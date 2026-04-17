@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_ops_project_department" model="ir.ui.view">
+        <field name="name">res.users.form.ops.project.department</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="ops_user_type.view_users_form_ops_user_type"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='access_rights']//field[@name='ops_user_type']" position="after">
+                <field
+                    name="ops_project_department_id"
+                    invisible="ops_user_type != 'project_manager'"
+                    options="{'no_open': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_users_tree_ops_project_department" model="ir.ui.view">
+        <field name="name">res.users.tree.ops.project.department</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="ops_user_type.view_users_tree_ops_user_type"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='ops_user_type']" position="after">
+                <field name="ops_project_department_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

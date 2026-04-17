@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_task_form_ops_field_reporting" model="ir.ui.view">
+        <field name="name">project.task.form.ops.field.reporting</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='priority'][1]" position="before">
+                <field name="ops_can_submit_for_review" invisible="1"/>
+                <field name="ops_can_mark_done" invisible="1"/>
+                <field name="ops_can_return_for_changes" invisible="1"/>
+                <field name="ops_reports_locked" invisible="1"/>
+            </xpath>
+            <xpath expr="//div[hasclass('o_state_container')]" position="before">
+                <div class="d-flex justify-content-end align-items-center me-2"
+                     invisible="not active or is_template or has_project_template">
+                    <button name="action_ops_submit_for_review"
+                            type="object"
+                            string="Шалгалтад илгээх"
+                            class="btn btn-primary me-2"
+                            invisible="not ops_can_submit_for_review"/>
+                    <button name="action_ops_mark_done"
+                            type="object"
+                            string="Дуусгах"
+                            class="btn btn-success me-2"
+                            invisible="not ops_can_mark_done"/>
+                    <button name="action_ops_open_return_wizard"
+                            type="object"
+                            string="Засвар буцаах"
+                            class="btn btn-warning me-2"
+                            invisible="not ops_can_return_for_changes"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='task_properties']" position="before">
+                <group string="Ажлын хэмжээ">
+                    <group>
+                        <field name="ops_measurement_unit" placeholder="Жишээ нь: mod"/>
+                        <field name="ops_planned_quantity"/>
+                    </group>
+                    <group>
+                        <field name="ops_completed_quantity" readonly="1"/>
+                        <field name="ops_remaining_quantity" readonly="1"/>
+                        <field name="ops_progress_percent" widget="percentage" readonly="1"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//notebook/page[@name='description_page']" position="after">
+                <page name="ops_field_reports_page" string="Гүйцэтгэлийн тайлан">
+                    <group string="Ажлын урсгал" col="1">
+                        <div class="o_form_label text-muted">
+                            Багийн ахлагч тайлангаа оруулаад `Шалгалтад илгээх` товч дарна.
+                            Ерөнхий менежер шалгаад `Дуусгах` эсвэл `Засвар буцаах` товчоор дараагийн алхмыг шийднэ.
+                        </div>
+                    </group>
+                    <field name="ops_report_ids" nolabel="1" context="{'default_task_id': id}" mode="list,form" readonly="ops_reports_locked">
+                        <list string="Тайлангууд" default_order="report_datetime desc" open_form_view="True">
+                            <field name="report_datetime"/>
+                            <field name="reporter_id" widget="many2one_avatar_user"/>
+                            <field name="reported_quantity"/>
+                            <field name="report_summary"/>
+                            <field name="image_count" string="Зураг"/>
+                            <field name="audio_count" string="Аудио"/>
+                        </list>
+                        <form string="Task Report">
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="task_id" readonly="1" options="{'no_open': True, 'no_create': True}"/>
+                                        <field name="reporter_id" readonly="1" widget="many2one_avatar_user"/>
+                                        <field name="report_datetime" readonly="1"/>
+                                    </group>
+                                    <group>
+                                        <field name="task_measurement_unit" readonly="1"/>
+                                        <field name="task_planned_quantity" readonly="1"/>
+                                        <field name="reported_quantity"/>
+                                    </group>
+                                </group>
+                                <group>
+                                    <field name="report_text" string="Текст тайлан" placeholder="Ажил дээрээ юу хийснээ энд бичнэ үү..."/>
+                                </group>
+                                <group string="Зураг">
+                                    <field name="image_attachment_ids"
+                                           nolabel="1"
+                                           widget="many2many_binary"
+                                           options="{'accepted_file_extensions': 'image/*'}"/>
+                                </group>
+                                <group string="Аудио">
+                                    <field name="audio_attachment_ids"
+                                           nolabel="1"
+                                           widget="many2many_binary"
+                                           options="{'accepted_file_extensions': 'audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm'}"/>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="quick_create_task_form_ops_field_reporting" model="ir.ui.view">
+        <field name="name">project.task.form.quick.create.ops.field.reporting</field>
+        <field name="model">project.task</field>
+                <field name="inherit_id" ref="project.quick_create_task_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_ids']" position="after">
+                <field name="ops_measurement_unit" placeholder="mod"/>
+                <field name="ops_planned_quantity"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_ops_task_return_wizard_form" model="ir.ui.view">
+        <field name="name">ops.task.return.wizard.form</field>
+        <field name="model">ops.task.return.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Засвар буцаах">
+                <sheet>
+                    <group>
+                        <field name="task_id" readonly="1"/>
+                        <field name="return_reason"
+                               string="Буцаах шалтгаан"
+                               placeholder="Ямар зүйл засах шаардлагатайг энд бичнэ үү..."/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_confirm_return"
+                            type="object"
+                            string="Буцаах"
+                            class="btn btn-warning"/>
+                    <button string="Цуцлах" class="btn btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

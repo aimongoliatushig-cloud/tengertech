@@ -1,0 +1,36 @@
+.o_kanban_group.ops_stage_blue > .o_kanban_header {
+    background: #e8f1ff;
+    border-top: 4px solid #2f80ed;
+    border-radius: 10px 10px 0 0;
+}
+
+.o_kanban_group.ops_stage_blue {
+    background: linear-gradient(to bottom, rgba(47, 128, 237, 0.08), rgba(47, 128, 237, 0.02));
+}
+
+.o_kanban_group.ops_stage_yellow > .o_kanban_header {
+    background: #fff6db;
+    border-top: 4px solid #f2c94c;
+    border-radius: 10px 10px 0 0;
+}
+
+.o_kanban_group.ops_stage_yellow {
+    background: linear-gradient(to bottom, rgba(242, 201, 76, 0.12), rgba(242, 201, 76, 0.03));
+}
+
+.o_kanban_group.ops_stage_green > .o_kanban_header {
+    background: #e8f7ee;
+    border-top: 4px solid #27ae60;
+    border-radius: 10px 10px 0 0;
+}
+
+.o_kanban_group.ops_stage_green {
+    background: linear-gradient(to bottom, rgba(39, 174, 96, 0.10), rgba(39, 174, 96, 0.03));
+}
+
+.o_kanban_group.ops_stage_blue > .o_kanban_header .o_column_title,
+.o_kanban_group.ops_stage_yellow > .o_kanban_header .o_column_title,
+.o_kanban_group.ops_stage_green > .o_kanban_header .o_column_title {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+}

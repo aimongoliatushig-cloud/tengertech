@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_ops_user_type" model="ir.ui.view">
+        <field name="name">res.users.form.ops.user.type</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='access_rights']//field[@name='company_id']" position="after">
+                <field name="ops_user_type"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_users_tree_ops_user_type" model="ir.ui.view">
+        <field name="name">res.users.tree.ops.user.type</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='role']" position="before">
+                <field name="ops_user_type" optional="show" widget="badge"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_users_search_ops_user_type" model="ir.ui.view">
+        <field name="name">res.users.search.ops.user.type</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search/field[@name='name']" position="after">
+                <field name="ops_user_type"/>
+            </xpath>
+            <xpath expr="//search/filter[@name='Inactive']" position="after">
+                <separator/>
+                <filter name="ops_user_type_system_admin" string="Системийн админ" domain="[('ops_user_type', '=', 'system_admin')]"/>
+                <filter name="ops_user_type_general_manager" string="Ерөнхий менежер" domain="[('ops_user_type', '=', 'general_manager')]"/>
+                <filter name="ops_user_type_project_manager" string="Төслийн удирдагч" domain="[('ops_user_type', '=', 'project_manager')]"/>
+                <filter name="ops_user_type_team_leader" string="Багийн ахлагч" domain="[('ops_user_type', '=', 'team_leader')]"/>
+                <filter name="ops_user_type_worker" string="Ажилтан" domain="[('ops_user_type', '=', 'worker')]"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

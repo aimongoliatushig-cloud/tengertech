@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="ir.rule" name="write">
+        <value model="ir.rule" search="[('id', '=', ref('project.project_public_members_rule'))]"/>
+        <value eval="{'groups': [(6, 0, [ref('project.group_project_user')])]}"/>
+    </function>
+
+    <function model="ir.rule" name="write">
+        <value model="ir.rule" search="[('id', '=', ref('project.task_visibility_rule'))]"/>
+        <value eval="{'groups': [(6, 0, [ref('project.group_project_user')])]}"/>
+    </function>
+
+    <record id="group_ops_system_admin" model="res.groups">
+        <field name="name">System Administrator</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_system'))]"/>
+    </record>
+
+    <record id="group_ops_general_manager" model="res.groups">
+        <field name="name">General Manager</field>
+    </record>
+
+    <record id="group_ops_project_leader" model="res.groups">
+        <field name="name">Project Leader</field>
+    </record>
+
+    <record id="group_ops_team_leader" model="res.groups">
+        <field name="name">Team Leader</field>
+    </record>
+
+    <record id="group_ops_worker" model="res.groups">
+        <field name="name">Worker</field>
+    </record>
+
+    <record id="rule_ops_project_all_system_admin" model="ir.rule">
+        <field name="name">OPS projects: system admin all</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_system_admin'))]"/>
+    </record>
+
+    <record id="rule_ops_project_all_general_manager" model="ir.rule">
+        <field name="name">OPS projects: general manager all</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_general_manager'))]"/>
+    </record>
+
+    <record id="rule_ops_project_project_leader_scope" model="ir.rule">
+        <field name="name">OPS projects: project leader own projects</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_project_leader'))]"/>
+    </record>
+
+    <record id="rule_ops_project_team_leader_scope" model="ir.rule">
+        <field name="name">OPS projects: team leader assigned task projects</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('task_ids.user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_team_leader'))]"/>
+    </record>
+
+    <record id="rule_ops_project_worker_scope" model="ir.rule">
+        <field name="name">OPS projects: worker assigned task projects</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('task_ids.user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_worker'))]"/>
+    </record>
+
+    <record id="rule_ops_task_all_system_admin" model="ir.rule">
+        <field name="name">OPS tasks: system admin all</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_system_admin'))]"/>
+    </record>
+
+    <record id="rule_ops_task_all_general_manager" model="ir.rule">
+        <field name="name">OPS tasks: general manager all</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_general_manager'))]"/>
+    </record>
+
+    <record id="rule_ops_task_project_leader_scope" model="ir.rule">
+        <field name="name">OPS tasks: project leader own project tasks</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('project_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_project_leader'))]"/>
+    </record>
+
+    <record id="rule_ops_task_team_leader_scope" model="ir.rule">
+        <field name="name">OPS tasks: team leader assigned tasks</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_team_leader'))]"/>
+    </record>
+
+    <record id="rule_ops_task_worker_scope" model="ir.rule">
+        <field name="name">OPS tasks: worker assigned tasks</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_worker'))]"/>
+    </record>
+
+    <record id="rule_ops_report_all_system_admin" model="ir.rule">
+        <field name="name">OPS task report: system admin all</field>
+        <field name="model_id" ref="project.model_report_project_task_user"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_system_admin'))]"/>
+    </record>
+
+    <record id="rule_ops_report_all_general_manager" model="ir.rule">
+        <field name="name">OPS task report: general manager all</field>
+        <field name="model_id" ref="project.model_report_project_task_user"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_general_manager'))]"/>
+    </record>
+
+    <record id="rule_ops_report_project_leader_scope" model="ir.rule">
+        <field name="name">OPS task report: project leader own project reports</field>
+        <field name="model_id" ref="project.model_report_project_task_user"/>
+        <field name="domain_force">[('project_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_project_leader'))]"/>
+    </record>
+</odoo>

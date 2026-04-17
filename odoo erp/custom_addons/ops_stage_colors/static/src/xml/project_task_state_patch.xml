@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ops_stage_colors.ProjectTaskStateSelectionPatch"
+       t-inherit="project.ProjectTaskStateSelection"
+       t-inherit-mode="extension">
+        <xpath expr="//span[@class='o_status_label' and @title='This task is blocked by another unfinished task']"
+               position="replace">
+            <span class="o_status_label" t-out="label"/>
+        </xpath>
+    </t>
+</templates>

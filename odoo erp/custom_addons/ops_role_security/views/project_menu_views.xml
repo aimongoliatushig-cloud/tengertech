@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="project.menu_main_pm" model="ir.ui.menu">
+        <field name="group_ids" eval="[
+            (4, ref('ops_role_security.group_ops_system_admin')),
+            (4, ref('ops_role_security.group_ops_general_manager')),
+            (4, ref('ops_role_security.group_ops_project_leader')),
+            (4, ref('ops_role_security.group_ops_team_leader')),
+            (4, ref('ops_role_security.group_ops_worker'))
+        ]"/>
+    </record>
+</odoo>

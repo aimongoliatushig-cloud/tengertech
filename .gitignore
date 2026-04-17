@@ -1,0 +1,14 @@
+odoo erp/Odoo 19/
+odoo erp/odoo_19.0.latest.exe
+odoo erp/custom_addons/field-service/
+
+web app/node_modules/
+web app/.next/
+web app/.env.local
+
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_task_form_ops_team_assignment" model="ir.ui.view">
+        <field name="name">project.task.form.ops.team.assignment</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_ids']" position="before">
+                <field name="ops_team_leader_id" options="{'no_open': True, 'no_quick_create': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="quick_create_task_form_ops_team_assignment" model="ir.ui.view">
+        <field name="name">project.task.form.quick.create.ops.team.assignment</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.quick_create_task_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_ids']" position="before">
+                <field name="ops_team_leader_id" options="{'no_open': True, 'no_quick_create': True}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

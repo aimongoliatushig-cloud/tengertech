@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="edit_project_ops_project_defaults" model="ir.ui.view">
+        <field name="name">project.project.form.ops.defaults</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[@name='description']" position="after">
+                <page name="ops_attachments" string="Нэмэлт хавсралт">
+                    <field name="ops_attachment_ids" nolabel="1" widget="many2many_binary"/>
+                </page>
+            </xpath>
+            <xpath expr="//page[@name='settings']//group[@name='extra_settings']" position="inside">
+                <group string="Алба нэгж">
+                    <field name="ops_department_id" required="1" options="{'no_open': True}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_project_view_form_simplified_ops_defaults" model="ir.ui.view">
+        <field name="name">project.project.view.form.simplified.ops.defaults</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.project_project_view_form_simplified"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('o_settings_container')]" position="inside">
+                <setting string="Алба нэгж" help="Төсөл аль алба нэгжид хамаарахыг сонгоно уу.">
+                    <field name="ops_department_id" required="1" options="{'no_open': True}"/>
+                </setting>
+            </xpath>
+            <xpath expr="//div[@name='alias_def']" position="after">
+                <group string="Нэмэлт хавсралт">
+                    <field name="ops_attachment_ids" nolabel="1" widget="many2many_binary"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_quick_create_form_ops_defaults" model="ir.ui.view">
+        <field name="name">project.form.quick.create.ops.defaults</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.quick_create_project_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="ops_department_id" required="1" options="{'no_open': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_project_search_ops_defaults" model="ir.ui.view">
+        <field name="name">project.project.search.ops.defaults</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_project_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search/field[@name='user_id']" position="after">
+                <field name="ops_department_id"/>
+            </xpath>
+            <xpath expr="//search/group" position="inside">
+                <filter string="Алба нэгж" name="groupby_ops_department" context="{'group_by': 'ops_department_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_project_list_ops_defaults" model="ir.ui.view">
+        <field name="name">project.project.list.ops.defaults</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="ops_department_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_project_kanban_ops_defaults" model="ir.ui.view">
+        <field name="name">project.project.kanban.ops.defaults</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="default_group_by">ops_department_id</attribute>
+            </xpath>
+            <xpath expr="/kanban" position="inside">
+                <field name="ops_department_id"/>
+            </xpath>
+            <xpath expr="//field[@name='tag_ids']" position="before">
+                <div t-if="record.ops_department_id.value" class="text-muted text-truncate fw-semibold">
+                    <span class="fa fa-sitemap me-2" title="Алба нэгж"/>
+                    <field name="ops_department_id"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_project_kanban_group_department" model="ir.ui.view">
+        <field name="name">project.project.kanban.group.department</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.project_kanban_view_group_stage"/>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="default_group_by">ops_department_id</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_project_config_kanban_group_department" model="ir.ui.view">
+        <field name="name">project.project.config.kanban.group.department</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_config_kanban_group_stage"/>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="default_group_by">ops_department_id</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project.act_project_project_2_project_task_all" model="ir.actions.act_window">
+        <field name="context">{
+            'default_project_id': active_id,
+            'show_project_update': True
+        }</field>
+    </record>
+
+    <record id="project.open_view_project_all" model="ir.actions.act_window">
+        <field name="context">{'display_milestone_deadline': True, 'search_default_groupby_ops_department': 1}</field>
+    </record>
+
+    <record id="project.open_view_project_all_group_stage" model="ir.actions.act_window">
+        <field name="context">{'display_milestone_deadline': True, 'search_default_groupby_ops_department': 1}</field>
+    </record>
+</odoo>
