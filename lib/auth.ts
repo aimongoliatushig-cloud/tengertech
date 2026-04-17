@@ -1,0 +1,137 @@
+import "server-only";
+
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from "node:crypto";
+
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { authenticateOdooUser } from "@/lib/odoo";
+import { SESSION_COOKIE_NAME } from "@/lib/session";
+
+const SESSION_TTL_SECONDS = 60 * 60 * 12;
+
+export type UserRole =
+  | "system_admin"
+  | "general_manager"
+  | "project_manager"
+  | "team_leader"
+  | "worker"
+  | string;
+
+export type AppSession = {
+  uid: number;
+  login: string;
+  password: string;
+  name: string;
+  role: UserRole;
+  issuedAt: number;
+};
+
+function getSessionKey() {
+  const secret =
+    process.env.SESSION_SECRET ?? "hot-tohjilt-local-session-secret-change-me";
+  return createHash("sha256").update(secret).digest();
+}
+
+function sealSession(payload: AppSession) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", getSessionKey(), iv);
+  const encrypted = Buffer.concat([
+    cipher.update(JSON.stringify(payload), "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString("base64url");
+}
+
+function unsealSession(token: string) {
+  const buffer = Buffer.from(token, "base64url");
+  const iv = buffer.subarray(0, 12);
+  const tag = buffer.subarray(12, 28);
+  const encrypted = buffer.subarray(28);
+  const decipher = createDecipheriv("aes-256-gcm", getSessionKey(), iv);
+  decipher.setAuthTag(tag);
+  const decrypted = Buffer.concat([
+    decipher.update(encrypted),
+    decipher.final(),
+  ]).toString("utf8");
+  return JSON.parse(decrypted) as AppSession;
+}
+
+export async function getSession() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return unsealSession(token);
+  } catch {
+    cookieStore.delete(SESSION_COOKIE_NAME);
+    return null;
+  }
+}
+
+export async function createSession(session: AppSession) {
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE_NAME, sealSession(session), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: SESSION_TTL_SECONDS,
+    path: "/",
+  });
+}
+
+export async function destroySession() {
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE_NAME);
+}
+
+export async function requireSession() {
+  const session = await getSession();
+  if (!session) {
+    redirect("/login");
+  }
+  return session;
+}
+
+export async function signInWithOdooCredentials(login: string, password: string) {
+  const result = await authenticateOdooUser(login, password);
+  if (!result) {
+    return null;
+  }
+
+  return {
+    uid: result.uid,
+    login: result.user.login,
+    password,
+    name: result.user.name,
+    role: result.user.role,
+    issuedAt: Date.now(),
+  } satisfies AppSession;
+}
+
+export function getRoleLabel(role: UserRole) {
+  switch (role) {
+    case "system_admin":
+      return "Системийн админ";
+    case "general_manager":
+      return "Ерөнхий менежер";
+    case "project_manager":
+      return "Төслийн удирдагч";
+    case "team_leader":
+      return "Багийн ахлагч";
+    case "worker":
+      return "Ажилтан";
+    default:
+      return "Хэрэглэгч";
+  }
+}
