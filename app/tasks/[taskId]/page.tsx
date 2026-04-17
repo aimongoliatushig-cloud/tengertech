@@ -56,7 +56,8 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
       password: session.password,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Даалгавар уншихад алдаа гарлаа.";
+    const message =
+      error instanceof Error ? error.message : "Даалгавар уншихад алдаа гарлаа.";
     return (
       <main className={styles.shell}>
         <div className={styles.container}>
@@ -82,10 +83,13 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
 
   return (
     <main className={styles.shell}>
-      <div className={styles.container}>
+      <div className={styles.container} id="task-top">
         <header className={styles.navBar}>
           <div className={styles.navLinks}>
-            <Link href={task.projectId ? `/projects/${task.projectId}` : "/"} className={styles.backLink}>
+            <Link
+              href={task.projectId ? `/projects/${task.projectId}` : "/"}
+              className={styles.backLink}
+            >
               Төсөл рүү буцах
             </Link>
             <span>{task.projectName}</span>
@@ -106,7 +110,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <h1>{task.name}</h1>
           <p>
             Энэ дэлгэц дээр тайлан нэмэх, шалгалтад илгээх, дуусгах, засвар нэхэж
-            буцаах зэрэг workflow-г web app дотроос удирдана.
+            буцаах зэрэг workflow-ийг web app дотроос удирдана.
           </p>
 
           <div className={styles.statsGrid}>
@@ -129,6 +133,23 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           </div>
         </section>
 
+        <nav className={styles.jumpRail} aria-label="Task quick navigation">
+          <a href="#task-detail" className={styles.jumpLink}>
+            Дэлгэрэнгүй
+          </a>
+          <a href="#workflow" className={styles.jumpLink}>
+            Үйлдэл
+          </a>
+          <a href="#reports" className={styles.jumpLink}>
+            Тайлан
+          </a>
+          {canWriteReport ? (
+            <a href="#report-form" className={styles.jumpLink}>
+              Шинэ тайлан
+            </a>
+          ) : null}
+        </nav>
+
         {errorMessage ? (
           <div className={`${styles.message} ${styles.errorMessage}`}>{errorMessage}</div>
         ) : null}
@@ -137,7 +158,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
         ) : null}
 
         <section className={styles.panelGrid}>
-          <section className={styles.panel}>
+          <section className={styles.panel} id="task-detail">
             <div className={styles.sectionHeader}>
               <div>
                 <span className={styles.eyebrow}>Task Detail</span>
@@ -200,7 +221,10 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
             ) : null}
           </section>
 
-          <aside className={styles.formCard}>
+          <aside
+            className={`${styles.formCard} ${styles.stickyAside}`}
+            id="workflow"
+          >
             <div className={styles.sectionHeader}>
               <div>
                 <span className={styles.eyebrow}>Workflow</span>
@@ -245,7 +269,9 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                 </form>
               ) : null}
 
-              {!task.canSubmitForReview && !task.canMarkDone && !task.canReturnForChanges ? (
+              {!task.canSubmitForReview &&
+              !task.canMarkDone &&
+              !task.canReturnForChanges ? (
                 <p>Энэ task дээр одоогоор таны role-д тохирсон workflow action алга.</p>
               ) : null}
             </div>
@@ -253,13 +279,16 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
         </section>
 
         <section className={styles.panelGrid} style={{ marginTop: 22 }}>
-          <section className={styles.panel}>
+          <section className={styles.panel} id="reports">
             <div className={styles.sectionHeader}>
               <div>
                 <span className={styles.eyebrow}>Field Reports</span>
                 <h2>Тайлангийн урсгал</h2>
               </div>
-              <p>Зураг, аудио upload-ийг дараагийн шатанд нэмнэ. Одоогоор текст ба хэмжээний тайлан орно.</p>
+              <p>
+                Зураг, аудио upload-ийг дараагийн шатанд нэмнэ. Одоогоор текст ба
+                хэмжээнй тайлан орно.
+              </p>
             </div>
 
             {task.reports.length ? (
@@ -291,7 +320,10 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
             )}
           </section>
 
-          <aside className={styles.formCard} id="report-form">
+          <aside
+            className={`${styles.formCard} ${styles.stickyAside}`}
+            id="report-form"
+          >
             <div className={styles.sectionHeader}>
               <div>
                 <span className={styles.eyebrow}>Add Report</span>
@@ -300,7 +332,10 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
             </div>
 
             {!canWriteReport ? (
-              <p>Тайлан нэмэх form нь одоогоор багийн ахлагч дээр, мөн түгжигдээгүй task дээр нээлттэй.</p>
+              <p>
+                Тайлан нэмэх form нь одоогоор багийн ахлагч дээр, мөн түгжигдээгүй
+                task дээр нээлттэй.
+              </p>
             ) : (
               <form action={createTaskReportAction} className={styles.form}>
                 <input type="hidden" name="task_id" value={task.id} />
@@ -337,6 +372,24 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
             )}
           </aside>
         </section>
+
+        <nav className={styles.mobileDock} aria-label="Task mobile quick navigation">
+          <a href="#workflow" className={styles.jumpLink}>
+            Үйлдэл
+          </a>
+          <a href="#reports" className={styles.jumpLink}>
+            Тайлан
+          </a>
+          {canWriteReport ? (
+            <a href="#report-form" className={styles.jumpLink}>
+              Нэмэх
+            </a>
+          ) : (
+            <a href="#task-top" className={styles.jumpLink}>
+              Дээш
+            </a>
+          )}
+        </nav>
       </div>
     </main>
   );
