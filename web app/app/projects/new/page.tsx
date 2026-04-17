@@ -41,7 +41,7 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
 
   return (
     <main className={styles.shell}>
-      <div className={styles.container}>
+      <div className={styles.container} id="create-project-top">
         <header className={styles.navBar}>
           <div className={styles.navLinks}>
             <Link href="/" className={styles.backLink}>
@@ -63,11 +63,20 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
           <span className={styles.eyebrow}>Project Create</span>
           <h1>Шинэ төсөл үүсгэх</h1>
           <p>
-            Шинэ төсөл нэмэхдээ аль алба нэгжид хамаарахыг нь заавал сонгоно. Ингэснээр
-            төсөлүүдийг илүү ойлгомжтой ангилж, дараа нь самбар болон Odoo project list дээр
-            илүү цэвэр харах боломжтой болно.
+            Шинэ төсөл нэмэхдээ аль алба нэгжид хамаарахыг нь заавал сонгоно.
+            Ингэснээр төслүүдийг илүү ойлгомжтой ангилж, самбар болон Odoo project list
+            дээр илүү цэвэр харах боломжтой болно.
           </p>
         </section>
+
+        <nav className={styles.jumpRail} aria-label="Create project quick navigation">
+          <a href="#project-form" className={styles.jumpLink}>
+            Form
+          </a>
+          <a href="#create-project-top" className={styles.jumpLink}>
+            Дээш буцах
+          </a>
+        </nav>
 
         {errorMessage ? (
           <div className={`${styles.message} ${styles.errorMessage}`}>{errorMessage}</div>
@@ -80,12 +89,12 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
           <section className={styles.emptyState}>
             <h2>Төсөл үүсгэх эрх алга</h2>
             <p>
-              Шинэ төсөл үүсгэх боломж нь одоогоор зөвхөн ерөнхий менежер болон системийн
-              админ хэрэглэгч дээр нээлттэй байна.
+              Шинэ төсөл үүсгэх боломж нь одоогоор зөвхөн ерөнхий менежер болон
+              системийн админ хэрэглэгч дээр нээлттэй байна.
             </p>
           </section>
         ) : (
-          <section className={styles.formCard}>
+          <section className={styles.formCard} id="project-form">
             <form action={createProjectAction} className={styles.form}>
               <div className={styles.field}>
                 <label htmlFor="name">Төслийн нэр</label>
@@ -145,6 +154,18 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
             </form>
           </section>
         )}
+
+        <nav className={styles.mobileDock} aria-label="Create project mobile navigation">
+          <a href="#project-form" className={styles.jumpLink}>
+            Form
+          </a>
+          <Link href="/" className={styles.jumpLink}>
+            Нүүр
+          </Link>
+          <a href="#create-project-top" className={styles.jumpLink}>
+            Дээш
+          </a>
+        </nav>
       </div>
     </main>
   );

@@ -50,7 +50,8 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
       password: session.password,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Төслийг уншихад алдаа гарлаа.";
+    const message =
+      error instanceof Error ? error.message : "Төслийг уншихад алдаа гарлаа.";
     return (
       <main className={styles.shell}>
         <div className={styles.container}>
@@ -77,7 +78,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
 
   return (
     <main className={styles.shell}>
-      <div className={styles.container}>
+      <div className={styles.container} id="project-top">
         <header className={styles.navBar}>
           <div className={styles.navLinks}>
             <Link href="/" className={styles.backLink}>
@@ -103,8 +104,8 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           <span className={styles.eyebrow}>Project Workspace</span>
           <h1>{project.name}</h1>
           <p>
-            Энэ дэлгэцээс төслийн task-уудыг дотроос нь хянаж, шинэ task үүсгээд, дараагийн
-            алхамд task detail рүү орж workflow-ийг удирдана.
+            Энэ дэлгэцээс төслийн task-уудыг хянаж, шинэ task үүсгээд, дараагийн
+            алхамд task detail рүү орж workflow-ийг web app дотроосоо удирдана.
           </p>
 
           <div className={styles.statsGrid}>
@@ -127,6 +128,20 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           </div>
         </section>
 
+        <nav className={styles.jumpRail} aria-label="Project quick navigation">
+          <a href="#task-list" className={styles.jumpLink}>
+            Task жагсаалт
+          </a>
+          {canCreateTask ? (
+            <a href="#task-create" className={styles.jumpLink}>
+              Шинэ task
+            </a>
+          ) : null}
+          <a href="#project-top" className={styles.jumpLink}>
+            Дээш буцах
+          </a>
+        </nav>
+
         {errorMessage ? (
           <div className={`${styles.message} ${styles.errorMessage}`}>{errorMessage}</div>
         ) : null}
@@ -135,13 +150,15 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
         ) : null}
 
         <section className={styles.panelGrid}>
-          <section className={styles.panel}>
+          <section className={styles.panel} id="task-list">
             <div className={styles.sectionHeader}>
               <div>
                 <span className={styles.eyebrow}>Task Board</span>
                 <h2>Төслийн task-ууд</h2>
               </div>
-              <p>Доорх task дээр дарж status, тайлан, гүйцэтгэлийг web app-аас удирдана.</p>
+              <p>
+                Доорх task дээр дарж status, тайлан, гүйцэтгэлийг web app-аас удирдана.
+              </p>
             </div>
 
             {project.tasks.length ? (
@@ -178,7 +195,10 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             )}
           </section>
 
-          <aside className={styles.formCard}>
+          <aside
+            className={`${styles.formCard} ${styles.stickyAside}`}
+            id="task-create"
+          >
             <div className={styles.sectionHeader}>
               <div>
                 <span className={styles.eyebrow}>Task Create</span>
@@ -240,7 +260,12 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
 
                 <div className={styles.field}>
                   <label htmlFor="deadline">Deadline</label>
-                  <input id="deadline" name="deadline" type="date" defaultValue={project.deadline} />
+                  <input
+                    id="deadline"
+                    name="deadline"
+                    type="date"
+                    defaultValue={project.deadline}
+                  />
                 </div>
 
                 <div className={styles.field}>
@@ -261,6 +286,24 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             )}
           </aside>
         </section>
+
+        <nav className={styles.mobileDock} aria-label="Project mobile quick navigation">
+          <a href="#task-list" className={styles.jumpLink}>
+            Task
+          </a>
+          {canCreateTask ? (
+            <a href="#task-create" className={styles.jumpLink}>
+              Шинэ
+            </a>
+          ) : (
+            <Link href="/" className={styles.jumpLink}>
+              Нүүр
+            </Link>
+          )}
+          <a href="#project-top" className={styles.jumpLink}>
+            Дээш
+          </a>
+        </nav>
       </div>
     </main>
   );

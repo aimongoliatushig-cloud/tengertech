@@ -32,7 +32,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 18px 22px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .navLinks {
@@ -71,7 +71,7 @@
 }
 
 .heroCard {
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .eyebrow {
@@ -100,6 +100,27 @@
   max-width: 760px;
   color: var(--ink-700);
   line-height: 1.7;
+}
+
+.jumpRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.jumpLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(24, 33, 44, 0.08);
+  color: var(--ink-900);
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .statsGrid,
@@ -333,6 +354,11 @@
   border-bottom: 1px solid rgba(24, 33, 44, 0.08);
 }
 
+.stickyAside {
+  position: sticky;
+  top: 20px;
+}
+
 .stagePill {
   display: inline-flex;
   align-items: center;
@@ -364,6 +390,10 @@
   color: #0d7c65;
 }
 
+.mobileDock {
+  display: none;
+}
+
 @media (max-width: 1080px) {
   .statsGrid,
   .panelGrid {
@@ -382,7 +412,7 @@
 
 @media (max-width: 720px) {
   .shell {
-    padding: 16px 14px 48px;
+    padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
   }
 
   .navBar,
@@ -396,8 +426,28 @@
     border-radius: 24px;
   }
 
+  .navBar {
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+  }
+
   .statsGrid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .jumpRail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .jumpLink {
+    scroll-snap-align: start;
+    white-space: nowrap;
   }
 
   .navBar,
@@ -412,11 +462,47 @@
     flex-direction: column;
   }
 
+  .panelGrid > .formCard {
+    order: -1;
+  }
+
+  .stickyAside {
+    position: static;
+  }
+
+  .taskGrid,
+  .reportGrid {
+    gap: 14px;
+  }
+
   .primaryButton,
   .secondaryButton,
   .dangerButton,
   .backLink,
   .smallLink {
     width: 100%;
+  }
+
+  .mobileDock {
+    position: fixed;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    left: 14px;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid rgba(20, 31, 42, 0.08);
+    border-radius: 24px;
+    background: rgba(255, 252, 245, 0.94);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 40px rgba(23, 27, 37, 0.16);
+  }
+
+  .mobileDock .jumpLink {
+    min-height: 52px;
+    padding: 0 12px;
+    background: rgba(17, 87, 132, 0.06);
   }
 }

@@ -82,6 +82,29 @@ export default async function Home() {
         </div>
       </header>
 
+      <section className={styles.commandStrip}>
+        <article className={styles.commandCard}>
+          <span>Идэвхтэй төсөл</span>
+          <strong>{snapshot.projects.length}</strong>
+          <small>Алба нэгжээр ангилсан</small>
+        </article>
+        <article className={styles.commandCard}>
+          <span>Талбарын ажил</span>
+          <strong>{snapshot.liveTasks.length}</strong>
+          <small>Явагдаж буй task</small>
+        </article>
+        <article className={styles.commandCard}>
+          <span>Шалгалтын мөр</span>
+          <strong>{snapshot.reviewQueue.length}</strong>
+          <small>Баталгаажуулалт хүлээж байна</small>
+        </article>
+        <article className={styles.commandCard}>
+          <span>Тайлангийн урсгал</span>
+          <strong>{snapshot.reports.length}</strong>
+          <small>Сүүлийн proof of work</small>
+        </article>
+      </section>
+
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <span className={styles.eyebrow}>
@@ -89,7 +112,7 @@ export default async function Home() {
           </span>
           <h2>Хот тохижилтын удирдлагын төв</h2>
           <p>
-            Odoo ERP-ийн project, task, field report, team leader мэдээллийг нэг
+            Odoo ERP-ийн төсөл, task, field report, team leader мэдээллийг нэг
             дэлгэц дээр нэгтгээд ерөнхий менежер, төслийн удирдагч, багийн ахлагч
             нарт зориулсан ажиллагааны зураглалыг үзүүлнэ.
           </p>
@@ -99,6 +122,9 @@ export default async function Home() {
             </Link>
             <Link className={styles.secondaryAction} href="#review">
               Шалгалтын дараалал
+            </Link>
+            <Link className={styles.secondaryAction} href="#reports">
+              Тайлангийн feed
             </Link>
           </div>
         </div>
@@ -136,7 +162,10 @@ export default async function Home() {
         <div className={styles.sectionHeader}>
           <div>
             <span className={styles.kicker}>Төслийн хяналт</span>
-            <h2>Идэвхтэй кампанит ажил</h2>
+            <h2>Идэвхтэй кампани ажил</h2>
+            <small className={styles.sectionNote}>
+              {snapshot.projects.length} төсөл, хэлтсээр бүлэглэсэн
+            </small>
           </div>
           <p>Ерөнхий менежерийн түвшний priority, хугацаа, гүйцэтгэлийн зураглал.</p>
         </div>
@@ -163,6 +192,10 @@ export default async function Home() {
               <div className={styles.progressTrack}>
                 <span style={{ width: `${project.completion}%` }} />
               </div>
+              <div className={styles.cardFooter}>
+                <span className={styles.cardLinkLabel}>Төслийн workspace</span>
+                <strong>→</strong>
+              </div>
             </Link>
           ))}
         </div>
@@ -174,6 +207,9 @@ export default async function Home() {
             <div>
               <span className={styles.kicker}>Амьд ажиллагаа</span>
               <h2>Талбар дээр явагдаж буй ажил</h2>
+              <small className={styles.sectionNote}>
+                {snapshot.liveTasks.length} task идэвхтэй байна
+              </small>
             </div>
             <p>Багийн ахлагчийн түвшнээс харагддаг active workload.</p>
           </div>
@@ -203,6 +239,10 @@ export default async function Home() {
                 <div className={styles.progressTrack}>
                   <span style={{ width: `${task.progress}%` }} />
                 </div>
+                <div className={styles.cardFooter}>
+                  <span className={styles.cardLinkLabel}>Task дэлгэрэнгүй</span>
+                  <strong>→</strong>
+                </div>
               </Link>
             ))}
           </div>
@@ -213,6 +253,9 @@ export default async function Home() {
             <div>
               <span className={styles.kicker}>Review Queue</span>
               <h2>Ерөнхий менежерийн шалгалт</h2>
+              <small className={styles.sectionNote}>
+                {snapshot.reviewQueue.length} ажил баталгаажуулалт хүлээж байна
+              </small>
             </div>
             <p>`Шалгалтад илгээх` дарсан ажил энд төвлөрч орж ирнэ.</p>
           </div>
@@ -241,6 +284,9 @@ export default async function Home() {
           <div>
             <span className={styles.kicker}>Хэлтсийн ачаалал</span>
             <h2>5 үндсэн нэгжийн зураглал</h2>
+            <small className={styles.sectionNote}>
+              Хэлтэс бүрийн нээлттэй ба review ачаалал
+            </small>
           </div>
           <p>Танай байгууллагын operational department-уудаар live workload-ийг харуулна.</p>
         </div>
@@ -274,6 +320,9 @@ export default async function Home() {
             <div>
               <span className={styles.kicker}>Багийн ахлагч</span>
               <h2>Гүйцэтгэлийн жижиг cockpit</h2>
+              <small className={styles.sectionNote}>
+                {snapshot.teamLeaders.length} ахлагчийн баг харагдана
+              </small>
             </div>
             <p>Team leader сонгогдоход ямар squad, ямар backlog-той явж байгааг харуулна.</p>
           </div>
@@ -295,11 +344,14 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className={styles.panel}>
+        <div className={styles.panel} id="reports">
           <div className={styles.sectionHeader}>
             <div>
               <span className={styles.kicker}>Proof Of Work</span>
               <h2>Сүүлийн field report feed</h2>
+              <small className={styles.sectionNote}>
+                {snapshot.reports.length} тайлангийн товч урсгал
+              </small>
             </div>
             <p>Зураг, аудио, текст тайлангийн сүүлийн урсгал.</p>
           </div>
@@ -326,6 +378,35 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <nav className={styles.mobileDock} aria-label="Mobile quick navigation">
+        <a href="#projects" className={styles.mobileDockLink}>
+          <span>Төсөл</span>
+          <strong>{snapshot.projects.length}</strong>
+        </a>
+        <a href="#review" className={styles.mobileDockLink}>
+          <span>Шалгалт</span>
+          <strong>{snapshot.reviewQueue.length}</strong>
+        </a>
+        <a href="#reports" className={styles.mobileDockLink}>
+          <span>Тайлан</span>
+          <strong>{snapshot.reports.length}</strong>
+        </a>
+        {canCreateProject ? (
+          <Link
+            href="/projects/new"
+            className={`${styles.mobileDockLink} ${styles.mobileDockPrimary}`}
+          >
+            <span>Шинэ</span>
+            <strong>+</strong>
+          </Link>
+        ) : (
+          <a href="#projects" className={styles.mobileDockLink}>
+            <span>Нүүр</span>
+            <strong>⌂</strong>
+          </a>
+        )}
+      </nav>
     </main>
   );
 }
