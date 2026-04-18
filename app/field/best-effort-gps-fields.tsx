@@ -88,8 +88,8 @@ export function BestEffortGpsFields() {
       />
       <small>
         {status === "ready"
-          ? "GPS location will be attached when available."
-          : "GPS is optional and will be skipped if the device does not share it."}
+          ? "GPS байршил боломжтой үед автоматаар хавсарна."
+          : "GPS нь заавал биш бөгөөд төхөөрөмж өгөхгүй бол алгасагдана."}
       </small>
     </>
   );

@@ -5,7 +5,7 @@ import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 function StagePill({
@@ -36,8 +36,9 @@ export default async function ReportsPage() {
     password: session.password,
   });
 
-  const canCreateProject =
-    session.role === "general_manager" || session.role === "system_admin";
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
 
   return (
     <main className={styles.shell}>
@@ -64,14 +65,19 @@ export default async function ReportsPage() {
           </div>
         </header>
 
-        <AppMenu active="reports" canCreateProject={canCreateProject} />
+        <AppMenu
+          active="reports"
+          canCreateProject={canCreateProject}
+          canViewQualityCenter={canViewQualityCenter}
+          canUseFieldConsole={canUseFieldConsole}
+        />
 
         <section className={styles.heroCard}>
           <span className={styles.eyebrow}>Тайлан ба баталгаажуулалт</span>
-          <h1>Шалгалтын дараалал ба proof of work</h1>
+          <h1>Шалгалтын дараалал ба гүйцэтгэлийн баталгаа</h1>
           <p>
-            Ерөнхий менежер, төслийн удирдагч, багийн ахлагчийн review урсгал,
-            тайлангийн feed, proof of work мэдээлэл энд төвлөрнө.
+            Ерөнхий менежер, төслийн удирдагч, багийн ахлагчийн шалгалтын урсгал,
+            тайлангийн урсгал, гүйцэтгэлийн баталгааны мэдээлэл энд төвлөрнө.
           </p>
 
           <div className={styles.statsGrid}>
@@ -88,7 +94,7 @@ export default async function ReportsPage() {
               <strong>{snapshot.teamLeaders.length}</strong>
             </article>
             <article className={styles.statCard}>
-              <span>Сүүлийн sync</span>
+              <span>Сүүлчийн синк</span>
               <strong>{snapshot.generatedAt}</strong>
             </article>
           </div>
@@ -98,10 +104,10 @@ export default async function ReportsPage() {
           <section className={styles.panel}>
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Review queue</span>
+                <span className={styles.eyebrow}>Шалгалтын мөр</span>
                 <h2>Шалгалт хүлээж буй ажил</h2>
               </div>
-              <p>Task дээр дарж workflow болон тайланг нь дотроос нь нээнэ.</p>
+              <p>Ажил дээр дарж шатны урсгал болон тайланг дотроос нь нээнэ.</p>
             </div>
 
             {snapshot.reviewQueue.length ? (
@@ -132,10 +138,10 @@ export default async function ReportsPage() {
           <section className={styles.panel}>
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Reports feed</span>
+                <span className={styles.eyebrow}>Тайлангийн урсгал</span>
                 <h2>Тайлангийн урсгал</h2>
               </div>
-              <p>Field report-оос орж ирсэн хамгийн сүүлийн мөрүүд.</p>
+              <p>Талбарын тайлангаас орж ирсэн хамгийн сүүлийн мөрүүд.</p>
             </div>
 
             {snapshot.reports.length ? (
@@ -146,7 +152,7 @@ export default async function ReportsPage() {
                       <div>
                         <h3>{report.taskName}</h3>
                         <p>
-                          {report.projectName} • {report.reporter}
+                          {report.projectName} / {report.reporter}
                         </p>
                       </div>
                       <strong>{report.submittedAt}</strong>
@@ -202,7 +208,7 @@ export default async function ReportsPage() {
             ) : (
               <div className={styles.emptyState}>
                 <h2>Тайлан алга</h2>
-                <p>Одоогоор тайлангийн feed хоосон байна.</p>
+                <p>Одоогоор тайлангийн урсгал хоосон байна.</p>
               </div>
             )}
           </section>
@@ -211,7 +217,7 @@ export default async function ReportsPage() {
         <section className={styles.panel} style={{ marginTop: 22 }}>
           <div className={styles.sectionHeader}>
             <div>
-              <span className={styles.eyebrow}>Team leaders</span>
+              <span className={styles.eyebrow}>Багийн ахлагчид</span>
               <h2>Багийн ахлагчдын товч зураглал</h2>
             </div>
           </div>
@@ -227,7 +233,7 @@ export default async function ReportsPage() {
                     <h3>{leader.name}</h3>
                     <div className={dashboardStyles.leaderMeta}>
                       <span>Идэвхтэй {leader.activeTasks}</span>
-                      <span>Review {leader.reviewTasks}</span>
+                      <span>Шалгалт {leader.reviewTasks}</span>
                       <span>Баг {leader.squadSize}</span>
                       <strong>{leader.averageCompletion}%</strong>
                     </div>
@@ -238,12 +244,12 @@ export default async function ReportsPage() {
           ) : (
             <div className={styles.emptyState}>
               <h2>Багийн ахлагчийн өгөгдөл алга</h2>
-              <p>Тайлан орж ирэх үед энд ахлагчдын summary харагдана.</p>
+              <p>Тайлан орж ирэх үед энд ахлагчдын товч мэдээлэл харагдана.</p>
             </div>
           )}
         </section>
 
-        <nav className={styles.mobileDock} aria-label="Reports mobile quick navigation">
+        <nav className={styles.mobileDock} aria-label="Тайлангийн гар утасны шуурхай цэс">
           <Link href="/" className={styles.jumpLink}>
             Нүүр
           </Link>

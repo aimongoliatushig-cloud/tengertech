@@ -15,25 +15,25 @@ import {
 import { BestEffortGpsFields } from "@/app/field/best-effort-gps-fields";
 import fieldStyles from "@/app/field/field.module.css";
 import workspaceStyles from "@/app/workspace.module.css";
-import { getRoleLabel, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 import { loadAssignedGarbageTasks, type FieldStop } from "@/lib/field-ops";
 
 export const dynamic = "force-dynamic";
 
 const ISSUE_TYPE_OPTIONS = [
-  { value: "route", label: "Route issue" },
-  { value: "vehicle", label: "Vehicle issue" },
-  { value: "crew", label: "Crew issue" },
-  { value: "safety", label: "Safety risk" },
-  { value: "citizen", label: "Citizen complaint" },
-  { value: "other", label: "Other" },
+  { value: "route", label: "Маршрутын асуудал" },
+  { value: "vehicle", label: "Машины асуудал" },
+  { value: "crew", label: "Багийн асуудал" },
+  { value: "safety", label: "Аюулгүй байдлын эрсдэл" },
+  { value: "citizen", label: "Иргэний гомдол" },
+  { value: "other", label: "Бусад" },
 ];
 
 const ISSUE_SEVERITY_OPTIONS = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "critical", label: "Critical" },
+  { value: "low", label: "Бага" },
+  { value: "medium", label: "Дунд" },
+  { value: "high", label: "Өндөр" },
+  { value: "critical", label: "Ноцтой" },
 ];
 
 type PageProps = {
@@ -70,25 +70,51 @@ function statusTone(stop: FieldStop) {
   return fieldStyles.stopDraft;
 }
 
+function getTodayLabel() {
+  return new Intl.DateTimeFormat("mn-MN", {
+    timeZone: "Asia/Ulaanbaatar",
+    month: "short",
+    day: "numeric",
+  }).format(new Date());
+}
+
 export default async function FieldPage({ searchParams }: PageProps) {
   const session = await requireSession();
   const query = (await searchParams) ?? {};
   const selectedTaskId = parseTaskId(query.taskId);
   const noticeMessage = getMessage(query.notice);
   const errorMessage = getMessage(query.error);
-  const canCreateProject =
-    session.role === "general_manager" || session.role === "system_admin";
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
 
-  const bundle = await loadAssignedGarbageTasks(
-    {
-      userId: session.uid,
-      selectedTaskId,
-    },
-    {
-      login: session.login,
-      password: session.password,
-    },
-  );
+  let fieldLoadError = "";
+  let bundle: Awaited<ReturnType<typeof loadAssignedGarbageTasks>> = {
+    requestedDate: "",
+    requestedDateLabel: getTodayLabel(),
+    assignments: [],
+    activeAssignment: null,
+  };
+
+  if (canUseFieldConsole) {
+    try {
+      bundle = await loadAssignedGarbageTasks(
+        {
+          userId: session.uid,
+          selectedTaskId,
+        },
+        {
+          login: session.login,
+          password: session.password,
+        },
+      );
+    } catch (error) {
+      fieldLoadError =
+        error instanceof Error && error.message
+          ? error.message
+          : "Талбарын маршрутын мэдээллийг Odoo-оос уншиж чадсангүй.";
+    }
+  }
 
   const assignment = bundle.activeAssignment;
 
@@ -98,7 +124,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
         <header className={workspaceStyles.navBar}>
           <div className={workspaceStyles.navLinks}>
             <Link href="/" className={workspaceStyles.backLink}>
-              Dashboard
+              Хяналтын самбар
             </Link>
             <span>{getRoleLabel(session.role)}</span>
             <span>{session.name}</span>
@@ -107,34 +133,39 @@ export default async function FieldPage({ searchParams }: PageProps) {
           <div className={workspaceStyles.navActions}>
             <form action={logoutAction}>
               <button type="submit" className={workspaceStyles.secondaryButton}>
-                Log out
+                Гарах
               </button>
             </form>
           </div>
         </header>
 
-        <AppMenu active="field" canCreateProject={canCreateProject} />
+        <AppMenu
+          active="field"
+          canCreateProject={canCreateProject}
+          canViewQualityCenter={canViewQualityCenter}
+          canUseFieldConsole={canUseFieldConsole}
+        />
 
         <section className={`${workspaceStyles.heroCard} ${fieldStyles.heroCard}`}>
-          <span className={workspaceStyles.eyebrow}>Mobile Field Flow</span>
-          <h1>My Route Today</h1>
+          <span className={workspaceStyles.eyebrow}>Талбарын гар утасны урсгал</span>
+          <h1>Өнөөдрийн маршрут</h1>
           <p>
-            Drivers and inspectors can start the shift, work stop by stop, upload
-            before and after proof photos, report issues, and submit the completed
-            route for verification from this page.
+            Жолооч, хянагч нар ээлж эхлүүлж, цэг тус бүрээр ажиллаад, өмнөх ба дараах
+            баталгааны зургаа оруулж, асуудал бүртгээд, дууссан маршрутаа шалгалтад
+            илгээх боломжтой.
           </p>
 
           <div className={fieldStyles.heroFacts}>
             <article className={workspaceStyles.statCard}>
-              <span>Date</span>
+              <span>Огноо</span>
               <strong>{bundle.requestedDateLabel}</strong>
             </article>
             <article className={workspaceStyles.statCard}>
-              <span>Assigned routes</span>
+              <span>Оноогдсон маршрут</span>
               <strong>{bundle.assignments.length}</strong>
             </article>
             <article className={workspaceStyles.statCard}>
-              <span>Role</span>
+              <span>Эрх</span>
               <strong>{getRoleLabel(session.role)}</strong>
             </article>
           </div>
@@ -145,13 +176,18 @@ export default async function FieldPage({ searchParams }: PageProps) {
             {errorMessage}
           </div>
         ) : null}
+        {fieldLoadError ? (
+          <div className={`${workspaceStyles.message} ${workspaceStyles.errorMessage}`}>
+            {fieldLoadError}
+          </div>
+        ) : null}
         {noticeMessage ? (
           <div className={`${workspaceStyles.message} ${workspaceStyles.noticeMessage}`}>
             {noticeMessage}
           </div>
         ) : null}
 
-        {bundle.assignments.length > 1 ? (
+        {canUseFieldConsole && bundle.assignments.length > 1 ? (
           <section className={fieldStyles.routeSelector}>
             {bundle.assignments.map((item) => (
               <Link
@@ -164,19 +200,35 @@ export default async function FieldPage({ searchParams }: PageProps) {
                 <span>{item.vehicleName}</span>
                 <strong>{item.routeName}</strong>
                 <small>
-                  {item.completedStopCount}/{item.stopCount} stops
+                  {item.completedStopCount}/{item.stopCount} цэг
                 </small>
               </Link>
             ))}
           </section>
         ) : null}
 
-        {!assignment ? (
+        {!canUseFieldConsole ? (
           <section className={workspaceStyles.emptyState}>
-            <h2>No assigned garbage route for today</h2>
+            <h2>Энэ хуудас талбарын хэрэглэгчдэд зориулагдсан</h2>
             <p>
-              When a dispatcher assigns a garbage collection task to your driver or
-              inspector account, it will appear here automatically.
+              Ерөнхий менежер, төслийн хяналтын хэрэглэгчид энэ хэсгийг ашиглахгүй.
+              Хяналтын самбар, төслүүд, тайлан хэсгээс ажлаа үргэлжлүүлнэ үү.
+            </p>
+          </section>
+        ) : fieldLoadError ? (
+          <section className={workspaceStyles.emptyState}>
+            <h2>Маршрутын мэдээлэл түр уншигдсангүй</h2>
+            <p>
+              Odoo серверээс талбарын өгөгдөл авах үед алдаа гарлаа. Дахин сэргээж
+              үзээд, алдаа хэвээр байвал Odoo талын эрх болон model field-үүдийг шалгана уу.
+            </p>
+          </section>
+        ) : !assignment ? (
+          <section className={workspaceStyles.emptyState}>
+            <h2>Өнөөдөр оноогдсон хогийн маршрут алга</h2>
+            <p>
+              Диспетчер танай жолооч эсвэл хянагчийн эрх дээр хог тээвэрлэлтийн ажил
+              оноовол энд автоматаар харагдана.
             </p>
           </section>
         ) : (
@@ -185,7 +237,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
               <section className={workspaceStyles.panel}>
                 <div className={workspaceStyles.sectionHeader}>
                   <div>
-                    <span className={workspaceStyles.eyebrow}>Route Summary</span>
+                    <span className={workspaceStyles.eyebrow}>Маршрутын товч</span>
                     <h2>{assignment.routeName}</h2>
                   </div>
                   <span className={fieldStyles.statePill}>{assignment.stateLabel}</span>
@@ -193,27 +245,27 @@ export default async function FieldPage({ searchParams }: PageProps) {
 
                 <div className={fieldStyles.summaryFacts}>
                   <div>
-                    <span>Vehicle</span>
+                    <span>Машин</span>
                     <strong>{assignment.vehicleName}</strong>
                   </div>
                   <div>
-                    <span>District</span>
+                    <span>Дүүрэг</span>
                     <strong>{assignment.districtName}</strong>
                   </div>
                   <div>
-                    <span>Driver</span>
+                    <span>Жолооч</span>
                     <strong>{assignment.driverName}</strong>
                   </div>
                   <div>
-                    <span>Inspector</span>
+                    <span>Хянагч</span>
                     <strong>{assignment.inspectorName}</strong>
                   </div>
                   <div>
-                    <span>Shift</span>
+                    <span>Ээлж</span>
                     <strong>{assignment.shiftTypeLabel}</strong>
                   </div>
                   <div>
-                    <span>Collected weight</span>
+                    <span>Цуглуулсан жин</span>
                     <strong>{assignment.totalNetWeightLabel}</strong>
                   </div>
                 </div>
@@ -224,27 +276,27 @@ export default async function FieldPage({ searchParams }: PageProps) {
 
                 <div className={fieldStyles.summaryStats}>
                   <div>
-                    <span>Stops</span>
+                    <span>Цэг</span>
                     <strong>{assignment.stopCount}</strong>
                   </div>
                   <div>
-                    <span>Completed</span>
+                    <span>Дууссан</span>
                     <strong>{assignment.completedStopCount}</strong>
                   </div>
                   <div>
-                    <span>Skipped</span>
+                    <span>Алгассан</span>
                     <strong>{assignment.skippedStopCount}</strong>
                   </div>
                   <div>
-                    <span>Open</span>
+                    <span>Нээлттэй</span>
                     <strong>{assignment.unresolvedStopCount}</strong>
                   </div>
                   <div>
-                    <span>Proof photos</span>
+                    <span>Баталгааны зураг</span>
                     <strong>{assignment.proofCount}</strong>
                   </div>
                   <div>
-                    <span>Issues</span>
+                    <span>Асуудал</span>
                     <strong>{assignment.issueCount}</strong>
                   </div>
                 </div>
@@ -253,22 +305,22 @@ export default async function FieldPage({ searchParams }: PageProps) {
               <aside className={`${workspaceStyles.formCard} ${fieldStyles.stickySummary}`}>
                 <div className={workspaceStyles.sectionHeader}>
                   <div>
-                    <span className={workspaceStyles.eyebrow}>Shift Actions</span>
-                    <h2>Ready to run</h2>
+                    <span className={workspaceStyles.eyebrow}>Ээлжийн үйлдэл</span>
+                    <h2>Ажиллахад бэлэн</h2>
                   </div>
                 </div>
 
                 <div className={fieldStyles.timeline}>
                   <div>
-                    <span>Dispatched</span>
+                    <span>Хуваарилсан</span>
                     <strong>{assignment.dispatchedAt}</strong>
                   </div>
                   <div>
-                    <span>Started</span>
+                    <span>Эхэлсэн</span>
                     <strong>{assignment.startedAt}</strong>
                   </div>
                   <div>
-                    <span>Submitted</span>
+                    <span>Илгээсэн</span>
                     <strong>{assignment.endedAt}</strong>
                   </div>
                 </div>
@@ -277,7 +329,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                   <form action={startFieldShiftAction} className={workspaceStyles.form}>
                     <input type="hidden" name="task_id" value={assignment.id} />
                     <button type="submit" className={workspaceStyles.primaryButton}>
-                      Start shift
+                      Ээлж эхлүүлэх
                     </button>
                   </form>
                 ) : null}
@@ -285,12 +337,12 @@ export default async function FieldPage({ searchParams }: PageProps) {
                 <form action={submitFieldShiftAction} className={workspaceStyles.form}>
                   <input type="hidden" name="task_id" value={assignment.id} />
                   <div className={workspaceStyles.field}>
-                    <label htmlFor="summary">End-of-shift summary</label>
+                    <label htmlFor="summary">Ээлжийн төгсгөлийн товч</label>
                     <textarea
                       id="summary"
                       name="summary"
                       defaultValue={assignment.endShiftSummary}
-                      placeholder="Write the shift summary before submitting for verification."
+                      placeholder="Шалгалтад илгээхээсээ өмнө ээлжийн товч тайлангаа бичнэ үү."
                       required
                     />
                   </div>
@@ -299,17 +351,17 @@ export default async function FieldPage({ searchParams }: PageProps) {
                     className={workspaceStyles.secondaryButton}
                     disabled={!assignment.canSubmit}
                   >
-                    Submit for verification
+                    Шалгалтад илгээх
                   </button>
                 </form>
 
                 <div className={fieldStyles.alertList}>
                   <div className={fieldStyles.alertCard}>
-                    <span>Unresolved stops</span>
+                    <span>Хаагдаагүй цэг</span>
                     <strong>{assignment.unresolvedStopCount}</strong>
                   </div>
                   <div className={fieldStyles.alertCard}>
-                    <span>Completed stops missing proof</span>
+                    <span>Зураг дутуу дууссан цэг</span>
                     <strong>{assignment.missingProofStopCount}</strong>
                   </div>
                 </div>
@@ -318,7 +370,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                   <div className={fieldStyles.weightList}>
                     {assignment.weightTotals.map((weight) => (
                       <article key={weight.id} className={fieldStyles.weightCard}>
-                        <strong>{weight.netWeightTotal.toFixed(2)} t</strong>
+                        <strong>{weight.netWeightTotal.toFixed(2)} тн</strong>
                         <span>{weight.sourceLabel}</span>
                         {weight.externalReference ? <small>{weight.externalReference}</small> : null}
                       </article>
@@ -326,7 +378,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                   </div>
                 ) : (
                   <p className={fieldStyles.helperText}>
-                    Nightly WRS totals will appear here after the weighbridge sync runs.
+                    Шөнийн WRS синк ажилласны дараа жингийн дүн энд харагдана.
                   </p>
                 )}
               </aside>
@@ -341,7 +393,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                 >
                   <div className={fieldStyles.stopTop}>
                     <div>
-                      <span className={fieldStyles.stopSequence}>Stop {stop.sequence}</span>
+                      <span className={fieldStyles.stopSequence}>Цэг {stop.sequence}</span>
                       <h3>{stop.collectionPointName}</h3>
                       <p>
                         {stop.districtName}
@@ -353,34 +405,34 @@ export default async function FieldPage({ searchParams }: PageProps) {
 
                   <div className={fieldStyles.stopMeta}>
                     <div>
-                      <span>Planned arrival</span>
+                      <span>Төлөвлөсөн очих цаг</span>
                       <strong>{stop.plannedArrivalLabel}</strong>
                     </div>
                     <div>
-                      <span>Service time</span>
+                      <span>Үйлчлэх хугацаа</span>
                       <strong>{stop.plannedServiceLabel}</strong>
                     </div>
                     <div>
-                      <span>Arrived</span>
+                      <span>Очсон</span>
                       <strong>{stop.arrivalLabel}</strong>
                     </div>
                     <div>
-                      <span>Departed</span>
+                      <span>Гарсан</span>
                       <strong>{stop.departureLabel}</strong>
                     </div>
                   </div>
 
                   <div className={workspaceStyles.chipRow}>
-                    <span className={workspaceStyles.chip}>{stop.proofCount} proof photos</span>
-                    <span className={workspaceStyles.chip}>{stop.issueCount} issues</span>
+                    <span className={workspaceStyles.chip}>{stop.proofCount} баталгааны зураг</span>
+                    <span className={workspaceStyles.chip}>{stop.issueCount} асуудал</span>
                     {stop.missingProofTypes.length ? (
                       <span className={workspaceStyles.chip}>
-                        Missing: {stop.missingProofTypes.join(", ")}
+                        Дутуу: {stop.missingProofTypes.join(", ")}
                       </span>
                     ) : null}
                     {stop.skipReason ? (
                       <span className={workspaceStyles.chip}>
-                        Skip reason: {stop.skipReason}
+                        Алгассан шалтгаан: {stop.skipReason}
                       </span>
                     ) : null}
                   </div>
@@ -391,7 +443,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                         <input type="hidden" name="task_id" value={assignment.id} />
                         <input type="hidden" name="stop_line_id" value={stop.id} />
                         <button type="submit" className={workspaceStyles.secondaryButton}>
-                          Mark arrived
+                          Очсонд тэмдэглэх
                         </button>
                       </form>
                     ) : null}
@@ -401,7 +453,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                         <input type="hidden" name="task_id" value={assignment.id} />
                         <input type="hidden" name="stop_line_id" value={stop.id} />
                         <button type="submit" className={workspaceStyles.primaryButton}>
-                          Mark done
+                          Дууссанд тэмдэглэх
                         </button>
                       </form>
                     ) : null}
@@ -409,23 +461,23 @@ export default async function FieldPage({ searchParams }: PageProps) {
 
                   <div className={fieldStyles.detailsGrid}>
                     <details className={fieldStyles.detailCard} open={stop.status !== "done"}>
-                      <summary>Proof photos</summary>
+                      <summary>Баталгааны зураг</summary>
                       <form action={uploadFieldStopProofAction} className={workspaceStyles.form}>
                         <input type="hidden" name="task_id" value={assignment.id} />
                         <input type="hidden" name="stop_line_id" value={stop.id} />
                         <div className={workspaceStyles.field}>
-                          <label htmlFor={`proof_type_${stop.id}`}>Photo type</label>
+                          <label htmlFor={`proof_type_${stop.id}`}>Зургийн төрөл</label>
                           <select
                             id={`proof_type_${stop.id}`}
                             name="proof_type"
                             defaultValue="before"
                           >
-                            <option value="before">Before</option>
-                            <option value="after">After</option>
+                            <option value="before">Өмнө</option>
+                            <option value="after">Дараа</option>
                           </select>
                         </div>
                         <div className={workspaceStyles.field}>
-                          <label htmlFor={`image_${stop.id}`}>Photo</label>
+                          <label htmlFor={`image_${stop.id}`}>Зураг</label>
                           <input
                             id={`image_${stop.id}`}
                             type="file"
@@ -436,17 +488,17 @@ export default async function FieldPage({ searchParams }: PageProps) {
                           />
                         </div>
                         <div className={workspaceStyles.field}>
-                          <label htmlFor={`proof_description_${stop.id}`}>Note</label>
+                          <label htmlFor={`proof_description_${stop.id}`}>Тайлбар</label>
                           <input
                             id={`proof_description_${stop.id}`}
                             type="text"
                             name="description"
-                            placeholder="Optional photo note"
+                            placeholder="Зургийн тайлбар оруулж болно"
                           />
                         </div>
                         <BestEffortGpsFields />
                         <button type="submit" className={workspaceStyles.secondaryButton}>
-                          Upload proof photo
+                          Баталгааны зураг оруулах
                         </button>
                       </form>
 
@@ -464,48 +516,48 @@ export default async function FieldPage({ searchParams }: PageProps) {
                         </div>
                       ) : (
                         <p className={fieldStyles.helperText}>
-                          Upload both before and after photos before marking the stop as done.
+                          Цэгийг дууссанд тэмдэглэхээс өмнө өмнөх ба дараах зургийг хоёуланг нь оруулна уу.
                         </p>
                       )}
                     </details>
 
                     <details className={fieldStyles.detailCard}>
-                      <summary>Skip stop</summary>
+                      <summary>Цэг алгасах</summary>
                       <form action={markFieldStopSkippedAction} className={workspaceStyles.form}>
                         <input type="hidden" name="task_id" value={assignment.id} />
                         <input type="hidden" name="stop_line_id" value={stop.id} />
                         <div className={workspaceStyles.field}>
-                          <label htmlFor={`skip_reason_${stop.id}`}>Reason</label>
+                          <label htmlFor={`skip_reason_${stop.id}`}>Шалтгаан</label>
                           <textarea
                             id={`skip_reason_${stop.id}`}
                             name="skip_reason"
                             defaultValue={stop.skipReason}
-                            placeholder="Explain why this stop was skipped."
+                            placeholder="Энэ цэгийг яагаад алгассанаа тайлбарлана уу."
                             required
                           />
                         </div>
                         <button type="submit" className={workspaceStyles.dangerButton}>
-                          Mark skipped
+                          Алгассанд тэмдэглэх
                         </button>
                       </form>
                     </details>
 
                     <details className={fieldStyles.detailCard}>
-                      <summary>Notes and issue log</summary>
+                      <summary>Тэмдэглэл ба асуудлын бүртгэл</summary>
                       <form action={saveFieldStopNoteAction} className={workspaceStyles.form}>
                         <input type="hidden" name="task_id" value={assignment.id} />
                         <input type="hidden" name="stop_line_id" value={stop.id} />
                         <div className={workspaceStyles.field}>
-                          <label htmlFor={`note_${stop.id}`}>Stop note</label>
+                          <label htmlFor={`note_${stop.id}`}>Цэгийн тэмдэглэл</label>
                           <textarea
                             id={`note_${stop.id}`}
                             name="note"
                             defaultValue={stop.note}
-                            placeholder="Save a note for this collection point."
+                            placeholder="Энэ цэг дээрх тэмдэглэлийг хадгална."
                           />
                         </div>
                         <button type="submit" className={workspaceStyles.secondaryButton}>
-                          Save note
+                          Тэмдэглэл хадгалах
                         </button>
                       </form>
 
@@ -513,18 +565,18 @@ export default async function FieldPage({ searchParams }: PageProps) {
                         <input type="hidden" name="task_id" value={assignment.id} />
                         <input type="hidden" name="stop_line_id" value={stop.id} />
                         <div className={workspaceStyles.field}>
-                          <label htmlFor={`issue_title_${stop.id}`}>Issue title</label>
+                          <label htmlFor={`issue_title_${stop.id}`}>Асуудлын гарчиг</label>
                           <input
                             id={`issue_title_${stop.id}`}
                             type="text"
                             name="title"
-                            placeholder="Short issue title"
+                            placeholder="Товч гарчиг"
                             required
                           />
                         </div>
                         <div className={fieldStyles.inlineFields}>
                           <div className={workspaceStyles.field}>
-                            <label htmlFor={`issue_type_${stop.id}`}>Issue type</label>
+                            <label htmlFor={`issue_type_${stop.id}`}>Асуудлын төрөл</label>
                             <select
                               id={`issue_type_${stop.id}`}
                               name="issue_type"
@@ -538,7 +590,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                             </select>
                           </div>
                           <div className={workspaceStyles.field}>
-                            <label htmlFor={`severity_${stop.id}`}>Severity</label>
+                            <label htmlFor={`severity_${stop.id}`}>Ноцтой түвшин</label>
                             <select
                               id={`severity_${stop.id}`}
                               name="severity"
@@ -553,16 +605,16 @@ export default async function FieldPage({ searchParams }: PageProps) {
                           </div>
                         </div>
                         <div className={workspaceStyles.field}>
-                          <label htmlFor={`issue_description_${stop.id}`}>Description</label>
+                          <label htmlFor={`issue_description_${stop.id}`}>Тайлбар</label>
                           <textarea
                             id={`issue_description_${stop.id}`}
                             name="description"
-                            placeholder="Describe the issue at this stop."
+                            placeholder="Энэ цэг дээрх асуудлыг тайлбарлана уу."
                             required
                           />
                         </div>
                         <button type="submit" className={workspaceStyles.secondaryButton}>
-                          Create issue
+                          Асуудал бүртгэх
                         </button>
                       </form>
 
@@ -583,7 +635,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                         </div>
                       ) : (
                         <p className={fieldStyles.helperText}>
-                          Use the issue log when a stop is blocked, unsafe, or needs follow-up.
+                          Цэг хаагдсан, аюултай эсвэл дахин шалгах шаардлагатай үед асуудлын бүртгэл ашиглана.
                         </p>
                       )}
                     </details>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Exo_2, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+
 import "./globals.css";
 
 const display = Exo_2({
@@ -22,7 +23,7 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Хот тохижилтын удирдлагын төв",
-  description: "Odoo ERP дээр суурилсан municipal operations dashboard",
+  description: "Odoo ERP дээр суурилсан хотын ажиллагааны хяналтын самбар",
 };
 
 export default function RootLayout({

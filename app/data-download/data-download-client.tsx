@@ -78,10 +78,10 @@ export function DataDownloadClient() {
         <section className={styles.formCard}>
           <div className={styles.sectionHeader}>
             <div>
-              <span className={styles.eyebrow}>WRS fetch</span>
-              <h2>Нэг өдрийн дата татах</h2>
+              <span className={styles.eyebrow}>WRS татах</span>
+              <h2>Нэг өдрийн өгөгдөл татах</h2>
             </div>
-            <p>Сонгосон өдрөөр WRS-ээс тайлангийн HTML preview-г шууд татна.</p>
+            <p>Сонгосон өдрөөр WRS-ээс тайлангийн HTML дүрслэлийг шууд татна.</p>
           </div>
 
           <form className={styles.form} onSubmit={handleSubmit}>
@@ -98,7 +98,7 @@ export function DataDownloadClient() {
 
             <div className={styles.buttonRow}>
               <button type="submit" className={styles.primaryButton} disabled={isPending}>
-                {isPending ? "Татаж байна..." : "Data татах"}
+                {isPending ? "Татаж байна..." : "Өгөгдөл татах"}
               </button>
             </div>
           </form>
@@ -107,7 +107,7 @@ export function DataDownloadClient() {
         <aside className={`${styles.panel} ${styles.stickyAside}`}>
           <div className={styles.sectionHeader}>
             <div>
-              <span className={styles.eyebrow}>Flow</span>
+              <span className={styles.eyebrow}>Урсгал</span>
               <h2>Автомат алхам</h2>
             </div>
           </div>
@@ -126,8 +126,8 @@ export function DataDownloadClient() {
               <strong>{report?.branchName ?? "Морингийн энгэрийн төвлөрсөн хогийн цэг"}</strong>
             </div>
             <div>
-              <span>Preview</span>
-              <strong>Static image pages</strong>
+              <span>Урьдчилан харах</span>
+              <strong>Зургийн хуудсууд</strong>
             </div>
           </div>
         </aside>
@@ -136,13 +136,13 @@ export function DataDownloadClient() {
       <section className={styles.panel}>
         <div className={styles.sectionHeader}>
           <div>
-            <span className={styles.eyebrow}>Preview</span>
+            <span className={styles.eyebrow}>Урьдчилан харах</span>
             <h2>Татсан тайлан</h2>
           </div>
           <p>
             {report
               ? `${report.requestedDate} огнооны тайлан HTML байдлаар доор харагдана.`
-              : "Огноо сонгоод Data татах товч дармагц тайлан энд гарна."}
+              : "Огноо сонгоод Өгөгдөл татах товч дармагц тайлан энд гарна."}
           </p>
         </div>
 
@@ -163,7 +163,7 @@ export function DataDownloadClient() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={pageSource}
-                    alt={`${report.title} page ${index + 1}`}
+                    alt={`${report.title} хуудас ${index + 1}`}
                     className={styles.reportPageImage}
                     loading="lazy"
                   />
@@ -174,7 +174,7 @@ export function DataDownloadClient() {
         ) : (
           <div className={styles.emptyState}>
             <h2>Тайлан хараахан татаагүй байна</h2>
-            <p>Огноогоо сонгоод Data татах товч дармагц WRS preview энд ачааллана.</p>
+            <p>Огноогоо сонгоод Өгөгдөл татах товч дармагц WRS дүрслэл энд ачааллана.</p>
           </div>
         )}
       </section>

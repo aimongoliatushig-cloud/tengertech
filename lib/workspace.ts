@@ -455,7 +455,7 @@ export async function loadTaskDetail(
       );
       assigneeNames = assignees.map((user) => user.name);
     } catch {
-      assigneeNames = task.user_ids.map((id) => `User #${id}`);
+      assigneeNames = task.user_ids.map((id) => `Хэрэглэгч #${id}`);
     }
   }
 

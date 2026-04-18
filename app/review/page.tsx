@@ -4,7 +4,7 @@ import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 type PageProps = {
@@ -48,8 +48,9 @@ export default async function ReviewPage({ searchParams }: PageProps) {
     password: session.password,
   });
 
-  const canCreateProject =
-    session.role === "general_manager" || session.role === "system_admin";
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
 
   const params = (await searchParams) ?? {};
   const requestedDepartment = getDepartmentParam(params.department);
@@ -94,15 +95,20 @@ export default async function ReviewPage({ searchParams }: PageProps) {
           </div>
         </header>
 
-        <AppMenu active="review" canCreateProject={canCreateProject} />
+        <AppMenu
+          active="review"
+          canCreateProject={canCreateProject}
+          canViewQualityCenter={canViewQualityCenter}
+          canUseFieldConsole={canUseFieldConsole}
+        />
 
         <section className={styles.heroCard}>
           <span className={styles.eyebrow}>Шалгах ажлууд</span>
           <h1>Алба нэгжээр нь сонгож шалгалтын ажлуудаа хянах</h1>
           <p>
-            Ерөнхий менежер review дээр ирсэн ажлуудыг алба нэгжээр нь ялгаж харна.
+            Ерөнхий менежер шалгалтад ирсэн ажлуудыг алба нэгжээр нь ялгаж харна.
             Доорх цэснээс нэг алба нэгж сонгоход зөвхөн тухайн нэгжийн
-            `Шалгагдаж буй ажил` task-ууд харагдана.
+            `Шалгагдаж буй ажил`-ууд харагдана.
           </p>
 
           <div className={styles.statsGrid}>
@@ -111,7 +117,7 @@ export default async function ReviewPage({ searchParams }: PageProps) {
               <strong>{selectedDepartment?.name ?? "Тодорхойгүй"}</strong>
             </article>
             <article className={styles.statCard}>
-              <span>Шалгах task</span>
+              <span>Шалгах ажил</span>
               <strong>{visibleReviewTasks.length}</strong>
             </article>
             <article className={styles.statCard}>
@@ -128,10 +134,10 @@ export default async function ReviewPage({ searchParams }: PageProps) {
         <section className={dashboardStyles.projectsSection}>
           <div className={dashboardStyles.sectionHeader}>
             <div>
-              <span className={dashboardStyles.kicker}>Department menu</span>
+              <span className={dashboardStyles.kicker}>Алба нэгжийн цэс</span>
               <h2>Алба нэгж сонгох</h2>
               <small className={dashboardStyles.sectionNote}>
-                Нэг дор бүх нэгжийг биш, сонгосон нэгжийн review task-уудыг харуулна
+                Нэг дор бүх нэгжийг биш, сонгосон нэгжийн шалгалтын ажлуудыг харуулна
               </small>
             </div>
           </div>
@@ -179,7 +185,7 @@ export default async function ReviewPage({ searchParams }: PageProps) {
                   <strong>{visibleReviewTasks.length}</strong>
                 </div>
                 <div>
-                  <span>Review мөр</span>
+                  <span>Шалгалтын мөр</span>
                   <strong>{selectedDepartment.reviewTasks}</strong>
                 </div>
                 <div>
@@ -214,7 +220,7 @@ export default async function ReviewPage({ searchParams }: PageProps) {
           </section>
         ) : null}
 
-        <nav className={styles.mobileDock} aria-label="Review mobile quick navigation">
+        <nav className={styles.mobileDock} aria-label="Шалгалтын хуудасны гар утасны цэс">
           <Link href="/" className={styles.jumpLink}>
             Нүүр
           </Link>

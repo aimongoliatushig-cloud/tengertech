@@ -183,65 +183,65 @@ export type FieldAssignmentBundle = {
 const TIME_ZONE = process.env.APP_TIME_ZONE ?? "Asia/Ulaanbaatar";
 
 const STOP_STATUS_LABELS: Record<string, string> = {
-  draft: "Planned",
-  arrived: "Arrived",
-  done: "Completed",
-  skipped: "Skipped",
+  draft: "Төлөвлөгдсөн",
+  arrived: "Очсон",
+  done: "Дууссан",
+  skipped: "Алгассан",
 };
 
 const TASK_STATE_LABELS: Record<string, string> = {
-  draft: "Planned",
-  dispatched: "Dispatched",
-  in_progress: "In progress",
-  submitted: "Submitted",
-  verified: "Verified",
-  cancelled: "Cancelled",
+  draft: "Төлөвлөгдсөн",
+  dispatched: "Хуваарилсан",
+  in_progress: "Ажиллаж байна",
+  submitted: "Илгээсэн",
+  verified: "Баталгаажсан",
+  cancelled: "Цуцалсан",
 };
 
 const SHIFT_LABELS: Record<string, string> = {
-  morning: "Morning shift",
-  day: "Day shift",
-  evening: "Evening shift",
-  night: "Night shift",
+  morning: "Өглөөний ээлж",
+  day: "Өдрийн ээлж",
+  evening: "Оройн ээлж",
+  night: "Шөнийн ээлж",
 };
 
 const PROOF_TYPE_LABELS: Record<string, string> = {
-  before: "Before",
-  after: "After",
-  completion: "Completion",
-  incident: "Issue",
+  before: "Өмнө",
+  after: "Дараа",
+  completion: "Дууссан",
+  incident: "Асуудал",
 };
 
 const ISSUE_TYPE_LABELS: Record<string, string> = {
-  route: "Route issue",
-  vehicle: "Vehicle issue",
-  crew: "Crew issue",
-  safety: "Safety risk",
-  citizen: "Citizen complaint",
-  other: "Other",
+  route: "Маршрутын асуудал",
+  vehicle: "Машины асуудал",
+  crew: "Багийн асуудал",
+  safety: "Аюулгүй байдлын эрсдэл",
+  citizen: "Иргэний гомдол",
+  other: "Бусад",
 };
 
 const ISSUE_SEVERITY_LABELS: Record<string, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-  critical: "Critical",
+  low: "Бага",
+  medium: "Дунд",
+  high: "Өндөр",
+  critical: "Ноцтой",
 };
 
 const ISSUE_STATE_LABELS: Record<string, string> = {
-  new: "New",
-  in_progress: "In progress",
-  resolved: "Resolved",
-  cancelled: "Cancelled",
+  new: "Шинэ",
+  in_progress: "Ажиллаж байна",
+  resolved: "Шийдсэн",
+  cancelled: "Цуцалсан",
 };
 
 const WEIGHT_SOURCE_LABELS: Record<string, string> = {
-  manual: "Manual",
-  external: "External ticket",
-  wrs_normalized: "WRS nightly total",
+  manual: "Гараар оруулсан",
+  external: "Гаднын тасалбар",
+  wrs_normalized: "WRS шөнийн дүн",
 };
 
-function relationName(relation: Relation, fallback = "Unassigned") {
+function relationName(relation: Relation, fallback = "Оноогоогүй") {
   return Array.isArray(relation) ? relation[1] : fallback;
 }
 
@@ -265,7 +265,7 @@ function toIsoDateInTimeZone(date: Date) {
 
 function formatDateLabel(value?: string | false) {
   if (!value) {
-    return "Not scheduled";
+    return "Товлоогүй";
   }
 
   const parsed = new Date(value);
@@ -282,7 +282,7 @@ function formatDateLabel(value?: string | false) {
 
 function formatDateTimeLabel(value?: string | false) {
   if (!value) {
-    return "Not recorded";
+    return "Бүртгэгдээгүй";
   }
 
   const parsed = new Date(value);
@@ -301,7 +301,7 @@ function formatDateTimeLabel(value?: string | false) {
 
 function formatFloatHourLabel(value?: number | null) {
   if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
-    return "Flexible";
+    return "Уян хатан";
   }
 
   const hours = Math.floor(value);
@@ -311,14 +311,14 @@ function formatFloatHourLabel(value?: number | null) {
 
 function formatDurationLabel(value?: number | null) {
   if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
-    return "Flexible";
+    return "Уян хатан";
   }
-  return `${value} min`;
+  return `${value} мин`;
 }
 
 function formatWeightLabel(value?: number | null) {
   const safeValue = typeof value === "number" && Number.isFinite(value) ? value : 0;
-  return `${Math.round(safeValue * 100) / 100} t`;
+  return `${Math.round(safeValue * 100) / 100} тн`;
 }
 
 function formatGpsLabel(latitude: number | false, longitude: number | false) {
@@ -353,16 +353,18 @@ function issueStateLabel(state: string) {
 }
 
 function weightSourceLabel(source?: string | false) {
-  return WEIGHT_SOURCE_LABELS[source || ""] ?? (source || "Unknown");
+  return WEIGHT_SOURCE_LABELS[source || ""] ?? (source || "Тодорхойгүй");
 }
 
 function shiftTypeLabel(shiftType?: string | false) {
-  return SHIFT_LABELS[shiftType || ""] ?? (shiftType || "Shift");
+  return SHIFT_LABELS[shiftType || ""] ?? (shiftType || "Ээлж");
 }
 
 function missingProofTypes(proofs: FieldProofImage[]) {
   const availableTypes = new Set(proofs.map((proof) => proof.proofType));
-  return ["before", "after"].filter((proofType) => !availableTypes.has(proofType));
+  return ["before", "after"]
+    .filter((proofType) => !availableTypes.has(proofType))
+    .map((proofType) => proofTypeLabel(proofType));
 }
 
 async function loadTodayGarbageTaskRecords(

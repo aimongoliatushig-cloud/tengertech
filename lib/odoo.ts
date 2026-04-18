@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { RoleGroupFlags } from "@/lib/roles";
+
 type OdooRelation = [number, string] | false;
 
 type OdooProjectRecord = {
@@ -15,6 +17,7 @@ type OdooTaskRecord = {
   id: number;
   name: string;
   project_id: OdooRelation;
+  ops_department_id: OdooRelation;
   stage_id: OdooRelation;
   ops_team_leader_id: OdooRelation;
   user_ids: number[];
@@ -26,6 +29,15 @@ type OdooTaskRecord = {
   priority: string;
   date_deadline: string | false;
   state: string;
+  mfo_is_operation_project: boolean;
+  mfo_operation_type: string | false;
+  mfo_route_id: OdooRelation;
+  mfo_unresolved_stop_count: number;
+  mfo_missing_proof_stop_count: number;
+  mfo_route_deviation_stop_count: number;
+  mfo_skipped_without_reason_count: number;
+  mfo_weight_sync_warning: boolean;
+  mfo_quality_exception_count: number;
 };
 
 type OdooReportRecord = {
@@ -95,6 +107,7 @@ type ReviewItem = {
 type LiveTask = {
   id: number;
   name: string;
+  departmentName: string;
   projectName: string;
   stageLabel: string;
   stageBucket: StageBucket;
@@ -113,6 +126,7 @@ type ReportFeedItem = {
   id: number;
   reporter: string;
   taskName: string;
+  departmentName: string;
   projectName: string;
   summary: string;
   reportedQuantity: number;
@@ -141,6 +155,22 @@ type TeamLeaderCard = {
   squadSize: number;
 };
 
+type QualityAlert = {
+  id: number;
+  name: string;
+  departmentName: string;
+  projectName: string;
+  routeName: string;
+  operationTypeLabel: string;
+  exceptionCount: number;
+  unresolvedStopCount: number;
+  missingProofStopCount: number;
+  deviationStopCount: number;
+  skippedWithoutReasonCount: number;
+  hasWeightWarning: boolean;
+  href: string;
+};
+
 type DashboardMetric = {
   label: string;
   value: string;
@@ -161,6 +191,7 @@ export type AuthenticatedOdooUser = {
     name: string;
     login: string;
     role: string;
+    groupFlags: RoleGroupFlags;
   };
 };
 
@@ -168,10 +199,12 @@ export type DashboardSnapshot = {
   source: "live" | "demo";
   generatedAt: string;
   metrics: DashboardMetric[];
+  qualityMetrics: DashboardMetric[];
   departments: DepartmentCard[];
   projects: ProjectCard[];
   liveTasks: LiveTask[];
   reviewQueue: ReviewItem[];
+  qualityAlerts: QualityAlert[];
   reports: ReportFeedItem[];
   teamLeaders: TeamLeaderCard[];
   odooBaseUrl: string;
@@ -218,6 +251,12 @@ const DEPARTMENT_ACCENTS: Record<(typeof DEPARTMENT_ORDER)[number], string> = {
   "Ногоон байгууламж": "var(--tone-teal)",
   "Зам талбайн цэвэрлэгээ": "var(--tone-blue)",
   "Тохижилт үйлчилгээ": "var(--tone-slate)",
+};
+
+const OPERATION_TYPE_LABELS: Record<string, string> = {
+  garbage: "Хог цуглуулалт",
+  street_cleaning: "Гудамж цэвэрлэгээ",
+  green_maintenance: "Ногоон байгууламж",
 };
 
 const STAGE_LABELS: Record<StageBucket, string> = {
@@ -310,6 +349,30 @@ function mapTaskToDepartment(task: Pick<OdooTaskRecord, "name" | "project_id">) 
   return "Тохижилт үйлчилгээ";
 }
 
+function resolveTaskDepartmentName(
+  task: Pick<OdooTaskRecord, "name" | "project_id" | "ops_department_id">,
+  projectDepartmentById: Map<number, string>,
+) {
+  const directDepartmentName = relationName(task.ops_department_id, "").trim();
+  if (directDepartmentName) {
+    return directDepartmentName;
+  }
+
+  const projectId = Array.isArray(task.project_id) ? task.project_id[0] : null;
+  if (projectId && projectDepartmentById.get(projectId)) {
+    return projectDepartmentById.get(projectId) as string;
+  }
+
+  return mapTaskToDepartment(task);
+}
+
+function operationTypeLabel(operationType?: string | false) {
+  if (!operationType) {
+    return "Ерөнхий ажил";
+  }
+  return OPERATION_TYPE_LABELS[operationType] ?? operationType;
+}
+
 function resolveProjectDepartmentName(
   project: Pick<OdooProjectRecord, "ops_department_id">,
   fallback = "Тодорхойгүй",
@@ -351,12 +414,25 @@ async function jsonRpc<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`Odoo JSON-RPC failed with HTTP ${response.status}`);
+    throw new Error(`Odoo JSON-RPC хүсэлт HTTP ${response.status} алдаатай дууслаа.`);
   }
 
-  const payload = (await response.json()) as { result?: T; error?: { message?: string } };
+  const payload = (await response.json()) as {
+    result?: T;
+    error?: {
+      message?: string;
+      data?: {
+        message?: string;
+        debug?: string;
+      };
+    };
+  };
   if (payload.error) {
-    throw new Error(payload.error.message ?? "Unknown Odoo JSON-RPC error");
+    throw new Error(
+      payload.error.data?.message ??
+        payload.error.message ??
+        "Odoo JSON-RPC алдаа тодорхойгүй байна.",
+    );
   }
 
   return payload.result as T;
@@ -399,12 +475,58 @@ export async function authenticateOdooUser(
     return null;
   }
 
+  const [
+    mfoManager,
+    mfoDispatcher,
+    mfoInspector,
+    mfoMobile,
+  ] = await Promise.all([
+    executeKw<boolean>(
+      uid,
+      "res.users",
+      "has_group",
+      [[uid], "municipal_field_ops.group_mfo_manager"],
+      {},
+      connection,
+    ),
+    executeKw<boolean>(
+      uid,
+      "res.users",
+      "has_group",
+      [[uid], "municipal_field_ops.group_mfo_dispatcher"],
+      {},
+      connection,
+    ),
+    executeKw<boolean>(
+      uid,
+      "res.users",
+      "has_group",
+      [[uid], "municipal_field_ops.group_mfo_inspector"],
+      {},
+      connection,
+    ),
+    executeKw<boolean>(
+      uid,
+      "res.users",
+      "has_group",
+      [[uid], "municipal_field_ops.group_mfo_mobile_user"],
+      {},
+      connection,
+    ),
+  ]);
+
   return {
     uid,
     user: {
       name: user.name,
       login: user.login,
       role: user.ops_user_type || "worker",
+      groupFlags: {
+        mfoManager,
+        mfoDispatcher,
+        mfoInspector,
+        mfoMobile,
+      },
     },
   };
 }
@@ -526,6 +648,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
         fields: [
           "name",
           "project_id",
+          "ops_department_id",
           "stage_id",
           "ops_team_leader_id",
           "user_ids",
@@ -537,6 +660,15 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
           "priority",
           "date_deadline",
           "state",
+          "mfo_is_operation_project",
+          "mfo_operation_type",
+          "mfo_route_id",
+          "mfo_unresolved_stop_count",
+          "mfo_missing_proof_stop_count",
+          "mfo_route_deviation_stop_count",
+          "mfo_skipped_without_reason_count",
+          "mfo_weight_sync_warning",
+          "mfo_quality_exception_count",
         ],
         limit: 2000,
         order: "priority desc, date_deadline asc, create_date desc",
@@ -594,21 +726,35 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     ]),
   );
 
+  const taskDepartmentNames = tasks.map((task) =>
+    resolveTaskDepartmentName(task, projectDepartmentById),
+  );
+
   const departmentNames = [
     ...DEPARTMENT_ORDER.filter((name) =>
-      [...projectDepartmentById.values(), ...tasks.map((task) => mapTaskToDepartment(task))].includes(name),
+      [...projectDepartmentById.values(), ...taskDepartmentNames].includes(name),
     ),
-    ...[...projectDepartmentById.values()]
-      .filter((name) => name && !DEPARTMENT_ORDER.includes(name as (typeof DEPARTMENT_ORDER)[number]))
-      .sort((left, right) => left.localeCompare(right, "mn")),
+    ...new Set(
+      [...projectDepartmentById.values(), ...taskDepartmentNames].filter(Boolean),
+    ),
+  ]
+    .filter(
+      (name, index, collection) =>
+        collection.indexOf(name) === index &&
+        !DEPARTMENT_ORDER.includes(name as (typeof DEPARTMENT_ORDER)[number]),
+    )
+    .sort((left, right) => left.localeCompare(right, "mn"));
+
+  const orderedDepartmentNames = [
+    ...DEPARTMENT_ORDER.filter((name) =>
+      [...projectDepartmentById.values(), ...taskDepartmentNames].includes(name),
+    ),
+    ...departmentNames,
   ];
 
-  const departments = departmentNames.map((department) => {
+  const departments = orderedDepartmentNames.map((department) => {
     const departmentTasks = tasks.filter((task) => {
-      const projectId = Array.isArray(task.project_id) ? task.project_id[0] : null;
-      const departmentName = projectId
-        ? projectDepartmentById.get(projectId) || mapTaskToDepartment(task)
-        : mapTaskToDepartment(task);
+      const departmentName = resolveTaskDepartmentName(task, projectDepartmentById);
       return departmentName === department;
     });
     const departmentDone = departmentTasks.filter(
@@ -631,7 +777,9 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
   });
 
   const projectsWithStats = projects.map((project) => {
-    const projectTasks = tasks.filter((task) => relationName(task.project_id, "") === project.name);
+    const projectTasks = tasks.filter(
+      (task) => Array.isArray(task.project_id) && task.project_id[0] === project.id,
+    );
     const completed = projectTasks.filter(
       (task) => getStageBucket(relationName(task.stage_id, "")) === "done",
     ).length;
@@ -664,6 +812,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
   const liveTasks = activeTasks.map((task) => ({
     id: task.id,
     name: task.name,
+    departmentName: resolveTaskDepartmentName(task, projectDepartmentById),
     projectName: relationName(task.project_id),
     stageLabel: STAGE_LABELS[getStageBucket(relationName(task.stage_id, ""))],
     stageBucket: getStageBucket(relationName(task.stage_id, "")),
@@ -681,9 +830,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
   const reviewQueue = reviewTasks.map((task) => ({
     id: task.id,
     name: task.name,
-    departmentName: Array.isArray(task.project_id)
-      ? (projectDepartmentById.get(task.project_id[0]) ?? mapTaskToDepartment(task))
-      : mapTaskToDepartment(task),
+    departmentName: resolveTaskDepartmentName(task, projectDepartmentById),
     stageLabel: relationName(task.stage_id, STAGE_LABELS.review),
     deadline: formatCompactDate(task.date_deadline),
     projectName: relationName(task.project_id),
@@ -745,6 +892,9 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       id: report.id,
       reporter: relationName(report.reporter_id),
       taskName: relationName(report.task_id),
+      departmentName: task
+        ? resolveTaskDepartmentName(task, projectDepartmentById)
+        : "Тодорхойгүй",
       projectName: task ? relationName(task.project_id) : "Төсөлгүй",
       summary: report.report_summary || "Тайлбар оруулаагүй",
       reportedQuantity: report.reported_quantity ?? 0,
@@ -796,6 +946,38 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     .sort((left, right) => right.activeTasks - left.activeTasks)
     .slice(0, 4);
 
+  const qualitySourceTasks = tasks.filter(
+    (task) => task.mfo_is_operation_project && (task.mfo_quality_exception_count ?? 0) > 0,
+  );
+  const missingProofTasks = qualitySourceTasks.filter(
+    (task) => (task.mfo_missing_proof_stop_count ?? 0) > 0,
+  );
+  const syncWarningTasks = qualitySourceTasks.filter((task) => task.mfo_weight_sync_warning);
+  const deviationTasks = qualitySourceTasks.filter(
+    (task) => (task.mfo_route_deviation_stop_count ?? 0) > 0,
+  );
+  const unresolvedQualityTasks = qualitySourceTasks.filter(
+    (task) => (task.mfo_unresolved_stop_count ?? 0) > 0,
+  );
+  const qualityAlerts = qualitySourceTasks
+    .map((task) => ({
+      id: task.id,
+      name: task.name,
+      departmentName: resolveTaskDepartmentName(task, projectDepartmentById),
+      projectName: relationName(task.project_id),
+      routeName: relationName(task.mfo_route_id, "Маршрутгүй"),
+      operationTypeLabel: operationTypeLabel(task.mfo_operation_type),
+      exceptionCount: task.mfo_quality_exception_count ?? 0,
+      unresolvedStopCount: task.mfo_unresolved_stop_count ?? 0,
+      missingProofStopCount: task.mfo_missing_proof_stop_count ?? 0,
+      deviationStopCount: task.mfo_route_deviation_stop_count ?? 0,
+      skippedWithoutReasonCount: task.mfo_skipped_without_reason_count ?? 0,
+      hasWeightWarning: Boolean(task.mfo_weight_sync_warning),
+      href: `/tasks/${task.id}`,
+    }))
+    .sort((left, right) => right.exceptionCount - left.exceptionCount)
+    .slice(0, 12);
+
   const completionRate = totalTasks ? Math.round((doneTasks.length / totalTasks) * 100) : 0;
   const completedQuantity = tasks.reduce(
     (sum, task) => sum + (task.ops_completed_quantity ?? 0),
@@ -823,25 +1005,53 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       {
         label: "Нийт гүйцэтгэл",
         value: `${completionRate}%`,
-        note: `${doneTasks.length}/${totalTasks} task дууссан`,
+        note: `${doneTasks.length}/${totalTasks} ажил дууссан`,
         tone: "teal",
       },
       {
         label: "Хэмжээний биелэлт",
         value: formatQuantity(completedQuantity, "нэгж"),
-        note: "Field report-оос автоматаар тооцсон",
+        note: "Талбарын тайлангаас автоматаар тооцсон",
         tone: "slate",
+      },
+    ],
+    qualityMetrics: [
+      {
+        label: "Чанарын анхааруулга",
+        value: String(qualitySourceTasks.length),
+        note: "Талбарын гүйцэтгэл дээр засах шаардлагатай ажил",
+        tone: qualitySourceTasks.length ? "red" : "teal",
+      },
+      {
+        label: "Зураг дутсан ажил",
+        value: String(missingProofTasks.length),
+        note: "Өмнө, дараах зураг бүрэн биш",
+        tone: missingProofTasks.length ? "amber" : "teal",
+      },
+      {
+        label: "Синк анхааруулга",
+        value: String(syncWarningTasks.length),
+        note: "WRS эсвэл жингийн өгөгдөл бүрэн биш",
+        tone: syncWarningTasks.length ? "red" : "slate",
+      },
+      {
+        label: "Маршрутын зөрүү",
+        value: String(deviationTasks.length),
+        note: `${unresolvedQualityTasks.length} ажил нээлттэй цэгтэй`,
+        tone: deviationTasks.length ? "amber" : "slate",
       },
     ],
     departments,
     projects: projectsWithStats,
     liveTasks,
     reviewQueue,
+    qualityAlerts,
     reports: reportsFeed,
     teamLeaders,
   };
 }
 
+// Preserved temporarily while the clean fallback snapshot replaces the old demo payload.
 function fallbackSnapshot(): DashboardSnapshot {
   return {
     source: "demo",
@@ -858,13 +1068,13 @@ function fallbackSnapshot(): DashboardSnapshot {
       {
         label: "Шалгалтын дараалал",
         value: "4",
-        note: "Ерөнхий менежер review хийж байна",
+        note: "Ерөнхий менежер шалгаж байна",
         tone: "amber",
       },
       {
         label: "Нийт гүйцэтгэл",
         value: "64%",
-        note: "18/28 task дээр ахиц бүртгэгдсэн",
+        note: "18/28 ажил дээр ахиц бүртгэгдсэн",
         tone: "teal",
       },
       {
@@ -872,6 +1082,32 @@ function fallbackSnapshot(): DashboardSnapshot {
         value: "713 мод",
         note: "Өнөөдрийн тайлангаас автоматаар тооцсон",
         tone: "slate",
+      },
+    ],
+    qualityMetrics: [
+      {
+        label: "Чанарын анхааруулга",
+        value: "5",
+        note: "Талбарын гүйцэтгэл дээр дахин шалгах ажил",
+        tone: "red",
+      },
+      {
+        label: "Зураг дутсан ажил",
+        value: "2",
+        note: "Өмнө эсвэл дараах зураг бүрэн биш",
+        tone: "amber",
+      },
+      {
+        label: "Синк анхааруулга",
+        value: "1",
+        note: "Жингийн синкийг шалгах шаардлагатай",
+        tone: "red",
+      },
+      {
+        label: "Маршрутын зөрүү",
+        value: "2",
+        note: "Зөрүү эсвэл хаагдаагүй цэг илэрсэн",
+        tone: "amber",
       },
     ],
     departments: DEPARTMENT_ORDER.map((name, index) => ({
@@ -923,6 +1159,7 @@ function fallbackSnapshot(): DashboardSnapshot {
     liveTasks: [
       {
         id: 101,
+        departmentName: "ÐÐ¾Ð³Ð¾Ð¾Ð½ Ð±Ð°Ð¹Ð³ÑƒÑƒÐ»Ð°Ð¼Ð¶",
         name: "1-р хороо - 20-р байрны ар тал",
         projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
         stageLabel: "Явагдаж буй ажил",
@@ -939,6 +1176,7 @@ function fallbackSnapshot(): DashboardSnapshot {
       },
       {
         id: 102,
+        departmentName: "Ð—Ð°Ð¼ Ñ‚Ð°Ð»Ð±Ð°Ð¹Ð½ Ñ†ÑÐ²ÑÑ€Ð»ÑÐ³ÑÑ",
         name: "7-р хороо - Төв замын захын цэвэрлэгээ",
         projectName: "Зам талбайн шөнийн цэвэрлэгээ",
         stageLabel: "Хийгдэх ажил",
@@ -955,6 +1193,7 @@ function fallbackSnapshot(): DashboardSnapshot {
       },
       {
         id: 103,
+        departmentName: "ÐÐ²Ñ‚Ð¾ Ð±Ð°Ð°Ð·",
         name: "Авто бааз - 3 машинд урсгал үйлчилгээ",
         projectName: "Техникийн өдөр тутмын бэлэн байдал",
         stageLabel: "Явагдаж буй ажил",
@@ -994,9 +1233,42 @@ function fallbackSnapshot(): DashboardSnapshot {
         href: "/tasks/202",
       },
     ],
+    qualityAlerts: [
+      {
+        id: 401,
+        name: "Хогийн 2-р маршрут",
+        departmentName: "Хог тээвэрлэлт",
+        projectName: "Өглөөний хог тээврийн маршрут",
+        routeName: "2-р чиглэл",
+        operationTypeLabel: "Хог цуглуулалт",
+        exceptionCount: 3,
+        unresolvedStopCount: 1,
+        missingProofStopCount: 1,
+        deviationStopCount: 0,
+        skippedWithoutReasonCount: 0,
+        hasWeightWarning: true,
+        href: "/tasks/202",
+      },
+      {
+        id: 402,
+        name: "Төв замын цэвэрлэгээ",
+        departmentName: "Зам талбайн цэвэрлэгээ",
+        projectName: "Шөнийн гудамж цэвэрлэгээ",
+        routeName: "7-р хорооны чиглэл",
+        operationTypeLabel: "Гудамж цэвэрлэгээ",
+        exceptionCount: 2,
+        unresolvedStopCount: 1,
+        missingProofStopCount: 0,
+        deviationStopCount: 1,
+        skippedWithoutReasonCount: 0,
+        hasWeightWarning: false,
+        href: "/tasks/102",
+      },
+    ],
     reports: [
       {
         id: 301,
+        departmentName: "ÐÐ¾Ð³Ð¾Ð¾Ð½ Ð±Ð°Ð¹Ð³ÑƒÑƒÐ»Ð°Ð¼Ð¶",
         reporter: "suldee",
         taskName: "1-р хороо - 20-р байрны ар тал",
         projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
@@ -1010,6 +1282,7 @@ function fallbackSnapshot(): DashboardSnapshot {
       },
       {
         id: 302,
+        departmentName: "Ð¥Ð¾Ð³ Ñ‚ÑÑÐ²ÑÑ€Ð»ÑÐ»Ñ‚",
         reporter: "sarangerel",
         taskName: "Хог тээврийн 2-р маршрут",
         projectName: "Хог тээвэрлэлтийн өглөөний маршрут",
@@ -1048,6 +1321,10 @@ function fallbackSnapshot(): DashboardSnapshot {
   };
 }
 
+function buildFallbackSnapshot(): DashboardSnapshot {
+  return fallbackSnapshot();
+}
+
 export async function loadMunicipalSnapshot(
   connectionOverrides: Partial<OdooConnection> = {},
 ) {
@@ -1057,6 +1334,6 @@ export async function loadMunicipalSnapshot(
     return await fetchLiveSnapshot(connection);
   } catch (error) {
     console.warn("Falling back to demo dashboard snapshot:", error);
-    return fallbackSnapshot();
+    return buildFallbackSnapshot();
   }
 }

@@ -11,17 +11,15 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { authenticateOdooUser } from "@/lib/odoo";
+import {
+  getRoleLabel,
+  hasCapability,
+  type RoleGroupFlags,
+  type UserRole,
+} from "@/lib/roles";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
-
-export type UserRole =
-  | "system_admin"
-  | "general_manager"
-  | "project_manager"
-  | "team_leader"
-  | "worker"
-  | string;
 
 export type AppSession = {
   uid: number;
@@ -29,6 +27,7 @@ export type AppSession = {
   password: string;
   name: string;
   role: UserRole;
+  groupFlags?: RoleGroupFlags;
   issuedAt: number;
 };
 
@@ -115,23 +114,9 @@ export async function signInWithOdooCredentials(login: string, password: string)
     password,
     name: result.user.name,
     role: result.user.role,
+    groupFlags: result.user.groupFlags,
     issuedAt: Date.now(),
   } satisfies AppSession;
 }
 
-export function getRoleLabel(role: UserRole) {
-  switch (role) {
-    case "system_admin":
-      return "Системийн админ";
-    case "general_manager":
-      return "Ерөнхий менежер";
-    case "project_manager":
-      return "Төслийн удирдагч";
-    case "team_leader":
-      return "Багийн ахлагч";
-    case "worker":
-      return "Ажилтан";
-    default:
-      return "Хэрэглэгч";
-  }
-}
+export { getRoleLabel, hasCapability };

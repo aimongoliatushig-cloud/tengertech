@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AppMenu } from "@/app/_components/app-menu";
 import { createProjectAction, logoutAction } from "@/app/actions";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 import { loadDepartmentOptions, loadProjectManagerOptions } from "@/lib/workspace";
 
 type PageProps = {
@@ -37,8 +37,9 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
     }),
   ]);
 
-  const canCreateProject =
-    session.role === "general_manager" || session.role === "system_admin";
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
 
   return (
     <main className={styles.shell}>
@@ -60,7 +61,12 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
           </div>
         </header>
 
-        <AppMenu active="new-project" canCreateProject={canCreateProject} />
+        <AppMenu
+          active="new-project"
+          canCreateProject={canCreateProject}
+          canViewQualityCenter={canViewQualityCenter}
+          canUseFieldConsole={canUseFieldConsole}
+        />
 
         <section className={styles.heroCard}>
           <span className={styles.eyebrow}>Төсөл бүртгэх</span>
@@ -72,9 +78,9 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
           </p>
         </section>
 
-        <nav className={styles.jumpRail} aria-label="Create project quick navigation">
+        <nav className={styles.jumpRail} aria-label="Төсөл үүсгэх шуурхай цэс">
           <a href="#project-form" className={styles.jumpLink}>
-            Form
+            Маягт
           </a>
           <a href="#create-project-top" className={styles.jumpLink}>
             Дээш
@@ -201,9 +207,9 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
           </section>
         )}
 
-        <nav className={styles.mobileDock} aria-label="Create project mobile navigation">
+        <nav className={styles.mobileDock} aria-label="Төсөл үүсгэх гар утасны цэс">
           <a href="#project-form" className={styles.jumpLink}>
-            Form
+            Маягт
           </a>
           <Link href="/" className={styles.jumpLink}>
             Нүүр

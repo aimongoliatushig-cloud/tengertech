@@ -37,32 +37,32 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <main className={styles.shell}>
       <section className={styles.infoPanel}>
-        <span className={styles.eyebrow}>Municipal Operations Platform</span>
+        <span className={styles.eyebrow}>Хотын ажиллагааны нэгдсэн платформ</span>
         <h1>Хот тохижилтын веб апп</h1>
         <p>
-          Odoo ERP дээрх төслийн урсгал, талбарын тайлан, review queue, багийн
-          бүтэц, хэмжээг нэг дэлгэц дээр нэгтгэсэн mobile-friendly web app.
+          Odoo ERP дээрх төслийн урсгал, талбарын тайлан, шалгалтын мөр, багийн бүтэц,
+          хэмжээг нэг дэлгэц дээр нэгтгэсэн гар утсанд эвтэйхэн веб апп.
         </p>
 
         <div className={styles.featureGrid}>
           <article className={styles.featureCard}>
             <strong>Ерөнхий менежер</strong>
-            <span>Review queue, KPI, live progress, proof of work feed</span>
+            <span>Шалгалтын мөр, KPI, явц, гүйцэтгэлийн баталгааны урсгал</span>
           </article>
           <article className={styles.featureCard}>
             <strong>Багийн ахлагч</strong>
-            <span>Task, тайлан, зураг, аудио, хэмжээг нэг урсгалаар удирдана</span>
+            <span>Ажил, тайлан, зураг, аудио, хэмжээг нэг урсгалаар удирдана</span>
           </article>
           <article className={styles.featureCard}>
-            <strong>Mobile ready</strong>
-            <span>Утсан дээр нэг гараар ашиглахад эвтэйхэн layout-тай</span>
+            <strong>Гар утсанд бэлэн</strong>
+            <span>Утсан дээр нэг гараар ашиглахад эвтэйхэн зохиомжтой</span>
           </article>
         </div>
       </section>
 
       <section className={styles.formPanel}>
         <div className={styles.formHeader}>
-          <span className={styles.formBadge}>Odoo Login</span>
+          <span className={styles.formBadge}>Odoo нэвтрэлт</span>
           <h2>Нэвтрэх</h2>
           <p>
             Odoo дээрх одоогийн хэрэглэгчийн нэр, нууц үгээрээ шууд орно.
@@ -101,7 +101,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </form>
 
         <div className={styles.footerHint}>
-          <span>Default demo access</span>
+          <span>Жишээ нэвтрэх эрх</span>
           <strong>`admin / admin`</strong>
         </div>
       </section>
