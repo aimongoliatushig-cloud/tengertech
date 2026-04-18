@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mfo_task_search" model="ir.ui.view">
+        <field name="name">project.task.search.mfo</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <search string="Өдрийн даалгавар">
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="mfo_shift_date"/>
+                <field name="mfo_route_id"/>
+                <field name="mfo_vehicle_id"/>
+                <field name="mfo_crew_team_id"/>
+                <field name="mfo_district_id"/>
+                <field name="mfo_state"/>
+                <filter string="Минийх" name="my_tasks" domain="[('user_ids', 'in', uid)]"/>
+                <filter string="Өнөөдөр" name="today" domain="[('mfo_shift_date', '=', context_today())]"/>
+                <filter string="Шалгахаар" name="submitted" domain="[('mfo_state', '=', 'submitted')]"/>
+                <filter string="Баталгаажсан" name="verified" domain="[('mfo_state', '=', 'verified')]"/>
+                <group>
+                    <filter string="Огноо" name="groupby_shift_date" context="{'group_by': 'mfo_shift_date'}"/>
+                    <filter string="Маршрут" name="groupby_route" context="{'group_by': 'mfo_route_id'}"/>
+                    <filter string="Техник" name="groupby_vehicle" context="{'group_by': 'mfo_vehicle_id'}"/>
+                    <filter string="Экипаж" name="groupby_crew" context="{'group_by': 'mfo_crew_team_id'}"/>
+                    <filter string="Дүүрэг" name="groupby_district" context="{'group_by': 'mfo_district_id'}"/>
+                    <filter string="Төлөв" name="groupby_state" context="{'group_by': 'mfo_state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_task_list" model="ir.ui.view">
+        <field name="name">project.task.list.mfo</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <list default_order="mfo_shift_date desc, id desc">
+                <field name="priority" optional="hide"/>
+                <field name="mfo_shift_date"/>
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="mfo_route_id"/>
+                <field name="mfo_district_id"/>
+                <field name="mfo_crew_team_id"/>
+                <field name="mfo_vehicle_id"/>
+                <field name="mfo_state" widget="badge"/>
+                <field name="mfo_progress_percent" widget="progressbar"/>
+                <field name="mfo_proof_count"/>
+                <field name="mfo_total_net_weight" optional="show"/>
+                <field name="user_ids" widget="many2many_avatar_user" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_task_form_mfo" model="ir.ui.view">
+        <field name="name">project.task.form.mfo</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='priority'][1]" position="before">
+                <field name="mfo_is_operation_project" invisible="1"/>
+                <field name="mfo_can_dispatch" invisible="1"/>
+                <field name="mfo_can_start" invisible="1"/>
+                <field name="mfo_can_submit" invisible="1"/>
+                <field name="mfo_can_verify" invisible="1"/>
+                <field name="mfo_can_reopen" invisible="1"/>
+                <field name="mfo_operation_type" invisible="1"/>
+                <field name="mfo_state" invisible="1"/>
+            </xpath>
+            <xpath expr="//div[hasclass('o_state_container')]" position="before">
+                <div class="d-flex justify-content-end align-items-center me-2"
+                     invisible="not active or is_template or has_project_template or not mfo_is_operation_project">
+                    <button name="action_mfo_dispatch"
+                            type="object"
+                            string="Хуваарилах"
+                            class="btn btn-primary me-2"
+                            groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"
+                            invisible="not mfo_can_dispatch"/>
+                    <button name="action_mfo_start_shift"
+                            type="object"
+                            string="Ээлж эхлүүлэх"
+                            class="btn btn-secondary me-2"
+                            invisible="not mfo_can_start"/>
+                    <button name="action_mfo_submit_for_verification"
+                            type="object"
+                            string="Шалгалтад илгээх"
+                            class="btn btn-warning me-2"
+                            invisible="not mfo_can_submit"/>
+                    <button name="action_mfo_verify_completion"
+                            type="object"
+                            string="Баталгаажуулах"
+                            class="btn btn-success me-2"
+                            groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_inspector,base.group_system"
+                            invisible="not mfo_can_verify"/>
+                    <button name="action_mfo_reopen_execution"
+                            type="object"
+                            string="Дахин нээх"
+                            class="btn btn-light me-2"
+                            groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"
+                            invisible="not mfo_can_reopen"/>
+                    <button name="action_mfo_open_reassignment_wizard"
+                            type="object"
+                            string="Дахин хуваарилах"
+                            class="btn btn-outline-primary"
+                            groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"
+                            invisible="mfo_state == 'verified'"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='task_properties']" position="before">
+                <group string="Хотын талбайн ажиллагаа" invisible="not mfo_is_operation_project">
+                    <group>
+                        <field name="mfo_state" widget="statusbar" statusbar_visible="draft,dispatched,in_progress,submitted,verified,cancelled" readonly="1"/>
+                        <field name="mfo_shift_date"/>
+                        <field name="mfo_shift_type"/>
+                        <field name="mfo_route_id" invisible="mfo_operation_type != 'garbage'"/>
+                        <field name="mfo_district_id"/>
+                        <field name="mfo_subdistrict_id"/>
+                    </group>
+                    <group>
+                        <field name="mfo_planned_start"/>
+                        <field name="mfo_planned_end"/>
+                        <field name="mfo_dispatch_datetime" readonly="1"/>
+                        <field name="mfo_start_datetime" readonly="1"/>
+                        <field name="mfo_end_datetime" readonly="1"/>
+                        <field name="mfo_progress_percent" widget="progressbar" readonly="1"/>
+                    </group>
+                </group>
+                <group string="Экипаж ба техник"
+                       groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"
+                       invisible="not mfo_is_operation_project">
+                    <group>
+                        <field name="mfo_crew_team_id"/>
+                        <field name="mfo_vehicle_id"/>
+                        <field name="mfo_driver_employee_id"/>
+                        <field name="mfo_inspector_employee_id"/>
+                    </group>
+                    <group>
+                        <field name="mfo_collector_employee_ids" widget="many2many_tags"/>
+                        <field name="mfo_is_emergency_reassignment" readonly="1"/>
+                        <field name="mfo_last_reassignment_reason" readonly="1"/>
+                        <field name="mfo_last_sync_log_id" readonly="1" invisible="mfo_operation_type != 'garbage'"/>
+                    </group>
+                </group>
+                <group string="Экипажийн хураангуй"
+                       groups="municipal_field_ops.group_mfo_mobile_user,municipal_field_ops.group_mfo_inspector,base.group_system"
+                       invisible="not mfo_is_operation_project">
+                    <group>
+                        <field name="mfo_vehicle_id" options="{'no_open': True, 'no_create': True}"/>
+                        <field name="mfo_driver_name" readonly="1"/>
+                        <field name="mfo_collector_names" readonly="1"/>
+                        <field name="mfo_inspector_name" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="mfo_stop_count" readonly="1"/>
+                        <field name="mfo_completed_stop_count" readonly="1"/>
+                        <field name="mfo_proof_count" readonly="1"/>
+                        <field name="mfo_total_net_weight" readonly="1" invisible="mfo_operation_type != 'garbage'"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//notebook/page[@name='description_page']" position="after">
+                <page name="mfo_execution_page" string="Ээлжийн тайлан" invisible="not mfo_is_operation_project">
+                    <group>
+                        <field name="mfo_end_shift_summary" placeholder="Ээлжийн төгсгөлд хийсэн ажлын дүгнэлтээ бичнэ үү..."/>
+                    </group>
+                </page>
+                <page name="mfo_stop_page" string="Зогсоолууд" invisible="not mfo_is_operation_project or mfo_operation_type != 'garbage'">
+                    <field name="mfo_stop_line_ids" nolabel="1" context="{'default_task_id': id}">
+                        <list editable="bottom" open_form_view="True">
+                            <field name="sequence" widget="handle"/>
+                            <field name="collection_point_id"/>
+                            <field name="status" widget="badge"/>
+                            <field name="skip_reason" optional="show"/>
+                            <field name="arrival_datetime"/>
+                            <field name="departure_datetime"/>
+                            <field name="proof_count" readonly="1"/>
+                            <field name="issue_count" readonly="1"/>
+                        </list>
+                        <form string="Зогсоол">
+                            <header>
+                                <button name="action_mark_arrived" type="object" string="Очсон" class="btn btn-secondary"/>
+                                <button name="action_mark_done" type="object" string="Гүйцэтгэсэн" class="btn btn-success"/>
+                                <button name="action_mark_skipped" type="object" string="Алгассан" class="btn btn-warning"/>
+                            </header>
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="sequence"/>
+                                        <field name="collection_point_id"/>
+                                        <field name="district_id" readonly="1"/>
+                                        <field name="subdistrict_id" readonly="1"/>
+                                        <field name="status"/>
+                                    </group>
+                                    <group>
+                                        <field name="planned_arrival_hour" widget="float_time"/>
+                                        <field name="planned_service_minutes"/>
+                                        <field name="arrival_datetime"/>
+                                        <field name="departure_datetime"/>
+                                        <field name="note"/>
+                                        <field name="skip_reason"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+                </page>
+                <page name="mfo_proof_page" string="Баталгаажуулалт" invisible="not mfo_is_operation_project">
+                    <field name="mfo_proof_image_ids" nolabel="1" context="{'default_task_id': id}" mode="list,form">
+                        <list open_form_view="True">
+                            <field name="capture_datetime"/>
+                            <field name="proof_type"/>
+                            <field name="uploader_user_id"/>
+                            <field name="stop_line_id"/>
+                            <field name="description"/>
+                        </list>
+                        <form string="Баталгаажуулалтын зураг">
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="task_id" readonly="1"/>
+                                        <field name="stop_line_id"/>
+                                        <field name="proof_type"/>
+                                        <field name="capture_datetime"/>
+                                    </group>
+                                    <group>
+                                        <field name="uploader_user_id" readonly="1"/>
+                                        <field name="uploader_employee_id" readonly="1"/>
+                                        <field name="latitude"/>
+                                        <field name="longitude"/>
+                                    </group>
+                                </group>
+                                <group>
+                                    <field name="description"/>
+                                </group>
+                                <group>
+                                    <field name="image_1920" widget="image" class="oe_avatar"/>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+                </page>
+                <page name="mfo_weight_page" string="Жин" invisible="not mfo_is_operation_project or mfo_operation_type != 'garbage'">
+                    <group col="1">
+                        <button name="action_mfo_request_weight_sync"
+                                type="object"
+                                string="Пүүгээс татах"
+                                class="btn btn-secondary"
+                                groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+                    </group>
+                    <group string="Өдөр тутмын нийт">
+                        <field name="mfo_daily_weight_total_ids" nolabel="1" context="{'default_task_id': id, 'default_shift_date': mfo_shift_date, 'default_vehicle_id': mfo_vehicle_id, 'default_route_id': mfo_route_id}" mode="list,form">
+                            <list open_form_view="True">
+                                <field name="shift_date"/>
+                                <field name="vehicle_id"/>
+                                <field name="route_id"/>
+                                <field name="source"/>
+                                <field name="net_weight_total"/>
+                                <field name="external_reference"/>
+                            </list>
+                            <form string="Өдөр тутмын жингийн нийт">
+                                <sheet>
+                                    <group>
+                                        <group>
+                                            <field name="task_id" readonly="1"/>
+                                            <field name="shift_date"/>
+                                            <field name="vehicle_id"/>
+                                            <field name="route_id"/>
+                                        </group>
+                                        <group>
+                                            <field name="source"/>
+                                            <field name="net_weight_total"/>
+                                            <field name="external_reference"/>
+                                            <field name="sync_log_id" readonly="1"/>
+                                        </group>
+                                    </group>
+                                    <group>
+                                        <field name="note"/>
+                                    </group>
+                                </sheet>
+                            </form>
+                        </field>
+                    </group>
+                    <field name="mfo_weight_measurement_ids" nolabel="1" context="{'default_task_id': id, 'default_vehicle_id': mfo_vehicle_id}" mode="list,form">
+                        <list open_form_view="True">
+                            <field name="measured_at"/>
+                            <field name="ticket_number"/>
+                            <field name="source"/>
+                            <field name="gross_weight"/>
+                            <field name="tare_weight"/>
+                            <field name="net_weight"/>
+                        </list>
+                        <form string="Жингийн бүртгэл">
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="task_id" readonly="1"/>
+                                        <field name="vehicle_id"/>
+                                        <field name="measured_at"/>
+                                        <field name="ticket_number"/>
+                                        <field name="source"/>
+                                    </group>
+                                    <group>
+                                        <field name="gross_weight"/>
+                                        <field name="tare_weight"/>
+                                        <field name="net_weight" readonly="1"/>
+                                        <field name="external_reference"/>
+                                        <field name="sync_log_id" readonly="1"/>
+                                    </group>
+                                </group>
+                                <group>
+                                    <field name="note"/>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+                </page>
+                <page name="mfo_issue_page" string="Асуудал" invisible="not mfo_is_operation_project">
+                    <field name="mfo_issue_ids" nolabel="1" context="{'default_task_id': id}" mode="list,form">
+                        <list open_form_view="True">
+                            <field name="report_datetime"/>
+                            <field name="name"/>
+                            <field name="issue_type"/>
+                            <field name="severity"/>
+                            <field name="state"/>
+                            <field name="reporter_user_id"/>
+                        </list>
+                        <form string="Асуудлын бүртгэл">
+                            <header>
+                                <button name="action_mark_in_progress" type="object" string="Шийдвэрлэж байна" class="btn btn-secondary" invisible="state != 'new'"/>
+                                <button name="action_mark_resolved" type="object" string="Шийдсэн" class="btn btn-success" invisible="state == 'resolved'"/>
+                            </header>
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="task_id" readonly="1"/>
+                                        <field name="stop_line_id"/>
+                                        <field name="report_datetime"/>
+                                        <field name="issue_type"/>
+                                        <field name="severity"/>
+                                    </group>
+                                    <group>
+                                        <field name="name"/>
+                                        <field name="state"/>
+                                        <field name="reporter_user_id" readonly="1"/>
+                                        <field name="reporter_employee_id" readonly="1"/>
+                                    </group>
+                                </group>
+                                <group>
+                                    <field name="description"/>
+                                    <field name="resolution_note"/>
+                                </group>
+                            </sheet>
+                            <chatter reload_on_follower="True"/>
+                        </form>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_mfo_task_dispatch" model="ir.actions.act_window">
+        <field name="name">Өдөр тутмын даалгавар</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">list,kanban,form,calendar,pivot,graph,activity</field>
+        <field name="view_id" ref="view_mfo_task_list"/>
+        <field name="domain">[('project_id.mfo_is_operation_project', '=', True)]</field>
+        <field name="search_view_id" ref="view_mfo_task_search"/>
+        <field name="context">{'default_mfo_shift_date': context_today()}</field>
+    </record>
+
+    <record id="action_mfo_task_my_mobile" model="ir.actions.act_window">
+        <field name="name">Миний гүйцэтгэл</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">list,form,kanban</field>
+        <field name="view_id" ref="view_mfo_task_list"/>
+        <field name="domain">[('project_id.mfo_is_operation_project', '=', True), ('user_ids', 'in', uid)]</field>
+        <field name="search_view_id" ref="view_mfo_task_search"/>
+        <field name="context">{'search_default_my_tasks': 1}</field>
+    </record>
+</odoo>

@@ -1,8 +1,8 @@
 {
-    "name": "Operations Field Reporting",
-    "summary": "Task-level field reports with text, images, and audio.",
+    "name": "Хотын ажиллагаа: Гүйцэтгэлийн тайлан",
+    "summary": "Даалгаврын түвшний текст, зураг, аудио бүхий гүйцэтгэлийн тайлан.",
     "version": "19.0.1.6.0",
-    "category": "Project",
+    "category": "Төсөл",
     "author": "OpenAI",
     "license": "LGPL-3",
     "depends": ["project", "ops_role_security", "ops_team_assignment"],

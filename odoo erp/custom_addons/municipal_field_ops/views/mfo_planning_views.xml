@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mfo_planning_template_search" model="ir.ui.view">
+        <field name="name">mfo.planning.template.search</field>
+        <field name="model">mfo.planning.template</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="operation_type"/>
+                <filter string="Идэвхтэй" name="active" domain="[('active', '=', True)]"/>
+                <group>
+                    <filter string="Төсөл" name="groupby_project" context="{'group_by': 'project_id'}"/>
+                    <filter string="Ажиллагааны төрөл" name="groupby_operation_type" context="{'group_by': 'operation_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_planning_template_list" model="ir.ui.view">
+        <field name="name">mfo.planning.template.list</field>
+        <field name="model">mfo.planning.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="operation_type"/>
+                <field name="reference_date"/>
+                <field name="last_generated_week_start"/>
+                <field name="last_generated_count"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_planning_template_form" model="ir.ui.view">
+        <field name="name">mfo.planning.template.form</field>
+        <field name="model">mfo.planning.template</field>
+        <field name="arch" type="xml">
+            <form string="7 хоногийн загвар">
+                <header>
+                    <button name="action_generate_tasks_for_reference_week"
+                            type="object"
+                            string="Энэ 7 хоногийн даалгавар үүсгэх"
+                            class="btn btn-primary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="project_id"/>
+                            <field name="operation_type" readonly="1"/>
+                            <field name="reference_date"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="last_generated_week_start" readonly="1"/>
+                            <field name="last_generated_count" readonly="1"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Төлөвлөлтийн мөрүүд">
+                            <field name="line_ids" context="{'default_template_id': id}">
+                                <list editable="bottom" open_form_view="True">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="weekday"/>
+                                    <field name="route_id"/>
+                                    <field name="district_id" readonly="1"/>
+                                    <field name="shift_type"/>
+                                    <field name="crew_team_id"/>
+                                    <field name="vehicle_id"/>
+                                    <field name="expected_stop_count" readonly="1"/>
+                                </list>
+                                <form string="Төлөвлөлтийн мөр">
+                                    <sheet>
+                                        <group>
+                                            <group>
+                                                <field name="weekday"/>
+                                                <field name="route_id"/>
+                                                <field name="district_id" readonly="1"/>
+                                                <field name="shift_type"/>
+                                            </group>
+                                            <group>
+                                                <field name="planned_start_hour" widget="float_time"/>
+                                                <field name="planned_end_hour" widget="float_time"/>
+                                                <field name="expected_stop_count" readonly="1"/>
+                                                <field name="note"/>
+                                            </group>
+                                        </group>
+                                        <group string="Экипаж ба техник">
+                                            <group>
+                                                <field name="crew_team_id"/>
+                                                <field name="vehicle_id"/>
+                                                <field name="driver_employee_id"/>
+                                                <field name="inspector_employee_id"/>
+                                            </group>
+                                            <group>
+                                                <field name="collector_employee_ids" widget="many2many_tags"/>
+                                            </group>
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Өдрийн өөрчлөлтүүд">
+                            <field name="override_ids" nolabel="1">
+                                <list editable="bottom" open_form_view="True">
+                                    <field name="override_date"/>
+                                    <field name="template_line_id"/>
+                                    <field name="override_type"/>
+                                    <field name="route_id" optional="show"/>
+                                    <field name="crew_team_id" optional="show"/>
+                                    <field name="vehicle_id" optional="show"/>
+                                    <field name="note"/>
+                                    <field name="active"/>
+                                </list>
+                                <form string="Өдрийн өөрчлөлт">
+                                    <sheet>
+                                        <group>
+                                            <group>
+                                                <field name="template_id" readonly="1"/>
+                                                <field name="template_line_id"/>
+                                                <field name="override_date"/>
+                                                <field name="override_type"/>
+                                                <field name="active"/>
+                                            </group>
+                                            <group>
+                                                <field name="route_id" invisible="override_type != 'route_swap'"/>
+                                                <field name="crew_team_id" invisible="override_type != 'crew_swap'"/>
+                                                <field name="vehicle_id" invisible="override_type != 'vehicle_swap'"/>
+                                                <field name="note"/>
+                                            </group>
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mfo_planning_template" model="ir.actions.act_window">
+        <field name="name">7 хоногийн загвар</field>
+        <field name="res_model">mfo.planning.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_mfo_planning_template_search"/>
+    </record>
+
+    <record id="view_mfo_planning_override_search" model="ir.ui.view">
+        <field name="name">mfo.planning.override.search</field>
+        <field name="model">mfo.planning.override</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="template_line_id"/>
+                <field name="override_date"/>
+                <field name="override_type"/>
+                <group>
+                    <filter string="Огноо" name="groupby_override_date" context="{'group_by': 'override_date'}"/>
+                    <filter string="Төсөл" name="groupby_project" context="{'group_by': 'project_id'}"/>
+                    <filter string="Төрөл" name="groupby_type" context="{'group_by': 'override_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_planning_override_list" model="ir.ui.view">
+        <field name="name">mfo.planning.override.list</field>
+        <field name="model">mfo.planning.override</field>
+        <field name="arch" type="xml">
+            <list default_order="override_date desc">
+                <field name="override_date"/>
+                <field name="project_id"/>
+                <field name="template_line_id"/>
+                <field name="override_type"/>
+                <field name="route_id" optional="show"/>
+                <field name="crew_team_id" optional="show"/>
+                <field name="vehicle_id" optional="show"/>
+                <field name="note"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_planning_override_form" model="ir.ui.view">
+        <field name="name">mfo.planning.override.form</field>
+        <field name="model">mfo.planning.override</field>
+        <field name="arch" type="xml">
+            <form string="Өдрийн төлөвлөлтийн өөрчлөлт">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="project_id" readonly="1"/>
+                            <field name="template_id" readonly="1"/>
+                            <field name="template_line_id"/>
+                            <field name="override_date"/>
+                        </group>
+                        <group>
+                            <field name="override_type"/>
+                            <field name="route_id" invisible="override_type != 'route_swap'"/>
+                            <field name="crew_team_id" invisible="override_type != 'crew_swap'"/>
+                            <field name="vehicle_id" invisible="override_type != 'vehicle_swap'"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mfo_planning_override" model="ir.actions.act_window">
+        <field name="name">Өдрийн өөрчлөлт</field>
+        <field name="res_model">mfo.planning.override</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_mfo_planning_override_search"/>
+    </record>
+
+    <record id="view_mfo_sync_log_search" model="ir.ui.view">
+        <field name="name">mfo.sync.log.search</field>
+        <field name="model">mfo.sync.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="sync_type"/>
+                <field name="state"/>
+                <field name="task_id"/>
+                <field name="vehicle_id"/>
+                <group>
+                    <filter string="Төрөл" name="groupby_sync_type" context="{'group_by': 'sync_type'}"/>
+                    <filter string="Төлөв" name="groupby_state" context="{'group_by': 'state'}"/>
+                    <filter string="Техник" name="groupby_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_sync_log_list" model="ir.ui.view">
+        <field name="name">mfo.sync.log.list</field>
+        <field name="model">mfo.sync.log</field>
+        <field name="arch" type="xml">
+            <list default_order="create_date desc">
+                <field name="name"/>
+                <field name="sync_type"/>
+                <field name="state"/>
+                <field name="task_id"/>
+                <field name="vehicle_id"/>
+                <field name="requested_at"/>
+                <field name="finished_at"/>
+                <field name="result_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_sync_log_form" model="ir.ui.view">
+        <field name="name">mfo.sync.log.form</field>
+        <field name="model">mfo.sync.log</field>
+        <field name="arch" type="xml">
+            <form string="Синк лог">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="sync_type"/>
+                            <field name="state"/>
+                            <field name="task_id"/>
+                            <field name="vehicle_id"/>
+                        </group>
+                        <group>
+                            <field name="requested_at"/>
+                            <field name="finished_at"/>
+                            <field name="result_count"/>
+                            <field name="external_reference"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Хүсэлт">
+                            <field name="payload_excerpt" nolabel="1"/>
+                        </page>
+                        <page string="Хариу">
+                            <field name="response_excerpt" nolabel="1"/>
+                        </page>
+                        <page string="Алдаа">
+                            <field name="error_message" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mfo_sync_log" model="ir.actions.act_window">
+        <field name="name">Синк лог</field>
+        <field name="res_model">mfo.sync.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_mfo_sync_log_search"/>
+    </record>
+</odoo>

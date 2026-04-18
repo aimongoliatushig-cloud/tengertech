@@ -14,6 +14,11 @@
                 <group string="Алба нэгж">
                     <field name="ops_department_id" required="1" options="{'no_open': True}"/>
                 </group>
+                <group string="Төлөвлөсөн хэмжээ">
+                    <field name="ops_track_quantity"/>
+                    <field name="ops_planned_quantity" invisible="not ops_track_quantity"/>
+                    <field name="ops_measurement_unit" invisible="not ops_track_quantity"/>
+                </group>
             </xpath>
         </field>
     </record>
@@ -26,6 +31,13 @@
             <xpath expr="//div[hasclass('o_settings_container')]" position="inside">
                 <setting string="Алба нэгж" help="Төсөл аль алба нэгжид хамаарахыг сонгоно уу.">
                     <field name="ops_department_id" required="1" options="{'no_open': True}"/>
+                </setting>
+                <setting string="Төлөвлөсөн хэмжээ" help="Сонговол төсөл дээр төлөвлөсөн хэмжээ болон хэмжих нэгж оруулна.">
+                    <field name="ops_track_quantity"/>
+                    <div class="content-group" invisible="not ops_track_quantity">
+                        <field name="ops_planned_quantity"/>
+                        <field name="ops_measurement_unit"/>
+                    </div>
                 </setting>
             </xpath>
             <xpath expr="//div[@name='alias_def']" position="after">
@@ -43,6 +55,9 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='name']" position="after">
                 <field name="ops_department_id" required="1" options="{'no_open': True}"/>
+                <field name="ops_track_quantity"/>
+                <field name="ops_planned_quantity" placeholder="48" invisible="not ops_track_quantity"/>
+                <field name="ops_measurement_unit" placeholder="мод" invisible="not ops_track_quantity"/>
             </xpath>
         </field>
     </record>

@@ -6,11 +6,11 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 
 class OpsTaskReturnWizard(models.TransientModel):
     _name = "ops.task.return.wizard"
-    _description = "Return Task For Changes"
+    _description = "Даалгаврыг засварт буцаах"
 
     task_id = fields.Many2one(
         "project.task",
-        string="Task",
+        string="Даалгавар",
         required=True,
         readonly=True,
     )

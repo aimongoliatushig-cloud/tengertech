@@ -5,6 +5,9 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_ids'][1]" position="attributes">
+                <attribute name="string">Хариуцагчид</attribute>
+            </xpath>
             <xpath expr="//field[@name='priority'][1]" position="before">
                 <field name="ops_can_submit_for_review" invisible="1"/>
                 <field name="ops_can_mark_done" invisible="1"/>
@@ -34,7 +37,7 @@
             <xpath expr="//field[@name='task_properties']" position="before">
                 <group string="Ажлын хэмжээ">
                     <group>
-                        <field name="ops_measurement_unit" placeholder="Жишээ нь: mod"/>
+                        <field name="ops_measurement_unit" placeholder="Жишээ нь: мод"/>
                         <field name="ops_planned_quantity"/>
                     </group>
                     <group>
@@ -61,7 +64,7 @@
                             <field name="image_count" string="Зураг"/>
                             <field name="audio_count" string="Аудио"/>
                         </list>
-                        <form string="Task Report">
+                        <form string="Гүйцэтгэлийн тайлан">
                             <sheet>
                                 <group>
                                     <group>
@@ -101,10 +104,20 @@
     <record id="quick_create_task_form_ops_field_reporting" model="ir.ui.view">
         <field name="name">project.task.form.quick.create.ops.field.reporting</field>
         <field name="model">project.task</field>
-                <field name="inherit_id" ref="project.quick_create_task_form"/>
+        <field name="inherit_id" ref="project.quick_create_task_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='display_name']" position="attributes">
+                <attribute name="string">Даалгаврын гарчиг</attribute>
+                <attribute name="placeholder">Жишээ нь: Өдрийн даалгавар</attribute>
+            </xpath>
+            <xpath expr="//field[@name='project_id']" position="attributes">
+                <attribute name="placeholder">Хувийн</attribute>
+            </xpath>
+            <xpath expr="//field[@name='user_ids']" position="attributes">
+                <attribute name="string">Хариуцагчид</attribute>
+            </xpath>
             <xpath expr="//field[@name='user_ids']" position="after">
-                <field name="ops_measurement_unit" placeholder="mod"/>
+                <field name="ops_measurement_unit" placeholder="Жишээ нь: мод"/>
                 <field name="ops_planned_quantity"/>
             </xpath>
         </field>

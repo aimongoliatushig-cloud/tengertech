@@ -44,6 +44,8 @@ type ReportRecord = {
   reported_quantity: number;
   image_count: number;
   audio_count: number;
+  image_attachment_ids: number[];
+  audio_attachment_ids: number[];
 };
 
 type UserRecord = {
@@ -112,6 +114,16 @@ export type TaskReportFeedItem = {
   quantity: number;
   imageCount: number;
   audioCount: number;
+  images: {
+    id: number;
+    name: string;
+    url: string;
+  }[];
+  audios: {
+    id: number;
+    name: string;
+    url: string;
+  }[];
 };
 
 export type TaskDetail = {
@@ -412,6 +424,8 @@ export async function loadTaskDetail(
           "reported_quantity",
           "image_count",
           "audio_count",
+          "image_attachment_ids",
+          "audio_attachment_ids",
         ],
         order: "report_datetime desc",
         limit: 60,
@@ -476,6 +490,16 @@ export async function loadTaskDetail(
       quantity: report.reported_quantity ?? 0,
       imageCount: report.image_count ?? 0,
       audioCount: report.audio_count ?? 0,
+      images: (report.image_attachment_ids ?? []).map((attachmentId) => ({
+        id: attachmentId,
+        name: `image-${attachmentId}`,
+        url: `/api/odoo/attachments/${attachmentId}`,
+      })),
+      audios: (report.audio_attachment_ids ?? []).map((attachmentId) => ({
+        id: attachmentId,
+        name: `audio-${attachmentId}`,
+        url: `/api/odoo/attachments/${attachmentId}`,
+      })),
     })),
   };
 }
@@ -485,6 +509,9 @@ export async function createWorkspaceProject(
     name: string;
     managerId?: number | null;
     departmentId?: number | null;
+    trackQuantity?: boolean;
+    plannedQuantity?: number | null;
+    measurementUnit?: string;
     startDate?: string;
     deadline?: string;
   },
@@ -499,6 +526,18 @@ export async function createWorkspaceProject(
   }
   if (input.departmentId) {
     values.ops_department_id = input.departmentId;
+  }
+  if (input.trackQuantity) {
+    values.ops_track_quantity = true;
+    if (
+      typeof input.plannedQuantity === "number" &&
+      !Number.isNaN(input.plannedQuantity)
+    ) {
+      values.ops_planned_quantity = input.plannedQuantity;
+    }
+    if (input.measurementUnit) {
+      values.ops_measurement_unit = input.measurementUnit.trim();
+    }
   }
   if (input.startDate) {
     values.date_start = input.startDate;

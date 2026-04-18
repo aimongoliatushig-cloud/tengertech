@@ -1,8 +1,8 @@
 {
-    "name": "Operations Team Assignment",
-    "summary": "Assign a team leader and auto-fill the team on tasks.",
+    "name": "Хотын ажиллагаа: Багийн бүрэлдэхүүн",
+    "summary": "Даалгаварт багийн ахлагч оноож, багийн гишүүдийг автоматаар бөглөнө.",
     "version": "19.0.1.1.0",
-    "category": "Project",
+    "category": "Төсөл",
     "author": "OpenAI",
     "license": "LGPL-3",
     "depends": ["project", "hr", "ops_user_type"],

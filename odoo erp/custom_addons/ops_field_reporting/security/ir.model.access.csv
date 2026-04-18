@@ -1,7 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_ops_task_report_system_admin,ops.task.report system admin,model_ops_task_report,ops_role_security.group_ops_system_admin,1,1,1,1
-access_ops_task_report_general_manager,ops.task.report general manager,model_ops_task_report,ops_role_security.group_ops_general_manager,1,0,0,0
-access_ops_task_report_project_leader,ops.task.report project leader,model_ops_task_report,ops_role_security.group_ops_project_leader,1,0,0,0
-access_ops_task_report_team_leader,ops.task.report team leader,model_ops_task_report,ops_role_security.group_ops_team_leader,1,1,1,1
-access_ops_task_return_wizard_system_admin,ops.task.return.wizard system admin,model_ops_task_return_wizard,ops_role_security.group_ops_system_admin,1,1,1,1
-access_ops_task_return_wizard_general_manager,ops.task.return.wizard general manager,model_ops_task_return_wizard,ops_role_security.group_ops_general_manager,1,1,1,1
+access_ops_task_report_system_admin,гүйцэтгэлийн тайлан системийн админ,model_ops_task_report,ops_role_security.group_ops_system_admin,1,1,1,1
+access_ops_task_report_general_manager,гүйцэтгэлийн тайлан ерөнхий менежер,model_ops_task_report,ops_role_security.group_ops_general_manager,1,0,0,0
+access_ops_task_report_project_leader,гүйцэтгэлийн тайлан төслийн удирдагч,model_ops_task_report,ops_role_security.group_ops_project_leader,1,0,0,0
+access_ops_task_report_team_leader,гүйцэтгэлийн тайлан багийн ахлагч,model_ops_task_report,ops_role_security.group_ops_team_leader,1,1,1,1
+access_ops_task_return_wizard_system_admin,засварт буцаах цонх системийн админ,model_ops_task_return_wizard,ops_role_security.group_ops_system_admin,1,1,1,1
+access_ops_task_return_wizard_general_manager,засварт буцаах цонх ерөнхий менежер,model_ops_task_return_wizard,ops_role_security.group_ops_general_manager,1,1,1,1

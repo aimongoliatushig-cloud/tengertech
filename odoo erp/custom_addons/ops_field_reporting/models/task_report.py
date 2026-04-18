@@ -32,27 +32,27 @@ class ProjectTask(models.Model):
     _inherit = "project.task"
 
     ops_measurement_unit = fields.Char(
-        string="Measurement Unit",
-        help="For example: мод, км2, м3, ширхэг.",
+        string="Хэмжих нэгж",
+        help="Жишээ нь: мод, км2, м3, ширхэг.",
     )
     ops_planned_quantity = fields.Float(
-        string="Planned Quantity",
+        string="Төлөвлөсөн хэмжээ",
         digits=(16, 2),
     )
     ops_completed_quantity = fields.Float(
-        string="Completed Quantity",
+        string="Гүйцэтгэсэн хэмжээ",
         compute="_compute_ops_quantity_progress",
         store=True,
         digits=(16, 2),
     )
     ops_remaining_quantity = fields.Float(
-        string="Remaining Quantity",
+        string="Үлдсэн хэмжээ",
         compute="_compute_ops_quantity_progress",
         store=True,
         digits=(16, 2),
     )
     ops_progress_percent = fields.Float(
-        string="Progress",
+        string="Явц",
         compute="_compute_ops_quantity_progress",
         store=True,
         digits=(16, 2),
@@ -60,7 +60,7 @@ class ProjectTask(models.Model):
     ops_report_ids = fields.One2many(
         "ops.task.report",
         "task_id",
-        string="Field Reports",
+        string="Гүйцэтгэлийн тайлангууд",
     )
     ops_can_submit_for_review = fields.Boolean(
         compute="_compute_ops_workflow_actions",
@@ -376,66 +376,66 @@ class ProjectTask(models.Model):
     def _check_ops_planned_quantity(self):
         for task in self:
             if task.ops_planned_quantity < 0:
-                raise ValidationError(_("Planned quantity cannot be negative."))
+                raise ValidationError(_("Төлөвлөсөн хэмжээ сөрөг утгатай байж болохгүй."))
         self._ops_validate_quantity_totals()
 
 
 class OpsTaskReport(models.Model):
     _name = "ops.task.report"
-    _description = "Task Field Report"
+    _description = "Гүйцэтгэлийн тайлан"
     _order = "report_datetime desc, id desc"
     _rec_name = "name"
 
     name = fields.Char(
-        string="Report",
+        string="Тайлан",
         compute="_compute_name",
         store=True,
     )
     task_id = fields.Many2one(
         "project.task",
-        string="Task",
+        string="Даалгавар",
         required=True,
         ondelete="cascade",
         index=True,
     )
     project_id = fields.Many2one(
         "project.project",
-        string="Project",
+        string="Төсөл",
         related="task_id.project_id",
         store=True,
         readonly=True,
     )
     reporter_id = fields.Many2one(
         "res.users",
-        string="Submitted By",
+        string="Илгээсэн хэрэглэгч",
         required=True,
         default=lambda self: self.env.user,
         readonly=True,
         index=True,
     )
     report_datetime = fields.Datetime(
-        string="Submitted On",
+        string="Илгээсэн огноо",
         required=True,
         default=fields.Datetime.now,
         readonly=True,
     )
     report_text = fields.Text(
-        string="Report Text",
+        string="Тайлангийн текст",
         required=True,
     )
     task_measurement_unit = fields.Char(
-        string="Measurement Unit",
+        string="Хэмжих нэгж",
         related="task_id.ops_measurement_unit",
         readonly=True,
     )
     task_planned_quantity = fields.Float(
-        string="Planned Quantity",
+        string="Төлөвлөсөн хэмжээ",
         related="task_id.ops_planned_quantity",
         readonly=True,
         digits=(16, 2),
     )
     reported_quantity = fields.Float(
-        string="Completed This Report",
+        string="Энэ тайлангийн гүйцэтгэл",
         digits=(16, 2),
     )
     image_attachment_ids = fields.Many2many(
@@ -443,7 +443,7 @@ class OpsTaskReport(models.Model):
         "ops_task_report_image_rel",
         "report_id",
         "attachment_id",
-        string="Images",
+        string="Зураг",
         bypass_search_access=True,
     )
     audio_attachment_ids = fields.Many2many(
@@ -451,19 +451,19 @@ class OpsTaskReport(models.Model):
         "ops_task_report_audio_rel",
         "report_id",
         "attachment_id",
-        string="Audio Files",
+        string="Аудио файл",
         bypass_search_access=True,
     )
     image_count = fields.Integer(
-        string="Image Count",
+        string="Зургийн тоо",
         compute="_compute_media_counts",
     )
     audio_count = fields.Integer(
-        string="Audio Count",
+        string="Аудио тоо",
         compute="_compute_media_counts",
     )
     report_summary = fields.Char(
-        string="Summary",
+        string="Хураангуй",
         compute="_compute_report_summary",
     )
 
@@ -487,7 +487,7 @@ class OpsTaskReport(models.Model):
     def _compute_name(self):
         for report in self:
             if not report.task_id:
-                report.name = _("New Report")
+                report.name = _("Шинэ тайлан")
                 continue
             if report.report_datetime:
                 timestamp = fields.Datetime.to_string(report.report_datetime)
@@ -511,7 +511,7 @@ class OpsTaskReport(models.Model):
     def _check_reported_quantity(self):
         for report in self:
             if report.reported_quantity < 0:
-                raise ValidationError(_("Completed quantity cannot be negative."))
+                raise ValidationError(_("Гүйцэтгэсэн хэмжээ сөрөг утгатай байж болохгүй."))
 
     def _link_media_attachments(self):
         for report in self:

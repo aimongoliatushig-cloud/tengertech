@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_project_form_mfo" model="ir.ui.view">
+        <field name="name">project.project.form.mfo</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_mfo_open_new_planning_template"
+                        type="object"
+                        string="Шинэ 7 хоногийн загвар"
+                        class="btn btn-secondary"
+                        groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"
+                        invisible="not mfo_is_operation_project"/>
+                <button name="action_mfo_generate_current_week_tasks"
+                        type="object"
+                        string="Энэ 7 хоногийн даалгавар үүсгэх"
+                        class="btn btn-primary"
+                        groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"
+                        invisible="not mfo_is_operation_project"/>
+            </xpath>
+            <xpath expr="//sheet" position="inside">
+                <field name="mfo_is_operation_project" invisible="1"/>
+            </xpath>
+            <xpath expr="//page[@name='settings']//group[@name='extra_settings']" position="inside">
+                <group string="Хотын талбайн ажиллагаа">
+                    <field name="mfo_is_operation_project"/>
+                    <field name="mfo_operation_type" invisible="not mfo_is_operation_project"/>
+                    <field name="mfo_district_ids" widget="many2many_tags" invisible="not mfo_is_operation_project"/>
+                </group>
+                <group string="Ээлжийн үндсэн тохиргоо" invisible="not mfo_is_operation_project">
+                    <field name="mfo_default_shift_type"/>
+                    <field name="mfo_default_shift_start" widget="float_time"/>
+                    <field name="mfo_default_shift_end" widget="float_time"/>
+                </group>
+            </xpath>
+            <xpath expr="//notebook/page[@name='description']" position="after">
+                <page name="mfo_routes_page" string="Маршрут" invisible="not mfo_is_operation_project">
+                    <field name="mfo_route_ids" nolabel="1" context="{'default_project_id': id}">
+                        <list editable="bottom" open_form_view="True">
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="district_id"/>
+                            <field name="shift_type"/>
+                            <field name="collection_point_count" readonly="1"/>
+                            <field name="estimated_distance_km"/>
+                            <field name="active"/>
+                        </list>
+                    </field>
+                </page>
+                <page name="mfo_planning_page" string="7 хоногийн загвар" invisible="not mfo_is_operation_project">
+                    <button name="action_mfo_open_new_planning_template"
+                            type="object"
+                            string="Шинэ 7 хоногийн загвар"
+                            class="btn btn-secondary"
+                            groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+                    <field name="mfo_planning_template_ids" nolabel="1" context="{'default_project_id': id}">
+                        <list editable="bottom" open_form_view="True">
+                            <field name="name"/>
+                            <field name="active"/>
+                            <field name="reference_date"/>
+                            <field name="last_generated_week_start" readonly="1"/>
+                            <field name="last_generated_count" readonly="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_project_project_search_mfo" model="ir.ui.view">
+        <field name="name">project.project.search.mfo</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_project_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="mfo_operation_type"/>
+                <field name="mfo_district_ids"/>
+            </xpath>
+            <xpath expr="//search/group" position="inside">
+                <filter string="Ажиллагааны төрөл" name="groupby_mfo_operation_type" context="{'group_by': 'mfo_operation_type'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_project_project_list_mfo" model="ir.ui.view">
+        <field name="name">project.project.list.mfo</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="mfo_operation_type" optional="show" invisible="not mfo_is_operation_project"/>
+                <field name="mfo_district_names" string="Дүүрэг" optional="show" invisible="not mfo_is_operation_project"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_mfo_operation_projects" model="ir.actions.act_window">
+        <field name="name">Ажиллагааны төслүүд</field>
+        <field name="res_model">project.project</field>
+        <field name="view_mode">list,kanban,form,activity</field>
+        <field name="domain">[('mfo_is_operation_project', '=', True)]</field>
+        <field name="context">{'default_mfo_is_operation_project': True, 'search_default_own_projects': 0}</field>
+        <field name="search_view_id" ref="project.view_project_project_filter"/>
+    </record>
+</odoo>

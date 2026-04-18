@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_fleet_repair_request_procurement" model="ir.actions.act_window">
+        <field name="name">Худалдан авалтын шатанд байгаа</field>
+        <field name="res_model">fleet.repair.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'in', ['admin_order_ready', 'fund_prepared', 'purchasing'])]</field>
+        <field name="search_view_id" ref="fleet_repair_workflow.view_fleet_repair_request_search"/>
+    </record>
+
+    <menuitem id="menu_fleet_repair_workflow_root"
+              name="Vehicle Repair Workflow"
+              parent="fleet.menu_root"
+              sequence="30"
+              groups="fleet_repair_workflow.group_fleet_repair_mechanic,fleet_repair_workflow.group_fleet_repair_team_leader,fleet_repair_workflow.group_fleet_repair_accounting,fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_finance,fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_general_manager,fleet_repair_workflow.group_fleet_repair_ceo,fleet_repair_workflow.group_fleet_repair_manager,base.group_system"/>
+
+    <menuitem id="menu_fleet_repair_requests"
+              name="Засварын хүсэлтүүд"
+              parent="menu_fleet_repair_workflow_root"
+              action="fleet_repair_workflow.action_fleet_repair_request"
+              sequence="10"/>
+
+    <menuitem id="menu_fleet_repair_new_request"
+              name="Шинэ хүсэлт"
+              parent="menu_fleet_repair_workflow_root"
+              action="fleet_repair_workflow.action_create_repair_request_wizard"
+              groups="fleet_repair_workflow.group_fleet_repair_mechanic,fleet_repair_workflow.group_fleet_repair_team_leader,fleet_repair_workflow.group_fleet_repair_manager,base.group_system"
+              sequence="20"/>
+
+    <menuitem id="menu_fleet_repair_ceo"
+              name="CEO батлах"
+              parent="menu_fleet_repair_workflow_root"
+              action="fleet_repair_workflow.action_fleet_repair_request_ceo"
+              groups="fleet_repair_workflow.group_fleet_repair_ceo,fleet_repair_workflow.group_fleet_repair_manager,base.group_system"
+              sequence="30"/>
+
+    <menuitem id="menu_fleet_repair_general_manager"
+              name="Ерөнхий менежерийн хяналт"
+              parent="menu_fleet_repair_workflow_root"
+              action="fleet_repair_workflow.action_fleet_repair_request_general_manager"
+              groups="fleet_repair_workflow.group_fleet_repair_general_manager,fleet_repair_workflow.group_fleet_repair_manager,base.group_system"
+              sequence="40"/>
+
+    <menuitem id="menu_fleet_repair_procurement"
+              name="Худалдан авалтын шатанд байгаа"
+              parent="menu_fleet_repair_workflow_root"
+              action="action_fleet_repair_request_procurement"
+              groups="fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_finance,fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_manager,base.group_system"
+              sequence="50"/>
+
+    <menuitem id="menu_fleet_repair_in_repair"
+              name="Засварт байгаа машинууд"
+              parent="menu_fleet_repair_workflow_root"
+              action="fleet_repair_workflow.action_fleet_repair_request_in_repair"
+              sequence="60"/>
+
+    <menuitem id="menu_fleet_repair_settings"
+              name="Тохиргоо"
+              parent="menu_fleet_repair_workflow_root"
+              action="fleet_repair_workflow.action_fleet_repair_workflow_settings"
+              groups="base.group_system"
+              sequence="90"/>
+</odoo>

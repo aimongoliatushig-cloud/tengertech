@@ -1,0 +1,61 @@
+.menuBar {
+  max-width: 1360px;
+  margin: 0 auto 18px;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 24px;
+  background: var(--surface-panel-soft);
+  box-shadow: 0 12px 28px var(--shadow-soft);
+}
+
+.menuInner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.menuLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.08);
+  color: var(--ink-900);
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.menuLink:hover {
+  transform: translateY(-1px);
+  background: rgba(74, 154, 93, 0.12);
+}
+
+.menuLinkActive {
+  background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+  color: #f7fcf6;
+}
+
+@media (max-width: 720px) {
+  .menuBar {
+    padding: 8px;
+    border-radius: 20px;
+  }
+
+  .menuInner {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 2px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .menuLink {
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+}

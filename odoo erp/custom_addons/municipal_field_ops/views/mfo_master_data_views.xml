@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mfo_district_list" model="ir.ui.view">
+        <field name="name">mfo.district.list</field>
+        <field name="model">mfo.district</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_district_form" model="ir.ui.view">
+        <field name="name">mfo.district.form</field>
+        <field name="model">mfo.district</field>
+        <field name="arch" type="xml">
+            <form string="Дүүрэг">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Хороонууд">
+                            <field name="subdistrict_ids">
+                                <list editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_mfo_subdistrict_list" model="ir.ui.view">
+        <field name="name">mfo.subdistrict.list</field>
+        <field name="model">mfo.subdistrict</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="district_id"/>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_subdistrict_form" model="ir.ui.view">
+        <field name="name">mfo.subdistrict.form</field>
+        <field name="model">mfo.subdistrict</field>
+        <field name="arch" type="xml">
+            <form string="Хороо">
+                <sheet>
+                    <group>
+                        <field name="district_id"/>
+                        <field name="sequence"/>
+                        <field name="code"/>
+                        <field name="name"/>
+                        <field name="active"/>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_mfo_collection_point_search" model="ir.ui.view">
+        <field name="name">mfo.collection.point.search</field>
+        <field name="model">mfo.collection.point</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="district_id"/>
+                <field name="subdistrict_id"/>
+                <field name="operation_type"/>
+                <group>
+                    <filter string="Дүүрэг" name="groupby_district" context="{'group_by': 'district_id'}"/>
+                    <filter string="Хороо" name="groupby_subdistrict" context="{'group_by': 'subdistrict_id'}"/>
+                    <filter string="Ажиллагааны төрөл" name="groupby_operation_type" context="{'group_by': 'operation_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_collection_point_list" model="ir.ui.view">
+        <field name="name">mfo.collection.point.list</field>
+        <field name="model">mfo.collection.point</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="district_id"/>
+                <field name="subdistrict_id"/>
+                <field name="operation_type"/>
+                <field name="address"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_collection_point_form" model="ir.ui.view">
+        <field name="name">mfo.collection.point.form</field>
+        <field name="model">mfo.collection.point</field>
+        <field name="arch" type="xml">
+            <form string="Цуглуулалтын цэг">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="district_id"/>
+                            <field name="subdistrict_id"/>
+                            <field name="operation_type"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="address"/>
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_mfo_route_search" model="ir.ui.view">
+        <field name="name">mfo.route.search</field>
+        <field name="model">mfo.route</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="district_id"/>
+                <field name="shift_type"/>
+                <group>
+                    <filter string="Төсөл" name="groupby_project" context="{'group_by': 'project_id'}"/>
+                    <filter string="Дүүрэг" name="groupby_district" context="{'group_by': 'district_id'}"/>
+                    <filter string="Ээлж" name="groupby_shift" context="{'group_by': 'shift_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_route_list" model="ir.ui.view">
+        <field name="name">mfo.route.list</field>
+        <field name="model">mfo.route</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="project_id"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="district_id"/>
+                <field name="shift_type"/>
+                <field name="collection_point_count"/>
+                <field name="estimated_distance_km"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_route_form" model="ir.ui.view">
+        <field name="name">mfo.route.form</field>
+        <field name="model">mfo.route</field>
+        <field name="arch" type="xml">
+            <form string="Маршрут">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="project_id"/>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="district_id"/>
+                            <field name="shift_type"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="estimated_distance_km"/>
+                            <field name="estimated_duration_hours"/>
+                            <field name="collection_point_count" readonly="1"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Маршрутын мөрүүд">
+                            <field name="line_ids" context="{'default_route_id': id}">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="collection_point_id"/>
+                                    <field name="district_id" readonly="1"/>
+                                    <field name="subdistrict_id" readonly="1"/>
+                                    <field name="planned_arrival_hour" widget="float_time"/>
+                                    <field name="planned_service_minutes"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_mfo_crew_team_search" model="ir.ui.view">
+        <field name="name">mfo.crew.team.search</field>
+        <field name="model">mfo.crew.team</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="vehicle_id"/>
+                <field name="driver_employee_id"/>
+                <field name="operation_type"/>
+                <group>
+                    <filter string="Ажиллагааны төрөл" name="groupby_operation_type" context="{'group_by': 'operation_type'}"/>
+                    <filter string="Техник" name="groupby_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_crew_team_list" model="ir.ui.view">
+        <field name="name">mfo.crew.team.list</field>
+        <field name="model">mfo.crew.team</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="operation_type"/>
+                <field name="vehicle_id"/>
+                <field name="driver_employee_id"/>
+                <field name="inspector_employee_id"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_crew_team_form" model="ir.ui.view">
+        <field name="name">mfo.crew.team.form</field>
+        <field name="model">mfo.crew.team</field>
+        <field name="arch" type="xml">
+            <form string="Экипаж">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="operation_type"/>
+                            <field name="vehicle_id"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="driver_employee_id"/>
+                            <field name="collector_employee_ids" widget="many2many_tags"/>
+                            <field name="inspector_employee_id"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mfo_district" model="ir.actions.act_window">
+        <field name="name">Дүүрэг</field>
+        <field name="res_model">mfo.district</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_mfo_subdistrict" model="ir.actions.act_window">
+        <field name="name">Хороо</field>
+        <field name="res_model">mfo.subdistrict</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_mfo_collection_point" model="ir.actions.act_window">
+        <field name="name">Цуглуулалтын цэг</field>
+        <field name="res_model">mfo.collection.point</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_mfo_collection_point_search"/>
+    </record>
+
+    <record id="action_mfo_route" model="ir.actions.act_window">
+        <field name="name">Маршрут</field>
+        <field name="res_model">mfo.route</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_mfo_route_search"/>
+    </record>
+
+    <record id="action_mfo_crew_team" model="ir.actions.act_window">
+        <field name="name">Экипаж</field>
+        <field name="res_model">mfo.crew.team</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_mfo_crew_team_search"/>
+    </record>
+
+    <record id="view_hr_employee_form_mfo" model="ir.ui.view">
+        <field name="name">hr.employee.form.mfo</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='work_information']//field[@name='parent_id']" position="after">
+                <field name="mfo_is_field_active" groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+                <field name="mfo_field_role" groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_fleet_vehicle_form_mfo" model="ir.ui.view">
+        <field name="name">fleet.vehicle.form.mfo</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group[1]" position="inside">
+                <group string="Хотын талбайн ажиллагаа">
+                    <field name="mfo_active_for_ops" groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+                    <field name="mfo_operation_type" groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+                    <field name="mfo_capacity_ton" groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+                    <field name="mfo_wrs_vehicle_code" groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_fleet_vehicle_model_form_mfo" model="ir.ui.view">
+        <field name="name">fleet.vehicle.model.form.mfo</field>
+        <field name="model">fleet.vehicle.model</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_model_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='information']//field[@name='trailer_hook']" position="after">
+                <field name="mfo_capacity_ton"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_fleet_vehicle_model_list_mfo" model="ir.ui.view">
+        <field name="name">fleet.vehicle.model.list.mfo</field>
+        <field name="model">fleet.vehicle.model</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_model_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category_id']" position="after">
+                <field name="mfo_capacity_ton" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

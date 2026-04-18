@@ -11,9 +11,6 @@ class ProjectTask(models.Model):
             disallowed_fields = set(vals) - {"stage_id"}
             if disallowed_fields:
                 raise AccessError(
-                    _(
-                        "Workers can only update task status. "
-                        "Please ask a team leader for other changes."
-                    )
+                    _("Ажилтан зөвхөн даалгаврын төлөв шинэчилж болно. Бусад өөрчлөлтийг багийн ахлагчаас хүснэ үү.")
                 )
         return super().write(vals)

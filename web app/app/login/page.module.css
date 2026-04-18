@@ -3,8 +3,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
   background:
-    radial-gradient(circle at left top, rgba(233, 179, 62, 0.24), transparent 28%),
-    linear-gradient(180deg, #f0eadb 0%, #e4ddd0 100%);
+    radial-gradient(circle at left top, rgba(122, 183, 133, 0.24), transparent 28%),
+    linear-gradient(180deg, var(--surface-page) 0%, var(--surface-shell) 100%);
 }
 
 .infoPanel,
@@ -18,7 +18,7 @@
   flex-direction: column;
   justify-content: space-between;
   background:
-    linear-gradient(160deg, rgba(17, 73, 95, 0.94), rgba(17, 111, 107, 0.9)),
+    linear-gradient(160deg, rgba(31, 95, 49, 0.96), rgba(74, 154, 93, 0.9)),
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent);
   color: #f4f7f3;
 }
@@ -111,9 +111,9 @@
   gap: 18px;
   padding: 28px;
   border-radius: 30px;
-  border: 1px solid rgba(24, 33, 44, 0.08);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 18px 42px rgba(30, 36, 48, 0.08);
+  border: 1px solid var(--line-soft);
+  background: var(--surface-panel);
+  box-shadow: 0 18px 42px var(--shadow-soft);
 }
 
 .field {
@@ -131,9 +131,9 @@
   width: 100%;
   min-height: 52px;
   padding: 0 16px;
-  border: 1px solid rgba(32, 45, 61, 0.12);
+  border: 1px solid var(--line-soft);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.96);
   color: var(--ink-900);
   font: inherit;
   transition: border-color 160ms ease, box-shadow 160ms ease;
@@ -141,8 +141,8 @@
 
 .field input:focus {
   outline: none;
-  border-color: rgba(17, 95, 133, 0.56);
-  box-shadow: 0 0 0 4px rgba(17, 95, 133, 0.1);
+  border-color: rgba(44, 119, 64, 0.52);
+  box-shadow: 0 0 0 4px rgba(74, 154, 93, 0.12);
 }
 
 .errorBox {
@@ -158,12 +158,12 @@
   min-height: 54px;
   border: 0;
   border-radius: 18px;
-  background: linear-gradient(135deg, #11495f, #0d6d79);
-  color: #f6f8f5;
+  background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+  color: #f6fbf5;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 16px 30px rgba(17, 73, 95, 0.22);
+  box-shadow: 0 16px 30px rgba(31, 95, 49, 0.2);
 }
 
 .footerHint {
@@ -174,7 +174,7 @@
   margin-top: 16px;
   padding: 18px 20px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--ink-700);
   font-size: 0.94rem;
 }

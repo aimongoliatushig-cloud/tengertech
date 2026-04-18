@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "Operations Stage Colors",
-    "summary": "Adds custom kanban colors for municipal project stages",
+    "name": "Хотын ажиллагаа: Үе шатны өнгө",
+    "summary": "Хотын ажиллагааны төслийн үе шатуудад тусгай канбан өнгө нэмнэ",
     "version": "19.0.1.2.0",
-    "category": "Project",
+    "category": "Төсөл",
     "author": "OpenAI",
     "license": "LGPL-3",
     "depends": ["project", "web"],

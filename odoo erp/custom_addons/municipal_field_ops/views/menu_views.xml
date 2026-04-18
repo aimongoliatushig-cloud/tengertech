@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_mfo_root"
+              name="Хотын талбайн ажил"
+              parent="project.menu_main_pm"
+              sequence="30"
+              groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,municipal_field_ops.group_mfo_inspector,municipal_field_ops.group_mfo_mobile_user,base.group_system"/>
+
+    <menuitem id="menu_mfo_projects"
+              name="Ажиллагааны төслүүд"
+              parent="menu_mfo_root"
+              action="action_mfo_operation_projects"
+              sequence="10"
+              groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,municipal_field_ops.group_mfo_inspector,base.group_system"/>
+
+    <menuitem id="menu_mfo_tasks"
+              name="Өдөр тутмын даалгавар"
+              parent="menu_mfo_root"
+              action="action_mfo_task_dispatch"
+              sequence="20"
+              groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,municipal_field_ops.group_mfo_inspector,base.group_system"/>
+
+    <menuitem id="menu_mfo_my_tasks"
+              name="Миний гүйцэтгэл"
+              parent="menu_mfo_root"
+              action="action_mfo_task_my_mobile"
+              sequence="30"
+              groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,municipal_field_ops.group_mfo_inspector,municipal_field_ops.group_mfo_mobile_user,base.group_system"/>
+
+    <menuitem id="menu_mfo_reports_root"
+              name="Тайлан"
+              parent="menu_mfo_root"
+              sequence="40"
+              groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,municipal_field_ops.group_mfo_inspector,base.group_system"/>
+
+    <menuitem id="menu_mfo_report_daily"
+              name="Өдрийн ажиллагаа"
+              parent="menu_mfo_reports_root"
+              action="action_mfo_daily_operation_report"
+              sequence="10"/>
+
+    <menuitem id="menu_mfo_report_weight"
+              name="Жингийн тайлан"
+              parent="menu_mfo_reports_root"
+              action="action_mfo_weight_measurement_report"
+              sequence="20"/>
+
+    <menuitem id="menu_mfo_report_daily_weight_total"
+              name="Өдөр тутмын жингийн нийт"
+              parent="menu_mfo_reports_root"
+              action="action_mfo_daily_weight_total_report"
+              sequence="25"/>
+
+    <menuitem id="menu_mfo_report_deviation"
+              name="Төлөвлөлтийн зөрүү"
+              parent="menu_mfo_reports_root"
+              action="action_mfo_planning_deviation_report"
+              sequence="30"/>
+
+    <menuitem id="menu_mfo_config_root"
+              name="Тохиргоо"
+              parent="menu_mfo_root"
+              sequence="90"
+              groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,base.group_system"/>
+
+    <menuitem id="menu_mfo_config_district"
+              name="Дүүрэг"
+              parent="menu_mfo_config_root"
+              action="action_mfo_district"
+              sequence="10"/>
+
+    <menuitem id="menu_mfo_config_subdistrict"
+              name="Хороо"
+              parent="menu_mfo_config_root"
+              action="action_mfo_subdistrict"
+              sequence="20"/>
+
+    <menuitem id="menu_mfo_config_point"
+              name="Цуглуулалтын цэг"
+              parent="menu_mfo_config_root"
+              action="action_mfo_collection_point"
+              sequence="30"/>
+
+    <menuitem id="menu_mfo_config_route"
+              name="Маршрут"
+              parent="menu_mfo_config_root"
+              action="action_mfo_route"
+              sequence="40"/>
+
+    <menuitem id="menu_mfo_config_crew"
+              name="Экипаж"
+              parent="menu_mfo_config_root"
+              action="action_mfo_crew_team"
+              sequence="50"/>
+
+    <menuitem id="menu_mfo_config_planning"
+              name="7 хоногийн загвар"
+              parent="menu_mfo_config_root"
+              action="action_mfo_planning_template"
+              sequence="60"/>
+
+    <menuitem id="menu_mfo_config_planning_override"
+              name="Өдрийн өөрчлөлт"
+              parent="menu_mfo_config_root"
+              action="action_mfo_planning_override"
+              sequence="65"/>
+
+    <menuitem id="menu_mfo_config_sync"
+              name="Синк лог"
+              parent="menu_mfo_config_root"
+              action="action_mfo_sync_log"
+              sequence="70"/>
+</odoo>

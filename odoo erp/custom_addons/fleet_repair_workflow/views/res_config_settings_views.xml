@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_fleet_repair_workflow" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.fleet.repair.workflow</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="priority" eval="95"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Repair Workflow"
+                     string="Repair Workflow"
+                     name="fleet_repair_workflow"
+                     groups="base.group_system">
+                    <block title="Fleet Repair Workflow">
+                        <setting string="CEO approval threshold">
+                            <div class="text-muted content-group mt16">
+                                <span>CEO баталгаа шаардах босго дүн: </span>
+                                <field name="repair_ceo_threshold_amount" class="text-center" style="width: 10rem;"/>
+                                <span class="ms-2">MNT</span>
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_fleet_repair_workflow_settings" model="ir.actions.act_window">
+        <field name="name">Fleet Repair Workflow Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{'module': 'fleet_repair_workflow', 'bin_size': False}</field>
+    </record>
+</odoo>

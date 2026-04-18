@@ -9,7 +9,7 @@ class ProjectTask(models.Model):
 
     ops_team_leader_id = fields.Many2one(
         "res.users",
-        string="Team Leader",
+        string="Багийн ахлагч",
         domain="[('share', '=', False), ('ops_user_type', '=', 'team_leader')]",
     )
 

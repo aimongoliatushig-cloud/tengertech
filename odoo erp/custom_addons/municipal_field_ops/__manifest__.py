@@ -1,0 +1,23 @@
+{
+    "name": "Хотын талбайн ажиллагаа",
+    "summary": "Хотын хээрийн ажиллагааг төслийн апп дээр суурилан удирдах модуль.",
+    "version": "19.0.1.0.0",
+    "category": "Төсөл",
+    "author": "OpenAI",
+    "license": "LGPL-3",
+    "depends": ["project", "fleet", "hr", "mail"],
+    "data": [
+        "security/municipal_field_ops_security.xml",
+        "security/ir.model.access.csv",
+        "data/municipal_field_ops_cron.xml",
+        "views/project_project_views.xml",
+        "views/project_task_views.xml",
+        "views/mfo_master_data_views.xml",
+        "views/mfo_planning_views.xml",
+        "views/mfo_reporting_views.xml",
+        "wizard/mfo_task_reassignment_wizard_views.xml",
+        "views/menu_views.xml",
+    ],
+    "installable": True,
+    "application": True,
+}

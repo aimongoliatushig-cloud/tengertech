@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_activity_type_repair_workflow" model="mail.activity.type">
+        <field name="name">Repair Workflow</field>
+        <field name="summary">Repair Workflow</field>
+        <field name="icon">fa-wrench</field>
+        <field name="delay_count">0</field>
+        <field name="delay_unit">days</field>
+    </record>
+</odoo>

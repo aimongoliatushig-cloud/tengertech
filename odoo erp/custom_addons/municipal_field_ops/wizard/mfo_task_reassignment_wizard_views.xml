@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mfo_task_reassignment_wizard_form" model="ir.ui.view">
+        <field name="name">mfo.task.reassignment.wizard.form</field>
+        <field name="model">mfo.task.reassignment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Дахин хуваарилалт">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="task_id" readonly="1"/>
+                            <field name="route_id"/>
+                            <field name="crew_team_id"/>
+                            <field name="vehicle_id"/>
+                            <field name="driver_employee_id"/>
+                        </group>
+                        <group>
+                            <field name="collector_employee_ids" widget="many2many_tags"/>
+                            <field name="inspector_employee_id"/>
+                            <field name="planned_start"/>
+                            <field name="planned_end"/>
+                            <field name="reset_stop_lines"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason" placeholder="Яагаад дахин хуваарилж байгааг бичнэ үү..."/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_apply" type="object" string="Хадгалах" class="btn btn-primary"/>
+                    <button string="Цуцлах" special="cancel" class="btn btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

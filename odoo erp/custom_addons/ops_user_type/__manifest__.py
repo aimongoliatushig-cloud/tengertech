@@ -1,8 +1,8 @@
 {
-    "name": "Operations User Type",
-    "summary": "Adds municipal user type selection to users.",
+    "name": "Хотын ажиллагаа: Хэрэглэгчийн төрөл",
+    "summary": "Хэрэглэгч дээр хотын ажиллагааны төрлийн сонголт нэмнэ.",
     "version": "19.0.1.0.0",
-    "category": "Tools",
+    "category": "Хэрэгсэл",
     "author": "OpenAI",
     "license": "LGPL-3",
     "depends": ["base"],

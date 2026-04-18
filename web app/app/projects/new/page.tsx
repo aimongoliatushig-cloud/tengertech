@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AppMenu } from "@/app/_components/app-menu";
 import { createProjectAction, logoutAction } from "@/app/actions";
 import styles from "@/app/workspace.module.css";
 import { getRoleLabel, requireSession } from "@/lib/auth";
@@ -45,7 +46,7 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
         <header className={styles.navBar}>
           <div className={styles.navLinks}>
             <Link href="/" className={styles.backLink}>
-              Самбар руу буцах
+              Хяналтын самбар
             </Link>
             <span>{getRoleLabel(session.role)}</span>
           </div>
@@ -59,13 +60,15 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
           </div>
         </header>
 
+        <AppMenu active="new-project" canCreateProject={canCreateProject} />
+
         <section className={styles.heroCard}>
-          <span className={styles.eyebrow}>Project Create</span>
-          <h1>Шинэ төсөл үүсгэх</h1>
+          <span className={styles.eyebrow}>Төсөл бүртгэх</span>
+          <h1>Шинэ төсөл нэмэх</h1>
           <p>
-            Шинэ төсөл нэмэхдээ аль алба нэгжид хамаарахыг нь заавал сонгоно.
-            Ингэснээр төслүүдийг илүү ойлгомжтой ангилж, самбар болон Odoo project list
-            дээр илүү цэвэр харах боломжтой болно.
+            Алба нэгжийг нь сонгоод шинэ төсөл бүртгэнэ. Алба нэгж дээр төслийн
+            удирдагч урьдчилан тохируулагдсан бол төсөл үүсэх үед автоматаар
+            бөглөгдөнө.
           </p>
         </section>
 
@@ -74,7 +77,7 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
             Form
           </a>
           <a href="#create-project-top" className={styles.jumpLink}>
-            Дээш буцах
+            Дээш
           </a>
         </nav>
 
@@ -87,9 +90,9 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
 
         {!canCreateProject ? (
           <section className={styles.emptyState}>
-            <h2>Төсөл үүсгэх эрх алга</h2>
+            <h2>Төсөл бүртгэх эрх алга</h2>
             <p>
-              Шинэ төсөл үүсгэх боломж нь одоогоор зөвхөн ерөнхий менежер болон
+              Шинэ төсөл нэмэх боломж одоогоор зөвхөн ерөнхий менежер болон
               системийн админ хэрэглэгч дээр нээлттэй байна.
             </p>
           </section>
@@ -123,7 +126,7 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
                 <div className={styles.field}>
                   <label htmlFor="manager_id">Төслийн удирдагч</label>
                   <select id="manager_id" name="manager_id" defaultValue="">
-                    <option value="">Одоохондоо сонгохгүй</option>
+                    <option value="">Автоматаар эсвэл дараа нь сонгоно</option>
                     {managerOptions.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.name} ({option.login})
@@ -143,12 +146,55 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
                 </div>
               </div>
 
+              <div className={styles.optionalSection}>
+                <input
+                  id="track_quantity"
+                  name="track_quantity"
+                  type="checkbox"
+                  value="1"
+                  className={styles.optionalCheckbox}
+                />
+                <label htmlFor="track_quantity" className={styles.optionalToggle}>
+                  <span className={styles.optionalToggleTitle}>
+                    Төлөвлөсөн хэмжээ авах
+                  </span>
+                  <span className={styles.optionalToggleText}>
+                    Чек хийсэн үед төсөл дээр төлөвлөсөн хэмжээ болон хэмжих нэгжийг
+                    бүртгэнэ.
+                  </span>
+                </label>
+
+                <div className={styles.optionalFields}>
+                  <div className={styles.field}>
+                    <label htmlFor="planned_quantity">Төлөвлөсөн хэмжээ</label>
+                    <input
+                      id="planned_quantity"
+                      name="planned_quantity"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="48"
+                    />
+                  </div>
+
+                  <div className={styles.field}>
+                    <label htmlFor="measurement_unit">Хэмжих нэгж</label>
+                    <input
+                      id="measurement_unit"
+                      name="measurement_unit"
+                      type="text"
+                      placeholder="мод"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className={styles.buttonRow}>
                 <button type="submit" className={styles.primaryButton}>
                   Төсөл үүсгэх
                 </button>
-                <Link href="/" className={styles.smallLink}>
-                  Түр хойшлуулах
+                <Link href="/projects" className={styles.smallLink}>
+                  Төслүүд рүү очих
                 </Link>
               </div>
             </form>

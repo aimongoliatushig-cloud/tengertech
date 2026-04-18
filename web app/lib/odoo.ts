@@ -37,6 +37,18 @@ type OdooReportRecord = {
   reported_quantity: number;
   image_count: number;
   audio_count: number;
+  image_attachment_ids: number[];
+  audio_attachment_ids: number[];
+};
+
+type OdooAttachmentRecord = {
+  id: number;
+  name: string | false;
+  mimetype: string | false;
+};
+
+type OdooAttachmentBinaryRecord = OdooAttachmentRecord & {
+  datas: string | false;
 };
 
 type OdooUserRecord = {
@@ -71,6 +83,7 @@ type ProjectCard = {
 type ReviewItem = {
   id: number;
   name: string;
+  departmentName: string;
   stageLabel: string;
   deadline: string;
   projectName: string;
@@ -106,6 +119,18 @@ type ReportFeedItem = {
   imageCount: number;
   audioCount: number;
   submittedAt: string;
+  images: {
+    id: number;
+    name: string;
+    mimetype: string;
+    url: string;
+  }[];
+  audios: {
+    id: number;
+    name: string;
+    mimetype: string;
+    url: string;
+  }[];
 };
 
 type TeamLeaderCard = {
@@ -417,6 +442,62 @@ export async function executeOdooKw<T>(
   return executeKw<T>(uid, model, method, methodArgs, kwargs, connection);
 }
 
+export async function fetchOdooAttachmentContent(
+  attachmentId: number,
+  connectionOverrides: Partial<OdooConnection> = {},
+) {
+  const attemptRead = async (connection: OdooConnection) => {
+    const uid = await authenticate(connection);
+
+    if (!uid) {
+      throw new Error("Odoo authentication failed");
+    }
+
+    const attachments = await executeKw<OdooAttachmentBinaryRecord[]>(
+      uid,
+      "ir.attachment",
+      "search_read",
+      [[["id", "=", attachmentId]]],
+      {
+        fields: ["name", "mimetype", "datas"],
+        limit: 1,
+      },
+      connection,
+    );
+
+    const attachment = attachments[0];
+    if (!attachment?.datas) {
+      return null;
+    }
+
+    return {
+      id: attachment.id,
+      name: attachment.name || `attachment-${attachment.id}`,
+      mimetype: attachment.mimetype || "application/octet-stream",
+      datas: attachment.datas,
+    };
+  };
+
+  const primaryConnection = createOdooConnection(connectionOverrides);
+  const primaryResult = await attemptRead(primaryConnection);
+  if (primaryResult) {
+    return primaryResult;
+  }
+
+  const fallbackConnection = createOdooConnection();
+  const sameCredentials =
+    fallbackConnection.login === primaryConnection.login &&
+    fallbackConnection.password === primaryConnection.password &&
+    fallbackConnection.db === primaryConnection.db &&
+    fallbackConnection.url === primaryConnection.url;
+
+  if (sameCredentials) {
+    return null;
+  }
+
+  return attemptRead(fallbackConnection);
+}
+
 async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardSnapshot> {
   const uid = await authenticate(connection);
   if (!uid) {
@@ -431,7 +512,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       [[]],
       {
         fields: ["name", "user_id", "ops_department_id", "date_start", "date"],
-        limit: 12,
+        limit: 500,
         order: "create_date desc",
       },
       connection,
@@ -457,7 +538,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
           "date_deadline",
           "state",
         ],
-        limit: 120,
+        limit: 2000,
         order: "priority desc, date_deadline asc, create_date desc",
       },
       connection,
@@ -476,8 +557,10 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
           "reported_quantity",
           "image_count",
           "audio_count",
+          "image_attachment_ids",
+          "audio_attachment_ids",
         ],
-        limit: 32,
+        limit: 200,
         order: "report_datetime desc",
       },
       connection,
@@ -578,7 +661,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     } satisfies ProjectCard;
   });
 
-  const liveTasks = activeTasks.slice(0, 8).map((task) => ({
+  const liveTasks = activeTasks.map((task) => ({
     id: task.id,
     name: task.name,
     projectName: relationName(task.project_id),
@@ -595,9 +678,12 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     href: `/tasks/${task.id}`,
   }));
 
-  const reviewQueue = reviewTasks.slice(0, 6).map((task) => ({
+  const reviewQueue = reviewTasks.map((task) => ({
     id: task.id,
     name: task.name,
+    departmentName: Array.isArray(task.project_id)
+      ? (projectDepartmentById.get(task.project_id[0]) ?? mapTaskToDepartment(task))
+      : mapTaskToDepartment(task),
     stageLabel: relationName(task.stage_id, STAGE_LABELS.review),
     deadline: formatCompactDate(task.date_deadline),
     projectName: relationName(task.project_id),
@@ -606,9 +692,55 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     href: `/tasks/${task.id}`,
   }));
 
+  const attachmentIds = [
+    ...new Set(
+      reports.flatMap((report) => [
+        ...(report.image_attachment_ids ?? []),
+        ...(report.audio_attachment_ids ?? []),
+      ]),
+    ),
+  ];
+
+  const attachmentMap = new Map<number, OdooAttachmentRecord>();
+  if (attachmentIds.length) {
+    const attachments = await executeKw<OdooAttachmentRecord[]>(
+      uid,
+      "ir.attachment",
+      "search_read",
+      [[["id", "in", attachmentIds]]],
+      {
+        fields: ["name", "mimetype"],
+        limit: attachmentIds.length,
+      },
+      connection,
+    );
+
+    for (const attachment of attachments) {
+      attachmentMap.set(attachment.id, attachment);
+    }
+  }
+
   const reportTaskMap = new Map(tasks.map((task) => [task.id, task]));
-  const reportsFeed = reports.slice(0, 6).map((report) => {
+  const reportsFeed = reports.map((report) => {
     const task = Array.isArray(report.task_id) ? reportTaskMap.get(report.task_id[0]) : undefined;
+    const images = (report.image_attachment_ids ?? []).map((attachmentId) => {
+      const attachment = attachmentMap.get(attachmentId);
+      return {
+        id: attachmentId,
+        name: attachment?.name || `image-${attachmentId}`,
+        mimetype: attachment?.mimetype || "image/*",
+        url: `/api/odoo/attachments/${attachmentId}`,
+      };
+    });
+    const audios = (report.audio_attachment_ids ?? []).map((attachmentId) => {
+      const attachment = attachmentMap.get(attachmentId);
+      return {
+        id: attachmentId,
+        name: attachment?.name || `audio-${attachmentId}`,
+        mimetype: attachment?.mimetype || "audio/*",
+        url: `/api/odoo/attachments/${attachmentId}`,
+      };
+    });
     return {
       id: report.id,
       reporter: relationName(report.reporter_id),
@@ -619,6 +751,8 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       imageCount: report.image_count ?? 0,
       audioCount: report.audio_count ?? 0,
       submittedAt: formatCompactDate(report.report_datetime),
+      images,
+      audios,
     } satisfies ReportFeedItem;
   });
 
@@ -700,7 +834,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       },
     ],
     departments,
-    projects: projectsWithStats.slice(0, 6),
+    projects: projectsWithStats,
     liveTasks,
     reviewQueue,
     reports: reportsFeed,
@@ -837,24 +971,26 @@ function fallbackSnapshot(): DashboardSnapshot {
       },
     ],
     reviewQueue: [
-      {
-        id: 201,
-        name: "5-р хороо - 32 модны тайлан",
-        stageLabel: "Шалгагдаж буй ажил",
-        deadline: "Өнөөдөр 16:30",
-        projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
-        leaderName: "suldee",
-        progress: 100,
+        {
+          id: 201,
+          name: "5-р хороо - 32 модны тайлан",
+          departmentName: "Ногоон байгууламж",
+          stageLabel: "Шалгагдаж буй ажил",
+          deadline: "Өнөөдөр 16:30",
+          projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
+          leaderName: "suldee",
+          progress: 100,
         href: "/tasks/201",
       },
-      {
-        id: 202,
-        name: "Хог тээврийн 2-р маршрут",
-        stageLabel: "Шалгагдаж буй ажил",
-        deadline: "Өнөөдөр 19:00",
-        projectName: "Хог тээвэрлэлтийн өглөөний маршрут",
-        leaderName: "sarangerel",
-        progress: 88,
+        {
+          id: 202,
+          name: "Хог тээврийн 2-р маршрут",
+          departmentName: "Хог тээвэрлэлт",
+          stageLabel: "Шалгагдаж буй ажил",
+          deadline: "Өнөөдөр 19:00",
+          projectName: "Хог тээвэрлэлтийн өглөөний маршрут",
+          leaderName: "sarangerel",
+          progress: 88,
         href: "/tasks/202",
       },
     ],
@@ -868,6 +1004,8 @@ function fallbackSnapshot(): DashboardSnapshot {
         reportedQuantity: 21,
         imageCount: 1,
         audioCount: 1,
+        images: [],
+        audios: [],
         submittedAt: "Өнөөдөр 15:30",
       },
       {
@@ -879,6 +1017,8 @@ function fallbackSnapshot(): DashboardSnapshot {
         reportedQuantity: 4,
         imageCount: 2,
         audioCount: 0,
+        images: [],
+        audios: [],
         submittedAt: "Өнөөдөр 14:10",
       },
     ],

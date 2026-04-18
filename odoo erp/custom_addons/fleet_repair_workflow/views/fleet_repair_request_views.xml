@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_fleet_repair_request_search" model="ir.ui.view">
+        <field name="name">fleet.repair.request.search</field>
+        <field name="model">fleet.repair.request</field>
+        <field name="arch" type="xml">
+            <search string="Засварын хүсэлт">
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="license_plate"/>
+                <field name="issue_summary"/>
+                <field name="mechanic_id"/>
+                <field name="team_leader_id"/>
+                <field name="current_responsible_user_id"/>
+                <filter string="Миний хүсэлт" name="my_requests" domain="[('mechanic_id', '=', uid)]"/>
+                <filter string="Миний машинтай хүсэлтүүд" name="my_vehicle_requests" domain="['|', '|', ('mechanic_id', '=', uid), ('team_leader_id', '=', uid), ('repair_task_id.user_ids', 'in', uid)]"/>
+                <filter string="Waiting Accounting" name="waiting_accounting" domain="[('state', '=', 'waiting_accounting')]"/>
+                <filter string="Waiting Admin" name="waiting_admin" domain="[('state', '=', 'waiting_admin')]"/>
+                <filter string="Waiting CEO" name="waiting_ceo" domain="[('state', '=', 'waiting_ceo')]"/>
+                <filter string="Fund Prepared" name="fund_prepared" domain="[('state', '=', 'fund_prepared')]"/>
+                <filter string="Purchasing" name="purchasing" domain="[('state', '=', 'purchasing')]"/>
+                <filter string="Parts Received" name="parts_received" domain="[('state', '=', 'parts_received')]"/>
+                <filter string="In Repair" name="in_repair" domain="[('state', '=', 'in_repair')]"/>
+                <filter string="Waiting Repair Approval" name="waiting_repair_approval" domain="[('state', '=', 'waiting_repair_approval')]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="Rejected" name="rejected" domain="[('state', '=', 'rejected')]"/>
+                <filter string="CEO Approval Needed" name="needs_ceo_approval" domain="[('needs_ceo_approval', '=', True)]"/>
+                <filter string="Emergency" name="emergency" domain="[('maintenance_category', '=', 'emergency')]"/>
+                <filter string="Overdue" name="overdue" domain="[('is_overdue', '=', True)]"/>
+                <group>
+                    <filter string="Төлөв" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Машин" name="group_by_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Механик" name="group_by_mechanic" context="{'group_by': 'mechanic_id'}"/>
+                    <filter string="Багийн ахлагч" name="group_by_team_leader" context="{'group_by': 'team_leader_id'}"/>
+                    <filter string="Төрөл" name="group_by_category" context="{'group_by': 'maintenance_category'}"/>
+                    <filter string="Хариуцагч" name="group_by_responsible" context="{'group_by': 'current_responsible_user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_fleet_repair_request_list" model="ir.ui.view">
+        <field name="name">fleet.repair.request.list</field>
+        <field name="model">fleet.repair.request</field>
+        <field name="arch" type="xml">
+            <list default_order="create_date desc"
+                  decoration-danger="is_overdue or priority_level == '3'"
+                  decoration-muted="state == 'cancelled'"
+                  decoration-success="state == 'done'">
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="license_plate"/>
+                <field name="issue_summary"/>
+                <field name="state" widget="badge"/>
+                <field name="estimated_amount"/>
+                <field name="needs_ceo_approval"/>
+                <field name="current_responsible_user_id" widget="many2one_avatar_user"/>
+                <field name="current_stage_age_days"/>
+                <field name="expected_ready_datetime"/>
+                <field name="mechanic_id" widget="many2one_avatar_user"/>
+                <field name="team_leader_id" widget="many2one_avatar_user"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_fleet_repair_request_form" model="ir.ui.view">
+        <field name="name">fleet.repair.request.form</field>
+        <field name="model">fleet.repair.request</field>
+        <field name="arch" type="xml">
+            <form string="Засварын хүсэлт">
+                <header>
+                    <button name="action_submit_inspection" type="object" string="Submit Inspection" class="btn btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_accounting_review_pass" type="object" string="Accounting Approve" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_accounting,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'waiting_accounting'"/>
+                    <button name="action_admin_review_pass" type="object" string="Administration Review Pass" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'waiting_admin'"/>
+                    <button name="action_ceo_approve" type="object" string="CEO Approve" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_ceo,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'waiting_ceo'"/>
+                    <button name="action_ceo_reject" type="object" string="CEO Reject" class="btn btn-danger" groups="fleet_repair_workflow.group_fleet_repair_ceo,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'waiting_ceo'"/>
+                    <button name="action_admin_mark_order_ready" type="object" string="Mark Director Order Ready" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'admin_order_ready'"/>
+                    <button name="action_finance_prepare_fund" type="object" string="Finance Prepare Fund" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_finance,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'admin_order_ready'"/>
+                    <button name="action_create_purchase_order" type="object" string="Create PO / RFQ" class="btn btn-secondary" groups="fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_finance,fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_manager" invisible="not can_create_purchase"/>
+                    <button name="action_start_purchasing" type="object" string="Start Purchasing" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'fund_prepared'"/>
+                    <button name="action_mark_parts_received" type="object" string="Mark Parts Received" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'purchasing'"/>
+                    <button name="action_start_repair" type="object" string="Start Repair" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_mechanic,fleet_repair_workflow.group_fleet_repair_team_leader,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'parts_received'"/>
+                    <button name="action_submit_repair_for_approval" type="object" string="Submit Repair for Approval" class="btn btn-primary" groups="fleet_repair_workflow.group_fleet_repair_mechanic,fleet_repair_workflow.group_fleet_repair_team_leader,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'in_repair'"/>
+                    <button name="action_complete_repair" type="object" string="Complete Repair" class="btn btn-success" groups="fleet_repair_workflow.group_fleet_repair_team_leader,fleet_repair_workflow.group_fleet_repair_manager" invisible="state != 'waiting_repair_approval'"/>
+                    <button name="action_cancel" type="object" string="Cancel" class="btn btn-secondary" invisible="state in ('done', 'cancelled')"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft" class="btn btn-secondary" groups="fleet_repair_workflow.group_fleet_repair_manager" invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,waiting_accounting,waiting_admin,waiting_ceo,admin_order_ready,fund_prepared,purchasing,parts_received,in_repair,waiting_repair_approval,done,rejected,cancelled"/>
+                </header>
+                <sheet>
+                    <field name="can_create_purchase" invisible="1"/>
+                    <field name="needs_ceo_approval" invisible="1"/>
+                    <field name="is_overdue" invisible="1"/>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_vehicle" type="object" class="oe_stat_button" icon="fa-truck">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Open Vehicle</span>
+                            </div>
+                        </button>
+                        <button name="action_view_repair_task" type="object" class="oe_stat_button" icon="fa-tasks" invisible="not repair_task_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Open Repair Task</span>
+                            </div>
+                        </button>
+                        <button name="action_view_purchase_order" type="object" class="oe_stat_button" icon="fa-shopping-cart" groups="fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_finance,fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_manager" invisible="not purchase_order_id">
+                            <field name="purchase_count" widget="statinfo" string="Open Purchase Order"/>
+                        </button>
+                        <button name="action_view_activities" type="object" class="oe_stat_button" icon="fa-clock-o">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">View Activities</span>
+                            </div>
+                        </button>
+                        <button name="action_view_attachments" type="object" class="oe_stat_button" icon="fa-paperclip">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">View Attachments</span>
+                            </div>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="vehicle_id"/>
+                            <field name="project_id"/>
+                            <field name="repair_task_id" readonly="1"/>
+                            <field name="mechanic_id" widget="many2one_avatar_user"/>
+                            <field name="team_leader_id" widget="many2one_avatar_user"/>
+                        </group>
+                        <group>
+                            <field name="maintenance_category"/>
+                            <field name="priority_level"/>
+                            <field name="issue_summary"/>
+                            <field name="license_plate" readonly="1"/>
+                            <field name="vehicle_model_display" readonly="1"/>
+                            <field name="current_responsible_user_id" widget="many2one_avatar_user" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Үзлэг">
+                            <group>
+                                <group>
+                                    <field name="inspection_date"/>
+                                    <field name="diagnosis_note"/>
+                                    <field name="problem_description"/>
+                                    <field name="recommended_work"/>
+                                    <field name="urgent_reason"/>
+                                </group>
+                                <group>
+                                    <field name="odometer_value"/>
+                                    <field name="breakdown_datetime"/>
+                                    <field name="downtime_start"/>
+                                    <field name="inspection_image_ids" widget="many2many_binary"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Сэлбэг хэрэгцээ">
+                            <field name="line_ids" nolabel="1" mode="list,form" context="{'default_request_id': id}">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id"/>
+                                    <field name="name"/>
+                                    <field name="specification"/>
+                                    <field name="quantity"/>
+                                    <field name="uom_name"/>
+                                    <field name="estimated_unit_price"/>
+                                    <field name="estimated_subtotal"/>
+                                    <field name="actual_unit_price"/>
+                                    <field name="actual_subtotal"/>
+                                    <field name="is_critical"/>
+                                    <field name="purchased"/>
+                                    <field name="note"/>
+                                </list>
+                                <form string="Сэлбэгийн мөр">
+                                    <group>
+                                        <group>
+                                            <field name="product_id"/>
+                                            <field name="name"/>
+                                            <field name="specification"/>
+                                            <field name="quantity"/>
+                                            <field name="uom_name"/>
+                                        </group>
+                                        <group>
+                                            <field name="estimated_unit_price"/>
+                                            <field name="actual_unit_price"/>
+                                            <field name="is_critical"/>
+                                            <field name="purchased"/>
+                                        </group>
+                                    </group>
+                                    <group>
+                                        <field name="note"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Санхүү ба баталгаа">
+                            <group>
+                                <group>
+                                    <field name="estimated_amount" readonly="1"/>
+                                    <field name="approved_amount"/>
+                                    <field name="actual_purchase_amount"/>
+                                    <field name="needs_ceo_approval" readonly="1"/>
+                                    <field name="accounting_reviewer_id" widget="many2one_avatar_user"/>
+                                    <field name="accounting_review_datetime" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="admin_reviewer_id" widget="many2one_avatar_user"/>
+                                    <field name="admin_review_datetime" readonly="1"/>
+                                    <field name="ceo_approver_id" widget="many2one_avatar_user"/>
+                                    <field name="ceo_approval_datetime" readonly="1"/>
+                                    <field name="director_order_number"/>
+                                    <field name="director_order_date"/>
+                                    <field name="director_order_attachment_id"/>
+                                    <field name="finance_prepared_by_id" widget="many2one_avatar_user"/>
+                                    <field name="finance_prepared_datetime" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Худалдан авалт">
+                            <group>
+                                <group>
+                                    <field name="vendor_id" groups="fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_finance,fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_manager"/>
+                                    <field name="purchaser_id" widget="many2one_avatar_user"/>
+                                    <field name="purchase_order_id" groups="fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_finance,fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_manager"/>
+                                </group>
+                                <group>
+                                    <field name="purchase_datetime" readonly="1"/>
+                                    <field name="parts_received_datetime" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Засвар">
+                            <group>
+                                <group>
+                                    <field name="estimated_repair_hours"/>
+                                    <field name="expected_ready_datetime"/>
+                                    <field name="repair_completed_datetime" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="downtime_end"/>
+                                    <field name="total_downtime_hours" readonly="1"/>
+                                    <field name="blocked_reason"/>
+                                    <field name="repair_result_image_ids" widget="many2many_binary"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Хяналт">
+                            <group>
+                                <group>
+                                    <field name="current_responsible_user_id" widget="many2one_avatar_user" readonly="1"/>
+                                    <field name="current_stage_age_days" readonly="1"/>
+                                    <field name="total_cycle_hours" readonly="1"/>
+                                    <field name="general_manager_id" widget="many2one_avatar_user"/>
+                                </group>
+                                <group>
+                                    <field name="internal_note"/>
+                                    <field name="rejection_reason" readonly="state != 'rejected'"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_fleet_repair_request" model="ir.actions.act_window">
+        <field name="name">Засварын хүсэлтүүд</field>
+        <field name="res_model">fleet.repair.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_fleet_repair_request_search"/>
+    </record>
+
+    <record id="action_fleet_repair_request_ceo" model="ir.actions.act_window">
+        <field name="name">CEO батлах хүсэлтүүд</field>
+        <field name="res_model">fleet.repair.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('needs_ceo_approval', '=', True)]</field>
+        <field name="search_view_id" ref="view_fleet_repair_request_search"/>
+    </record>
+
+    <record id="action_fleet_repair_request_general_manager" model="ir.actions.act_window">
+        <field name="name">Ерөнхий менежерийн хяналт</field>
+        <field name="res_model">fleet.repair.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'not in', ['done', 'cancelled'])]</field>
+        <field name="search_view_id" ref="view_fleet_repair_request_search"/>
+    </record>
+
+    <record id="action_fleet_repair_request_in_repair" model="ir.actions.act_window">
+        <field name="name">Засварт байгаа машинууд</field>
+        <field name="res_model">fleet.repair.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'in', ['parts_received', 'in_repair', 'waiting_repair_approval'])]</field>
+        <field name="search_view_id" ref="view_fleet_repair_request_search"/>
+    </record>
+</odoo>

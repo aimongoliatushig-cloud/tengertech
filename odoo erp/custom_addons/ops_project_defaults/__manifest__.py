@@ -1,8 +1,8 @@
 {
-    "name": "Operations Project Defaults",
-    "summary": "Default project stages, departments, and project-level attachments.",
-    "version": "19.0.1.6.0",
-    "category": "Project",
+    "name": "Хотын ажиллагаа: Төслийн үндсэн тохиргоо",
+    "summary": "Төслийн үндсэн үе шат, алба нэгж, төслийн түвшний хавсралтын тохиргоо.",
+    "version": "19.0.1.8.3",
+    "category": "Төсөл",
     "author": "OpenAI",
     "license": "LGPL-3",
     "depends": ["project", "hr", "ops_user_type"],

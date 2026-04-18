@@ -14,5 +14,5 @@ class ResUsers(models.Model):
         ],
         string="Хэрэглэгчийн төрөл",
         default="worker",
-        help="Municipal operations role used when creating and managing users.",
+        help="Хэрэглэгч үүсгэх болон удирдах үед ашиглах хотын ажиллагааны хэрэглэгчийн төрөл.",
     )

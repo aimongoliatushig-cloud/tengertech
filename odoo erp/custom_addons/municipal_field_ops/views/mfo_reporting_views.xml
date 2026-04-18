@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mfo_daily_operation_report_search" model="ir.ui.view">
+        <field name="name">mfo.daily.operation.report.search</field>
+        <field name="model">mfo.daily.operation.report</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="shift_date"/>
+                <field name="project_id"/>
+                <field name="route_id"/>
+                <field name="district_id"/>
+                <field name="crew_team_id"/>
+                <field name="vehicle_id"/>
+                <field name="mfo_state"/>
+                <group>
+                    <filter string="Огноо" name="groupby_shift_date" context="{'group_by': 'shift_date'}"/>
+                    <filter string="Төсөл" name="groupby_project" context="{'group_by': 'project_id'}"/>
+                    <filter string="Маршрут" name="groupby_route" context="{'group_by': 'route_id'}"/>
+                    <filter string="Дүүрэг" name="groupby_district" context="{'group_by': 'district_id'}"/>
+                    <filter string="Экипаж" name="groupby_crew" context="{'group_by': 'crew_team_id'}"/>
+                    <filter string="Техник" name="groupby_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_daily_operation_report_list" model="ir.ui.view">
+        <field name="name">mfo.daily.operation.report.list</field>
+        <field name="model">mfo.daily.operation.report</field>
+        <field name="arch" type="xml">
+            <list default_order="shift_date desc">
+                <field name="shift_date"/>
+                <field name="task_id"/>
+                <field name="project_id"/>
+                <field name="route_id"/>
+                <field name="district_id"/>
+                <field name="crew_team_id"/>
+                <field name="vehicle_id"/>
+                <field name="mfo_state"/>
+                <field name="stop_count" sum="Нийт"/>
+                <field name="completed_stop_count" sum="Нийт"/>
+                <field name="proof_count" sum="Нийт"/>
+                <field name="issue_count" sum="Нийт"/>
+                <field name="total_net_weight" sum="Нийт"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_daily_operation_report_pivot" model="ir.ui.view">
+        <field name="name">mfo.daily.operation.report.pivot</field>
+        <field name="model">mfo.daily.operation.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Өдрийн ажиллагаа">
+                <field name="shift_date" type="row"/>
+                <field name="district_id" type="row"/>
+                <field name="vehicle_id" type="row"/>
+                <field name="crew_team_id" type="row"/>
+                <field name="stop_count" type="measure"/>
+                <field name="completed_stop_count" type="measure"/>
+                <field name="proof_count" type="measure"/>
+                <field name="issue_count" type="measure"/>
+                <field name="weight_count" type="measure"/>
+                <field name="total_net_weight" type="measure"/>
+                <field name="actual_duration_hours" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_mfo_daily_operation_report_graph" model="ir.ui.view">
+        <field name="name">mfo.daily.operation.report.graph</field>
+        <field name="model">mfo.daily.operation.report</field>
+        <field name="arch" type="xml">
+            <graph string="Өдрийн ажиллагаа" type="bar">
+                <field name="shift_date"/>
+                <field name="district_id"/>
+                <field name="completed_stop_count" type="measure"/>
+                <field name="total_net_weight" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_mfo_daily_operation_report" model="ir.actions.act_window">
+        <field name="name">Өдрийн ажиллагааны тайлан</field>
+        <field name="res_model">mfo.daily.operation.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id" ref="view_mfo_daily_operation_report_list"/>
+        <field name="search_view_id" ref="view_mfo_daily_operation_report_search"/>
+    </record>
+
+    <record id="view_mfo_daily_weight_total_search" model="ir.ui.view">
+        <field name="name">mfo.daily.weight.total.search</field>
+        <field name="model">mfo.daily.weight.total</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="shift_date"/>
+                <field name="task_id"/>
+                <field name="vehicle_id"/>
+                <field name="route_id"/>
+                <field name="source"/>
+                <group>
+                    <filter string="Огноо" name="groupby_shift_date" context="{'group_by': 'shift_date'}"/>
+                    <filter string="Техник" name="groupby_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Маршрут" name="groupby_route" context="{'group_by': 'route_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_daily_weight_total_list" model="ir.ui.view">
+        <field name="name">mfo.daily.weight.total.list</field>
+        <field name="model">mfo.daily.weight.total</field>
+        <field name="arch" type="xml">
+            <list default_order="shift_date desc">
+                <field name="shift_date"/>
+                <field name="task_id"/>
+                <field name="vehicle_id"/>
+                <field name="route_id"/>
+                <field name="source"/>
+                <field name="net_weight_total" sum="Нийт"/>
+                <field name="external_reference"/>
+                <field name="sync_log_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_daily_weight_total_form" model="ir.ui.view">
+        <field name="name">mfo.daily.weight.total.form</field>
+        <field name="model">mfo.daily.weight.total</field>
+        <field name="arch" type="xml">
+            <form string="Өдөр тутмын жингийн нийт">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="task_id"/>
+                            <field name="shift_date"/>
+                            <field name="vehicle_id"/>
+                            <field name="route_id"/>
+                        </group>
+                        <group>
+                            <field name="source"/>
+                            <field name="net_weight_total"/>
+                            <field name="external_reference"/>
+                            <field name="sync_log_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_mfo_daily_weight_total_pivot" model="ir.ui.view">
+        <field name="name">mfo.daily.weight.total.pivot</field>
+        <field name="model">mfo.daily.weight.total</field>
+        <field name="arch" type="xml">
+            <pivot string="Өдөр тутмын жингийн нийт">
+                <field name="shift_date" type="row"/>
+                <field name="vehicle_id" type="row"/>
+                <field name="route_id" type="row"/>
+                <field name="net_weight_total" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_mfo_daily_weight_total_graph" model="ir.ui.view">
+        <field name="name">mfo.daily.weight.total.graph</field>
+        <field name="model">mfo.daily.weight.total</field>
+        <field name="arch" type="xml">
+            <graph string="Өдөр тутмын жингийн нийт" type="bar">
+                <field name="shift_date"/>
+                <field name="vehicle_id"/>
+                <field name="net_weight_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_mfo_daily_weight_total_report" model="ir.actions.act_window">
+        <field name="name">Өдөр тутмын жингийн нийт</field>
+        <field name="res_model">mfo.daily.weight.total</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="view_id" ref="view_mfo_daily_weight_total_list"/>
+        <field name="search_view_id" ref="view_mfo_daily_weight_total_search"/>
+    </record>
+
+    <record id="view_mfo_weight_measurement_search" model="ir.ui.view">
+        <field name="name">mfo.weight.measurement.search</field>
+        <field name="model">mfo.weight.measurement</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="task_id"/>
+                <field name="vehicle_id"/>
+                <field name="measured_at"/>
+                <field name="source"/>
+                <group>
+                    <filter string="Техник" name="groupby_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Эх сурвалж" name="groupby_source" context="{'group_by': 'source'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_weight_measurement_list" model="ir.ui.view">
+        <field name="name">mfo.weight.measurement.list</field>
+        <field name="model">mfo.weight.measurement</field>
+        <field name="arch" type="xml">
+            <list default_order="measured_at desc">
+                <field name="measured_at"/>
+                <field name="task_id"/>
+                <field name="vehicle_id"/>
+                <field name="ticket_number"/>
+                <field name="source"/>
+                <field name="gross_weight" sum="Нийт"/>
+                <field name="tare_weight" sum="Нийт"/>
+                <field name="net_weight" sum="Нийт"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_weight_measurement_form" model="ir.ui.view">
+        <field name="name">mfo.weight.measurement.form</field>
+        <field name="model">mfo.weight.measurement</field>
+        <field name="arch" type="xml">
+            <form string="Жингийн бүртгэл">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="task_id"/>
+                            <field name="vehicle_id"/>
+                            <field name="measured_at"/>
+                            <field name="ticket_number"/>
+                            <field name="source"/>
+                        </group>
+                        <group>
+                            <field name="gross_weight"/>
+                            <field name="tare_weight"/>
+                            <field name="net_weight" readonly="1"/>
+                            <field name="external_reference"/>
+                            <field name="sync_log_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_mfo_weight_measurement_pivot" model="ir.ui.view">
+        <field name="name">mfo.weight.measurement.pivot</field>
+        <field name="model">mfo.weight.measurement</field>
+        <field name="arch" type="xml">
+            <pivot string="Жингийн тайлан">
+                <field name="vehicle_id" type="row"/>
+                <field name="task_id" type="row"/>
+                <field name="gross_weight" type="measure"/>
+                <field name="tare_weight" type="measure"/>
+                <field name="net_weight" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_mfo_weight_measurement_graph" model="ir.ui.view">
+        <field name="name">mfo.weight.measurement.graph</field>
+        <field name="model">mfo.weight.measurement</field>
+        <field name="arch" type="xml">
+            <graph string="Жингийн тайлан" type="bar">
+                <field name="vehicle_id"/>
+                <field name="source"/>
+                <field name="net_weight" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_mfo_weight_measurement_report" model="ir.actions.act_window">
+        <field name="name">Жингийн тайлан</field>
+        <field name="res_model">mfo.weight.measurement</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="view_id" ref="view_mfo_weight_measurement_list"/>
+        <field name="search_view_id" ref="view_mfo_weight_measurement_search"/>
+    </record>
+
+    <record id="view_mfo_planning_deviation_report_search" model="ir.ui.view">
+        <field name="name">mfo.planning.deviation.report.search</field>
+        <field name="model">mfo.planning.deviation.report</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="shift_date"/>
+                <field name="project_id"/>
+                <field name="route_id"/>
+                <field name="district_id"/>
+                <field name="vehicle_id"/>
+                <group>
+                    <filter string="Огноо" name="groupby_shift_date" context="{'group_by': 'shift_date'}"/>
+                    <filter string="Дүүрэг" name="groupby_district" context="{'group_by': 'district_id'}"/>
+                    <filter string="Техник" name="groupby_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mfo_planning_deviation_report_list" model="ir.ui.view">
+        <field name="name">mfo.planning.deviation.report.list</field>
+        <field name="model">mfo.planning.deviation.report</field>
+        <field name="arch" type="xml">
+            <list default_order="shift_date desc">
+                <field name="shift_date"/>
+                <field name="task_id"/>
+                <field name="route_id"/>
+                <field name="district_id"/>
+                <field name="vehicle_id"/>
+                <field name="planned_stop_count" sum="Нийт"/>
+                <field name="completed_stop_count" sum="Нийт"/>
+                <field name="skipped_stop_count" sum="Нийт"/>
+                <field name="deviation_stop_count" sum="Нийт"/>
+                <field name="missing_proof" sum="Нийт"/>
+                <field name="overdue_flag" sum="Нийт"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mfo_planning_deviation_report_pivot" model="ir.ui.view">
+        <field name="name">mfo.planning.deviation.report.pivot</field>
+        <field name="model">mfo.planning.deviation.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Төлөвлөлтийн зөрүү">
+                <field name="shift_date" type="row"/>
+                <field name="district_id" type="row"/>
+                <field name="vehicle_id" type="row"/>
+                <field name="planned_stop_count" type="measure"/>
+                <field name="completed_stop_count" type="measure"/>
+                <field name="skipped_stop_count" type="measure"/>
+                <field name="deviation_stop_count" type="measure"/>
+                <field name="missing_proof" type="measure"/>
+                <field name="overdue_flag" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_mfo_planning_deviation_report_graph" model="ir.ui.view">
+        <field name="name">mfo.planning.deviation.report.graph</field>
+        <field name="model">mfo.planning.deviation.report</field>
+        <field name="arch" type="xml">
+            <graph string="Төлөвлөлтийн зөрүү" type="bar">
+                <field name="shift_date"/>
+                <field name="district_id"/>
+                <field name="deviation_stop_count" type="measure"/>
+                <field name="missing_proof" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_mfo_planning_deviation_report" model="ir.actions.act_window">
+        <field name="name">Төлөвлөлтийн зөрүүний тайлан</field>
+        <field name="res_model">mfo.planning.deviation.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id" ref="view_mfo_planning_deviation_report_list"/>
+        <field name="search_view_id" ref="view_mfo_planning_deviation_report_search"/>
+    </record>
+</odoo>

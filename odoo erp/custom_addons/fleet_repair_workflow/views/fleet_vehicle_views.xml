@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_fleet_vehicle_form_inherit_repair_workflow" model="ir.ui.view">
+        <field name="name">fleet.vehicle.form.inherit.repair.workflow</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_repair_requests" type="object" class="oe_stat_button" icon="fa-wrench">
+                    <field name="repair_request_count" widget="statinfo" string="Засварын хүсэлтүүд"/>
+                </button>
+                <button name="action_open_repair_tasks" type="object" class="oe_stat_button" icon="fa-tasks">
+                    <field name="repair_task_count" widget="statinfo" string="Засварын task-ууд"/>
+                </button>
+                <button name="action_new_repair_request" type="object" class="oe_stat_button" icon="fa-plus">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Шинэ засварын хүсэлт</span>
+                    </div>
+                </button>
+                <button name="action_start_vehicle_inspection" type="object" class="oe_stat_button" icon="fa-search">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Үзлэг эхлүүлэх</span>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Засвар / худалдан авалтын түүх">
+                    <group>
+                        <group>
+                            <field name="latest_repair_request_id" readonly="1"/>
+                            <field name="latest_repair_state" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="vehicle_downtime_open" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Засварын хүсэлтүүд">
+                        <field name="repair_request_ids" nolabel="1" mode="list">
+                            <list>
+                                <field name="name"/>
+                                <field name="issue_summary"/>
+                                <field name="state" widget="badge"/>
+                                <field name="estimated_amount"/>
+                                <field name="expected_ready_datetime"/>
+                                <field name="current_responsible_user_id" widget="many2one_avatar_user"/>
+                            </list>
+                        </field>
+                    </group>
+                    <group string="Засварын task-ууд">
+                        <field name="repair_task_ids" nolabel="1" mode="list" domain="[('is_vehicle_repair_task', '=', True)]">
+                            <list>
+                                <field name="name"/>
+                                <field name="project_id"/>
+                                <field name="stage_id"/>
+                                <field name="user_ids" widget="many2many_avatar_user"/>
+                                <field name="repair_result"/>
+                                <field name="downtime_hours"/>
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

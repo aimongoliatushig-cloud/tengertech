@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_task_form_inherit_repair_workflow" model="ir.ui.view">
+        <field name="name">project.task.form.inherit.repair.workflow</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_repair_request" type="object" class="oe_stat_button" icon="fa-wrench" invisible="not repair_request_id">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Засварын хүсэлт нээх</span>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='task_properties']" position="before">
+                <group string="Vehicle Repair" invisible="not is_vehicle_repair_task and not repair_request_id">
+                    <group>
+                        <field name="is_vehicle_repair_task" invisible="1"/>
+                        <field name="vehicle_id"/>
+                        <field name="repair_request_id"/>
+                        <field name="maintenance_category"/>
+                        <field name="issue_summary"/>
+                        <field name="diagnosis_note"/>
+                    </group>
+                    <group>
+                        <field name="estimated_repair_hours"/>
+                        <field name="expected_ready_datetime"/>
+                        <field name="downtime_hours" readonly="1"/>
+                        <field name="repair_result"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//page[@name='description_page']" position="after">
+                <page string="Засвар" invisible="not is_vehicle_repair_task and not repair_request_id">
+                    <group>
+                        <group>
+                            <field name="repair_start_datetime"/>
+                            <field name="repair_end_datetime"/>
+                            <field name="actual_repair_hours"/>
+                        </group>
+                        <group>
+                            <field name="reviewed_by_id" widget="many2one_avatar_user"/>
+                            <field name="approved_by_id" widget="many2one_avatar_user"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="action_taken"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

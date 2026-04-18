@@ -11,48 +11,80 @@ class HrDepartment(models.Model):
         help="Энэ алба нэгж дээр шинэ төсөл үүсгэх үед project manager-ийг автоматаар сонгоно.",
     )
 
+    def _ops_can_sync_department_links(self):
+        self.env.cr.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_name = 'ops_project_manager_department_rel'
+            )
+            """
+        )
+        return bool(self.env.cr.fetchone()[0])
+
+    def _ops_run_initial_sync(self):
+        if not self._ops_can_sync_department_links():
+            return
+
+        departments = self.sudo().search([("ops_project_manager_user_id", "!=", False)])
+        if departments:
+            departments._sync_ops_project_manager_user_links()
+
+    def init(self):
+        self._ops_run_initial_sync()
+
+    def _register_hook(self):
+        result = super()._register_hook()
+        self._ops_run_initial_sync()
+        return result
+
     def _sync_ops_project_manager_user_links(self):
         if self.env.context.get("skip_ops_project_department_sync"):
             return
 
-        User = self.env["res.users"].sudo()
-        Department = self.sudo()
+        for department in self.sudo():
+            linked_users = department.ops_project_manager_user_id.sudo()
 
-        for department in Department:
-            linked_users = User.search(
-                [("ops_project_department_id", "=", department.id)]
+            users_with_department = self.env["res.users"].sudo().search(
+                [("ops_project_department_ids", "in", department.id)]
             )
 
-            if not department.ops_project_manager_user_id:
-                if linked_users:
-                    linked_users.with_context(
+            if not linked_users:
+                if users_with_department:
+                    users_with_department.with_context(
                         skip_ops_project_department_sync=True
-                    ).write({"ops_project_department_id": False})
+                    ).write(
+                        {
+                            "ops_project_department_ids": [
+                                fields.Command.unlink(department.id)
+                            ]
+                        }
+                    )
                 continue
 
-            conflicting_departments = Department.search(
-                [
-                    ("id", "!=", department.id),
-                    ("ops_project_manager_user_id", "=", department.ops_project_manager_user_id.id),
-                ]
+            users_to_cleanup = users_with_department.filtered(
+                lambda user: user.id != linked_users.id
             )
-            if conflicting_departments:
-                conflicting_departments.with_context(
+            if users_to_cleanup:
+                users_to_cleanup.with_context(
                     skip_ops_project_department_sync=True
-                ).write({"ops_project_manager_user_id": False})
+                ).write(
+                    {
+                        "ops_project_department_ids": [
+                            fields.Command.unlink(department.id)
+                        ]
+                    }
+                )
 
-            conflicting_users = linked_users.filtered(
-                lambda user: user.id != department.ops_project_manager_user_id.id
-            )
-            if conflicting_users:
-                conflicting_users.with_context(
-                    skip_ops_project_department_sync=True
-                ).write({"ops_project_department_id": False})
-
-            if department.ops_project_manager_user_id.ops_project_department_id.id != department.id:
-                department.ops_project_manager_user_id.with_context(
-                    skip_ops_project_department_sync=True
-                ).write({"ops_project_department_id": department.id})
+            if department not in linked_users.ops_project_department_ids:
+                linked_users.with_context(skip_ops_project_department_sync=True).write(
+                    {
+                        "ops_project_department_ids": [
+                            fields.Command.link(department.id)
+                        ]
+                    }
+                )
 
     @api.model_create_multi
     def create(self, vals_list):

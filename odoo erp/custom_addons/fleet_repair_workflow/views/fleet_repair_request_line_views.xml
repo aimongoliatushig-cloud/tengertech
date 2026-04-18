@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_fleet_repair_request_line_list" model="ir.ui.view">
+        <field name="name">fleet.repair.request.line.list</field>
+        <field name="model">fleet.repair.request.line</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" default_order="sequence, id">
+                <field name="sequence" widget="handle"/>
+                <field name="product_id"/>
+                <field name="name"/>
+                <field name="specification"/>
+                <field name="quantity"/>
+                <field name="uom_name"/>
+                <field name="estimated_unit_price"/>
+                <field name="estimated_subtotal"/>
+                <field name="actual_unit_price"/>
+                <field name="actual_subtotal"/>
+                <field name="is_critical"/>
+                <field name="purchased"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_fleet_repair_request_line_form" model="ir.ui.view">
+        <field name="name">fleet.repair.request.line.form</field>
+        <field name="model">fleet.repair.request.line</field>
+        <field name="arch" type="xml">
+            <form string="Сэлбэгийн мөр">
+                <group>
+                    <group>
+                        <field name="request_id" readonly="1"/>
+                        <field name="sequence"/>
+                        <field name="product_id"/>
+                        <field name="name"/>
+                        <field name="specification"/>
+                    </group>
+                    <group>
+                        <field name="quantity"/>
+                        <field name="uom_name"/>
+                        <field name="estimated_unit_price"/>
+                        <field name="actual_unit_price"/>
+                        <field name="is_critical"/>
+                        <field name="purchased"/>
+                    </group>
+                </group>
+                <group>
+                    <field name="note"/>
+                </group>
+            </form>
+        </field>
+    </record>
+</odoo>

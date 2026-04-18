@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_fleet_repair_request_mechanic_scope" model="ir.rule">
+        <field name="name">Fleet Repair Request: assigned mechanics and team leaders</field>
+        <field name="model_id" ref="model_fleet_repair_request"/>
+        <field name="domain_force">['|', '|', ('mechanic_id', '=', user.id), ('team_leader_id', '=', user.id), ('repair_task_id.user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('fleet_repair_workflow.group_fleet_repair_mechanic')), (4, ref('fleet_repair_workflow.group_fleet_repair_team_leader'))]"/>
+    </record>
+
+    <record id="rule_fleet_repair_request_all_roles" model="ir.rule">
+        <field name="name">Fleet Repair Request: broad visibility</field>
+        <field name="model_id" ref="model_fleet_repair_request"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[
+            (4, ref('fleet_repair_workflow.group_fleet_repair_accounting')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_administration')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_finance')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_purchaser')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_general_manager')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_ceo')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_manager'))
+        ]"/>
+    </record>
+
+    <record id="rule_fleet_repair_request_line_mechanic_scope" model="ir.rule">
+        <field name="name">Fleet Repair Request Line: assigned mechanics and team leaders</field>
+        <field name="model_id" ref="model_fleet_repair_request_line"/>
+        <field name="domain_force">['|', '|', ('request_id.mechanic_id', '=', user.id), ('request_id.team_leader_id', '=', user.id), ('request_id.repair_task_id.user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('fleet_repair_workflow.group_fleet_repair_mechanic')), (4, ref('fleet_repair_workflow.group_fleet_repair_team_leader'))]"/>
+    </record>
+
+    <record id="rule_fleet_repair_request_line_all_roles" model="ir.rule">
+        <field name="name">Fleet Repair Request Line: broad visibility</field>
+        <field name="model_id" ref="model_fleet_repair_request_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[
+            (4, ref('fleet_repair_workflow.group_fleet_repair_accounting')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_administration')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_finance')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_purchaser')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_general_manager')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_ceo')),
+            (4, ref('fleet_repair_workflow.group_fleet_repair_manager'))
+        ]"/>
+    </record>
+</odoo>

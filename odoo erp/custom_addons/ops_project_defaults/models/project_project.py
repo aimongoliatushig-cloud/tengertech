@@ -1,5 +1,6 @@
 from odoo import api, fields, models
 from odoo.fields import Command
+from odoo.exceptions import ValidationError
 
 
 DEFAULT_TASK_STAGES = (
@@ -24,9 +25,12 @@ class ProjectProject(models.Model):
         "ops_project_attachment_rel",
         "project_id",
         "attachment_id",
-        string="Project Attachments",
+        string="Төслийн хавсралтууд",
         bypass_search_access=True,
     )
+    ops_track_quantity = fields.Boolean(string="Төлөвлөсөн хэмжээ ашиглах")
+    ops_planned_quantity = fields.Float(string="Төлөвлөсөн хэмжээ")
+    ops_measurement_unit = fields.Char(string="Хэмжих нэгж")
 
     def _link_ops_attachments(self):
         for project in self:
@@ -71,6 +75,27 @@ class ProjectProject(models.Model):
             if department_user:
                 project.user_id = department_user
 
+    @api.onchange("ops_track_quantity")
+    def _onchange_ops_track_quantity(self):
+        for project in self:
+            if not project.ops_track_quantity:
+                project.ops_planned_quantity = 0
+                project.ops_measurement_unit = False
+
+    @api.constrains(
+        "ops_track_quantity",
+        "ops_planned_quantity",
+        "ops_measurement_unit",
+    )
+    def _check_ops_quantity_configuration(self):
+        for project in self:
+            if not project.ops_track_quantity:
+                continue
+            if project.ops_planned_quantity <= 0:
+                raise ValidationError("Төлөвлөсөн хэмжээ 0-ээс их байх ёстой.")
+            if not (project.ops_measurement_unit or "").strip():
+                raise ValidationError("Хэмжих нэгжээ заавал оруулна уу.")
+
     @api.model
     def _get_ops_department_project_manager(self, department_id):
         if not department_id:
@@ -84,7 +109,7 @@ class ProjectProject(models.Model):
             [
                 ("share", "=", False),
                 ("ops_user_type", "=", "project_manager"),
-                ("ops_project_department_id", "=", department_id),
+                ("ops_project_department_ids", "in", department_id),
             ],
             limit=1,
         )
@@ -100,10 +125,20 @@ class ProjectProject(models.Model):
             vals["user_id"] = department_user.id
         return vals
 
+    @api.model
+    def _ops_normalize_quantity_defaults(self, vals):
+        vals = dict(vals)
+        if vals.get("ops_track_quantity") is False:
+            vals["ops_planned_quantity"] = 0
+            vals["ops_measurement_unit"] = False
+        return vals
+
     @api.model_create_multi
     def create(self, vals_list):
         vals_list = [
-            self._ops_apply_department_manager_defaults(dict(vals))
+            self._ops_normalize_quantity_defaults(
+                self._ops_apply_department_manager_defaults(dict(vals))
+            )
             for vals in vals_list
         ]
         projects = super().create(vals_list)
@@ -112,6 +147,7 @@ class ProjectProject(models.Model):
         return projects
 
     def write(self, vals):
+        vals = self._ops_normalize_quantity_defaults(vals)
         if "ops_department_id" in vals and "user_id" not in vals:
             vals = self._ops_apply_department_manager_defaults(dict(vals))
         result = super().write(vals)
