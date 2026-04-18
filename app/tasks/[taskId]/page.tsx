@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 
+import { AppMenu } from "@/app/_components/app-menu";
 import {
   createTaskReportAction,
   logoutAction,
@@ -7,6 +9,7 @@ import {
   returnTaskForChangesAction,
   submitTaskForReviewAction,
 } from "@/app/actions";
+import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
 import { getRoleLabel, requireSession } from "@/lib/auth";
 import { loadTaskDetail } from "@/lib/workspace";
@@ -31,14 +34,14 @@ function getMessage(value?: string | string[]) {
 function StagePill({ label, bucket }: { label: string; bucket: string }) {
   const tone =
     bucket === "done"
-      ? styles.stageDone
+      ? dashboardStyles.stageDone
       : bucket === "review"
-        ? styles.stageReview
+        ? dashboardStyles.stageReview
         : bucket === "progress"
-          ? styles.stageProgress
-          : styles.stageTodo;
+          ? dashboardStyles.stageProgress
+          : dashboardStyles.stageTodo;
 
-  return <span className={`${styles.stagePill} ${tone}`}>{label}</span>;
+  return <span className={`${dashboardStyles.stagePill} ${tone}`}>{label}</span>;
 }
 
 export default async function TaskDetailPage({ params, searchParams }: PageProps) {
@@ -63,8 +66,8 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
         <div className={styles.container}>
           <header className={styles.navBar}>
             <div className={styles.navLinks}>
-              <Link href="/" className={styles.backLink}>
-                Самбар руу буцах
+              <Link href="/projects" className={styles.backLink}>
+                Төслүүд рүү буцах
               </Link>
             </div>
           </header>
@@ -80,6 +83,8 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
   const canWriteReport =
     !task.reportsLocked &&
     (session.role === "team_leader" || session.role === "system_admin");
+  const canCreateProject =
+    session.role === "general_manager" || session.role === "system_admin";
 
   return (
     <main className={styles.shell}>
@@ -87,7 +92,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
         <header className={styles.navBar}>
           <div className={styles.navLinks}>
             <Link
-              href={task.projectId ? `/projects/${task.projectId}` : "/"}
+              href={task.projectId ? `/projects/${task.projectId}` : "/projects"}
               className={styles.backLink}
             >
               Төсөл рүү буцах
@@ -105,12 +110,14 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           </div>
         </header>
 
+        <AppMenu active="projects" canCreateProject={canCreateProject} />
+
         <section className={styles.heroCard}>
-          <span className={styles.eyebrow}>Task Workspace</span>
+          <span className={styles.eyebrow}>Task workspace</span>
           <h1>{task.name}</h1>
           <p>
-            Энэ дэлгэц дээр тайлан нэмэх, шалгалтад илгээх, дуусгах, засвар нэхэж
-            буцаах зэрэг workflow-ийг web app дотроос удирдана.
+            Энэ дэлгэц дээр тайлан нэмэх, шалгалтад илгээх, дуусгах, засвар
+            нэхэж буцаах зэрэг workflow-ийг web app дотроос удирдана.
           </p>
 
           <div className={styles.statsGrid}>
@@ -161,7 +168,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <section className={styles.panel} id="task-detail">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Task Detail</span>
+                <span className={styles.eyebrow}>Task detail</span>
                 <h2>Ажлын мэдээлэл</h2>
               </div>
               <StagePill label={task.stageLabel} bucket={task.stageBucket} />
@@ -221,10 +228,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
             ) : null}
           </section>
 
-          <aside
-            className={`${styles.formCard} ${styles.stickyAside}`}
-            id="workflow"
-          >
+          <aside className={`${styles.formCard} ${styles.stickyAside}`} id="workflow">
             <div className={styles.sectionHeader}>
               <div>
                 <span className={styles.eyebrow}>Workflow</span>
@@ -272,7 +276,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
               {!task.canSubmitForReview &&
               !task.canMarkDone &&
               !task.canReturnForChanges ? (
-                <p>Энэ task дээр одоогоор таны role-д тохирсон workflow action алга.</p>
+                <p>Энэ task дээр одоогоор танай role-д тохирсон workflow action алга.</p>
               ) : null}
             </div>
           </aside>
@@ -282,12 +286,12 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <section className={styles.panel} id="reports">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Field Reports</span>
+                <span className={styles.eyebrow}>Field reports</span>
                 <h2>Тайлангийн урсгал</h2>
               </div>
               <p>
                 Зураг, аудио upload-ийг дараагийн шатанд нэмнэ. Одоогоор текст ба
-                хэмжээнй тайлан орно.
+                хэмжээн дээр суурилсан тайлан оруулж байна.
               </p>
             </div>
 
@@ -304,11 +308,48 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                         {report.quantity} {task.measurementUnit}
                       </strong>
                     </div>
-                    <p>{report.summary}</p>
+                    <p className={styles.reportSummaryText}>{report.summary}</p>
                     <div className={styles.chipRow}>
                       <span className={styles.chip}>{report.imageCount} зураг</span>
                       <span className={styles.chip}>{report.audioCount} аудио</span>
                     </div>
+                    {report.images.length ? (
+                      <div className={dashboardStyles.reportImageGrid}>
+                        {report.images.map((image) => (
+                          <a
+                            key={image.id}
+                            href={image.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={dashboardStyles.reportImageLink}
+                          >
+                            <Image
+                              src={image.url}
+                              alt={`${task.name} - ${image.name}`}
+                              className={dashboardStyles.reportImage}
+                              width={320}
+                              height={240}
+                              unoptimized
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+                    {report.audios.length ? (
+                      <div className={dashboardStyles.reportAudioList}>
+                        {report.audios.map((audio) => (
+                          <div key={audio.id} className={dashboardStyles.reportAudioCard}>
+                            <strong>{audio.name}</strong>
+                            <audio
+                              controls
+                              preload="none"
+                              src={audio.url}
+                              className={dashboardStyles.reportAudioPlayer}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -320,13 +361,10 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
             )}
           </section>
 
-          <aside
-            className={`${styles.formCard} ${styles.stickyAside}`}
-            id="report-form"
-          >
+          <aside className={`${styles.formCard} ${styles.stickyAside}`} id="report-form">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Add Report</span>
+                <span className={styles.eyebrow}>Add report</span>
                 <h2>Шинэ тайлан</h2>
               </div>
             </div>
@@ -334,7 +372,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
             {!canWriteReport ? (
               <p>
                 Тайлан нэмэх form нь одоогоор багийн ахлагч дээр, мөн түгжигдээгүй
-                task дээр нээлттэй.
+                task дээр нээлттэй байна.
               </p>
             ) : (
               <form action={createTaskReportAction} className={styles.form}>

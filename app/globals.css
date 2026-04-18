@@ -1,12 +1,24 @@
 :root {
   --ink-900: #17212b;
-  --ink-700: #49596b;
-  --ink-600: #657285;
-  --tone-amber: #dfb547;
-  --tone-teal: #157a71;
+  --ink-700: #4d5d52;
+  --ink-600: #6a7a6e;
+  --tone-amber: #8fbd86;
+  --tone-teal: #2f7f46;
   --tone-red: #b64f3d;
-  --tone-blue: #2d70c2;
-  --tone-slate: #4c5f70;
+  --tone-blue: #4f945f;
+  --tone-slate: #5f7563;
+  --brand-900: #1f5f31;
+  --brand-800: #2c7740;
+  --brand-700: #4a9a5d;
+  --brand-500: #7ab785;
+  --brand-200: #dcefd9;
+  --brand-100: #eef7ed;
+  --surface-page: #f4faf2;
+  --surface-shell: #e7f0e4;
+  --surface-panel: rgba(255, 255, 255, 0.88);
+  --surface-panel-soft: rgba(247, 252, 246, 0.9);
+  --line-soft: rgba(31, 95, 49, 0.12);
+  --shadow-soft: rgba(31, 95, 49, 0.08);
 }
 
 html {
@@ -22,6 +34,7 @@ body {
 body {
   min-height: 100vh;
   color: var(--ink-900);
+  background: var(--surface-page);
   font-family: var(--font-body), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -34,7 +47,7 @@ body {
 }
 
 *::selection {
-  background: rgba(223, 181, 71, 0.24);
+  background: rgba(122, 183, 133, 0.28);
 }
 
 a {

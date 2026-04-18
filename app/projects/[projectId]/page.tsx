@@ -1,6 +1,8 @@
 import Link from "next/link";
 
+import { AppMenu } from "@/app/_components/app-menu";
 import { createTaskAction, logoutAction } from "@/app/actions";
+import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
 import { getRoleLabel, requireSession } from "@/lib/auth";
 import { loadProjectDetail } from "@/lib/workspace";
@@ -25,14 +27,14 @@ function getMessage(value?: string | string[]) {
 function StagePill({ label, bucket }: { label: string; bucket: string }) {
   const tone =
     bucket === "done"
-      ? styles.stageDone
+      ? dashboardStyles.stageDone
       : bucket === "review"
-        ? styles.stageReview
+        ? dashboardStyles.stageReview
         : bucket === "progress"
-          ? styles.stageProgress
-          : styles.stageTodo;
+          ? dashboardStyles.stageProgress
+          : dashboardStyles.stageTodo;
 
-  return <span className={`${styles.stagePill} ${tone}`}>{label}</span>;
+  return <span className={`${dashboardStyles.stagePill} ${tone}`}>{label}</span>;
 }
 
 export default async function ProjectDetailPage({ params, searchParams }: PageProps) {
@@ -57,8 +59,8 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
         <div className={styles.container}>
           <header className={styles.navBar}>
             <div className={styles.navLinks}>
-              <Link href="/" className={styles.backLink}>
-                Самбар руу буцах
+              <Link href="/projects" className={styles.backLink}>
+                Төслүүд рүү буцах
               </Link>
             </div>
           </header>
@@ -76,22 +78,27 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
     session.role === "system_admin" ||
     session.role === "project_manager";
 
+  const canCreateProject =
+    session.role === "general_manager" || session.role === "system_admin";
+
   return (
     <main className={styles.shell}>
       <div className={styles.container} id="project-top">
         <header className={styles.navBar}>
           <div className={styles.navLinks}>
-            <Link href="/" className={styles.backLink}>
-              Самбар руу буцах
+            <Link href="/projects" className={styles.backLink}>
+              Төслүүд рүү буцах
             </Link>
             <span>{project.name}</span>
             <span>{getRoleLabel(session.role)}</span>
           </div>
 
           <div className={styles.navActions}>
-            <Link href="/projects/new" className={styles.smallLink}>
-              Шинэ төсөл
-            </Link>
+            {canCreateProject ? (
+              <Link href="/projects/new" className={styles.smallLink}>
+                Шинэ төсөл
+              </Link>
+            ) : null}
             <form action={logoutAction}>
               <button type="submit" className={styles.secondaryButton}>
                 Гарах
@@ -100,12 +107,14 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           </div>
         </header>
 
+        <AppMenu active="projects" canCreateProject={canCreateProject} />
+
         <section className={styles.heroCard}>
-          <span className={styles.eyebrow}>Project Workspace</span>
+          <span className={styles.eyebrow}>Төслийн workspace</span>
           <h1>{project.name}</h1>
           <p>
             Энэ дэлгэцээс төслийн task-уудыг хянаж, шинэ task үүсгээд, дараагийн
-            алхамд task detail рүү орж workflow-ийг web app дотроосоо удирдана.
+            алхамд task detail рүү орж workflow-ийг web app дотроос удирдана.
           </p>
 
           <div className={styles.statsGrid}>
@@ -138,7 +147,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             </a>
           ) : null}
           <a href="#project-top" className={styles.jumpLink}>
-            Дээш буцах
+            Дээш
           </a>
         </nav>
 
@@ -153,11 +162,12 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           <section className={styles.panel} id="task-list">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Task Board</span>
+                <span className={styles.eyebrow}>Task board</span>
                 <h2>Төслийн task-ууд</h2>
               </div>
               <p>
-                Доорх task дээр дарж status, тайлан, гүйцэтгэлийг web app-аас удирдана.
+                Доорх task дээр дарж тайлан, үе шат, шалгалтын урсгалыг app
+                дотроос удирдана.
               </p>
             </div>
 
@@ -195,13 +205,10 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             )}
           </section>
 
-          <aside
-            className={`${styles.formCard} ${styles.stickyAside}`}
-            id="task-create"
-          >
+          <aside className={`${styles.formCard} ${styles.stickyAside}`} id="task-create">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Task Create</span>
+                <span className={styles.eyebrow}>Task create</span>
                 <h2>Шинэ task</h2>
               </div>
             </div>
@@ -247,6 +254,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                       placeholder="48"
                     />
                   </div>
+
                   <div className={styles.field}>
                     <label htmlFor="measurement_unit">Хэмжих нэгж</label>
                     <input
