@@ -4,14 +4,15 @@ import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
 import { DataDownloadClient } from "@/app/data-download/data-download-client";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function DataDownloadPage() {
   const session = await requireSession();
-  const canCreateProject =
-    session.role === "general_manager" || session.role === "system_admin";
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
 
   return (
     <main className={styles.shell}>
@@ -38,14 +39,19 @@ export default async function DataDownloadPage() {
           </div>
         </header>
 
-        <AppMenu active="data-download" canCreateProject={canCreateProject} />
+        <AppMenu
+          active="data-download"
+          canCreateProject={canCreateProject}
+          canViewQualityCenter={canViewQualityCenter}
+          canUseFieldConsole={canUseFieldConsole}
+        />
 
         <section className={styles.heroCard}>
-          <span className={styles.eyebrow}>Дата татах</span>
+          <span className={styles.eyebrow}>Өгөгдөл татах</span>
           <h1>WRS-ээс өдрийн тайлан татах</h1>
           <p>
-            Нэг өдрийн огноо сонгоод `Data татах` товч дарахад WRS тайлан автоматаар
-            нээгдэж, логин хийгээд, гарсан тайлан нь HTML preview байдлаар энэ дэлгэцэн дээр
+            Нэг өдрийн огноо сонгоод `Өгөгдөл татах` товч дарахад WRS тайлан автоматаар
+            нээгдэж, логин хийгээд, гарсан тайлан нь HTML дүрслэл байдлаар энэ дэлгэцэн дээр
             харагдана.
           </p>
         </section>

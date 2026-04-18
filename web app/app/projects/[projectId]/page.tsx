@@ -4,7 +4,7 @@ import { AppMenu } from "@/app/_components/app-menu";
 import { createTaskAction, logoutAction } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 import { loadProjectDetail } from "@/lib/workspace";
 
 type PageProps = {
@@ -73,13 +73,10 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
     );
   }
 
-  const canCreateTask =
-    session.role === "general_manager" ||
-    session.role === "system_admin" ||
-    session.role === "project_manager";
-
-  const canCreateProject =
-    session.role === "general_manager" || session.role === "system_admin";
+  const canCreateTask = hasCapability(session, "create_tasks");
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
 
   return (
     <main className={styles.shell}>
@@ -107,14 +104,19 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           </div>
         </header>
 
-        <AppMenu active="projects" canCreateProject={canCreateProject} />
+        <AppMenu
+          active="projects"
+          canCreateProject={canCreateProject}
+          canViewQualityCenter={canViewQualityCenter}
+          canUseFieldConsole={canUseFieldConsole}
+        />
 
         <section className={styles.heroCard}>
-          <span className={styles.eyebrow}>Төслийн workspace</span>
+          <span className={styles.eyebrow}>Төслийн ажлын орчин</span>
           <h1>{project.name}</h1>
           <p>
-            Энэ дэлгэцээс төслийн task-уудыг хянаж, шинэ task үүсгээд, дараагийн
-            алхамд task detail рүү орж workflow-ийг web app дотроос удирдана.
+            Энэ дэлгэцээс төслийн ажлуудыг хянаж, шинэ ажил үүсгээд, дараагийн алхамд
+            ажлын дэлгэрэнгүй рүү орж шатны урсгалыг веб апп дотроос удирдана.
           </p>
 
           <div className={styles.statsGrid}>
@@ -127,7 +129,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
               <strong>{project.managerName}</strong>
             </article>
             <article className={styles.statCard}>
-              <span>Нийт task</span>
+              <span>Нийт ажил</span>
               <strong>{project.taskCount}</strong>
             </article>
             <article className={styles.statCard}>
@@ -137,13 +139,13 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           </div>
         </section>
 
-        <nav className={styles.jumpRail} aria-label="Project quick navigation">
+        <nav className={styles.jumpRail} aria-label="Төслийн хуудасны шуурхай цэс">
           <a href="#task-list" className={styles.jumpLink}>
-            Task жагсаалт
+            Ажлын жагсаалт
           </a>
           {canCreateTask ? (
             <a href="#task-create" className={styles.jumpLink}>
-              Шинэ task
+              Шинэ ажил
             </a>
           ) : null}
           <a href="#project-top" className={styles.jumpLink}>
@@ -162,11 +164,11 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           <section className={styles.panel} id="task-list">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Task board</span>
-                <h2>Төслийн task-ууд</h2>
+                <span className={styles.eyebrow}>Ажлын самбар</span>
+                <h2>Төслийн ажлууд</h2>
               </div>
               <p>
-                Доорх task дээр дарж тайлан, үе шат, шалгалтын урсгалыг app
+                Доорх ажил дээр дарж тайлан, үе шат, шалгалтын урсгалыг апп
                 дотроос удирдана.
               </p>
             </div>
@@ -188,7 +190,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                         Хэмжээ: {task.completedQuantity}/{task.plannedQuantity}{" "}
                         {task.measurementUnit}
                       </span>
-                      <span>Deadline: {task.deadline}</span>
+                      <span>Хугацаа: {task.deadline}</span>
                     </div>
 
                     <div className={styles.progressTrack}>
@@ -199,8 +201,8 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
               </div>
             ) : (
               <div className={styles.emptyState}>
-                <h2>Task алга</h2>
-                <p>Энэ төсөл дээр одоогоор task бүртгэгдээгүй байна.</p>
+                <h2>Ажил алга</h2>
+                <p>Энэ төсөл дээр одоогоор ажил бүртгэгдээгүй байна.</p>
               </div>
             )}
           </section>
@@ -208,19 +210,19 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           <aside className={`${styles.formCard} ${styles.stickyAside}`} id="task-create">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Task create</span>
-                <h2>Шинэ task</h2>
+                <span className={styles.eyebrow}>Ажил нэмэх</span>
+                <h2>Шинэ ажил</h2>
               </div>
             </div>
 
             {!canCreateTask ? (
-              <p>Энэ role дээр шинэ task үүсгэх form харагдахгүй.</p>
+              <p>Энэ эрх дээр шинэ ажил үүсгэх маягт харагдахгүй.</p>
             ) : (
               <form action={createTaskAction} className={styles.form}>
                 <input type="hidden" name="project_id" value={project.id} />
 
                 <div className={styles.field}>
-                  <label htmlFor="name">Task нэр</label>
+                  <label htmlFor="name">Ажлын нэр</label>
                   <input
                     id="name"
                     name="name"
@@ -267,7 +269,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                 </div>
 
                 <div className={styles.field}>
-                  <label htmlFor="deadline">Deadline</label>
+                  <label htmlFor="deadline">Хугацаа</label>
                   <input
                     id="deadline"
                     name="deadline"
@@ -287,7 +289,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
 
                 <div className={styles.buttonRow}>
                   <button type="submit" className={styles.primaryButton}>
-                    Task үүсгэх
+                    Ажил үүсгэх
                   </button>
                 </div>
               </form>
@@ -295,9 +297,9 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           </aside>
         </section>
 
-        <nav className={styles.mobileDock} aria-label="Project mobile quick navigation">
+        <nav className={styles.mobileDock} aria-label="Төслийн гар утасны шуурхай цэс">
           <a href="#task-list" className={styles.jumpLink}>
-            Task
+            Ажил
           </a>
           {canCreateTask ? (
             <a href="#task-create" className={styles.jumpLink}>

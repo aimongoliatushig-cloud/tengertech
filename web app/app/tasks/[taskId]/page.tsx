@@ -11,7 +11,7 @@ import {
 } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 import { loadTaskDetail } from "@/lib/workspace";
 
 type PageProps = {
@@ -21,6 +21,7 @@ type PageProps = {
   searchParams?: Promise<{
     error?: string | string[];
     notice?: string | string[];
+    returnTo?: string | string[];
   }>;
 };
 
@@ -51,6 +52,11 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
   const query = (await searchParams) ?? {};
   const errorMessage = getMessage(query.error);
   const noticeMessage = getMessage(query.notice);
+  const returnTo = getMessage(query.returnTo);
+  const safeReturnTo = returnTo.startsWith("/") ? returnTo : "";
+  const useExecutiveLayout = safeReturnTo.startsWith("/tasks");
+  const backHref = safeReturnTo || "/projects";
+  const backLabel = useExecutiveLayout ? "Өнөөдрийн ажил руу буцах" : "Төслүүд рүү буцах";
 
   let task;
   try {
@@ -66,13 +72,13 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
         <div className={styles.container}>
           <header className={styles.navBar}>
             <div className={styles.navLinks}>
-              <Link href="/projects" className={styles.backLink}>
-                Төслүүд рүү буцах
+              <Link href={backHref} className={styles.backLink}>
+                {backLabel}
               </Link>
             </div>
           </header>
           <section className={styles.emptyState}>
-            <h2>Task нээгдсэнгүй</h2>
+            <h2>Ажил нээгдсэнгүй</h2>
             <p>{message}</p>
           </section>
         </div>
@@ -81,21 +87,20 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
   }
 
   const canWriteReport =
-    !task.reportsLocked &&
-    (session.role === "team_leader" || session.role === "system_admin");
-  const canCreateProject =
-    session.role === "general_manager" || session.role === "system_admin";
+    !task.reportsLocked && hasCapability(session, "write_workspace_reports");
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
+  const taskBackHref = safeReturnTo || (task.projectId ? `/projects/${task.projectId}` : "/projects");
+  const taskBackLabel = useExecutiveLayout ? "Өнөөдрийн ажил руу буцах" : "Төсөл рүү буцах";
 
   return (
     <main className={styles.shell}>
       <div className={styles.container} id="task-top">
         <header className={styles.navBar}>
           <div className={styles.navLinks}>
-            <Link
-              href={task.projectId ? `/projects/${task.projectId}` : "/projects"}
-              className={styles.backLink}
-            >
-              Төсөл рүү буцах
+            <Link href={taskBackHref} className={styles.backLink}>
+              {taskBackLabel}
             </Link>
             <span>{task.projectName}</span>
             <span>{getRoleLabel(session.role)}</span>
@@ -110,14 +115,20 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           </div>
         </header>
 
-        <AppMenu active="projects" canCreateProject={canCreateProject} />
+        <AppMenu
+          active={useExecutiveLayout ? "tasks" : "projects"}
+          variant={useExecutiveLayout ? "executive" : "default"}
+          canCreateProject={canCreateProject}
+          canViewQualityCenter={canViewQualityCenter}
+          canUseFieldConsole={canUseFieldConsole}
+        />
 
         <section className={styles.heroCard}>
-          <span className={styles.eyebrow}>Task workspace</span>
+          <span className={styles.eyebrow}>Ажлын орчин</span>
           <h1>{task.name}</h1>
           <p>
-            Энэ дэлгэц дээр тайлан нэмэх, шалгалтад илгээх, дуусгах, засвар
-            нэхэж буцаах зэрэг workflow-ийг web app дотроос удирдана.
+            Энэ дэлгэц дээр тайлан нэмэх, шалгалтад илгээх, дуусгах, засвар нэхэж
+            буцаах зэрэг шатны урсгалыг веб апп дотроос удирдана.
           </p>
 
           <div className={styles.statsGrid}>
@@ -130,17 +141,17 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
               <strong>{task.progress}%</strong>
             </article>
             <article className={styles.statCard}>
-              <span>Deadline</span>
+              <span>Хугацаа</span>
               <strong>{task.deadline}</strong>
             </article>
             <article className={styles.statCard}>
-              <span>Priority</span>
+              <span>Эрэмбэ</span>
               <strong>{task.priorityLabel}</strong>
             </article>
           </div>
         </section>
 
-        <nav className={styles.jumpRail} aria-label="Task quick navigation">
+        <nav className={styles.jumpRail} aria-label="Ажлын хуудасны шуурхай цэс">
           <a href="#task-detail" className={styles.jumpLink}>
             Дэлгэрэнгүй
           </a>
@@ -168,7 +179,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <section className={styles.panel} id="task-detail">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Task detail</span>
+                <span className={styles.eyebrow}>Ажлын дэлгэрэнгүй</span>
                 <h2>Ажлын мэдээлэл</h2>
               </div>
               <StagePill label={task.stageLabel} bucket={task.stageBucket} />
@@ -203,8 +214,8 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
 
             <div className={styles.sectionHeader} style={{ marginTop: 20 }}>
               <div>
-                <span className={styles.eyebrow}>Assignees</span>
-                <h2>Хариуцсан хүмүүс</h2>
+                  <span className={styles.eyebrow}>Хуваарилагдсан хүмүүс</span>
+                  <h2>Хариуцсан хүмүүс</h2>
               </div>
             </div>
             <div className={styles.chipRow}>
@@ -219,7 +230,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
               <>
                 <div className={styles.sectionHeader} style={{ marginTop: 20 }}>
                   <div>
-                    <span className={styles.eyebrow}>Description</span>
+                    <span className={styles.eyebrow}>Тайлбар</span>
                     <h2>Тайлбар</h2>
                   </div>
                 </div>
@@ -231,7 +242,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <aside className={`${styles.formCard} ${styles.stickyAside}`} id="workflow">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Workflow</span>
+                <span className={styles.eyebrow}>Шатны үйлдэл</span>
                 <h2>Үйлдлүүд</h2>
               </div>
             </div>
@@ -276,7 +287,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
               {!task.canSubmitForReview &&
               !task.canMarkDone &&
               !task.canReturnForChanges ? (
-                <p>Энэ task дээр одоогоор танай role-д тохирсон workflow action алга.</p>
+                <p>Энэ ажил дээр одоогоор танай эрхэд тохирсон үйлдэл алга.</p>
               ) : null}
             </div>
           </aside>
@@ -286,11 +297,11 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <section className={styles.panel} id="reports">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Field reports</span>
+                <span className={styles.eyebrow}>Талбарын тайлан</span>
                 <h2>Тайлангийн урсгал</h2>
               </div>
               <p>
-                Зураг, аудио upload-ийг дараагийн шатанд нэмнэ. Одоогоор текст ба
+                Зураг, аудио оруулах боломжийг дараагийн шатанд нэмнэ. Одоогоор текст ба
                 хэмжээн дээр суурилсан тайлан оруулж байна.
               </p>
             </div>
@@ -356,7 +367,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
             ) : (
               <div className={styles.emptyState}>
                 <h2>Тайлан алга</h2>
-                <p>Энэ task дээр одоогоор тайлан бүртгэгдээгүй байна.</p>
+                <p>Энэ ажил дээр одоогоор тайлан бүртгэгдээгүй байна.</p>
               </div>
             )}
           </section>
@@ -364,15 +375,15 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <aside className={`${styles.formCard} ${styles.stickyAside}`} id="report-form">
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>Add report</span>
+                <span className={styles.eyebrow}>Тайлан нэмэх</span>
                 <h2>Шинэ тайлан</h2>
               </div>
             </div>
 
             {!canWriteReport ? (
               <p>
-                Тайлан нэмэх form нь одоогоор багийн ахлагч дээр, мөн түгжигдээгүй
-                task дээр нээлттэй байна.
+                Тайлан нэмэх маягт нь одоогоор багийн ахлагч дээр, мөн түгжигдээгүй
+                ажил дээр нээлттэй байна.
               </p>
             ) : (
               <form action={createTaskReportAction} className={styles.form}>
@@ -411,7 +422,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           </aside>
         </section>
 
-        <nav className={styles.mobileDock} aria-label="Task mobile quick navigation">
+        <nav className={styles.mobileDock} aria-label="Ажлын гар утасны шуурхай цэс">
           <a href="#workflow" className={styles.jumpLink}>
             Үйлдэл
           </a>

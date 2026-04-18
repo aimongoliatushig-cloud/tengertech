@@ -6,4 +6,5 @@ from . import mfo_planning
 from . import mfo_daily_weight_total
 from . import project_project
 from . import project_task
+from . import project_task_quality
 from . import project_task_type

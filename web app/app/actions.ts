@@ -61,6 +61,7 @@ function revalidateFieldPaths(taskId?: number) {
   revalidatePath("/projects");
   revalidatePath("/review");
   revalidatePath("/reports");
+  revalidatePath("/quality");
   revalidatePath("/field");
   if (taskId) {
     revalidatePath(`/tasks/${taskId}`);
@@ -179,7 +180,7 @@ export async function createTaskAction(formData: FormData) {
     redirectWithMessage(
       `/projects/${projectId || ""}`,
       "error",
-      "Task үүсгэхэд шаардлагатай талбар дутуу байна.",
+      "Ажил үүсгэхэд шаардлагатай талбар дутуу байна.",
     );
   }
 
@@ -203,7 +204,7 @@ export async function createTaskAction(formData: FormData) {
     revalidatePath("/review");
     revalidatePath("/reports");
     revalidatePath(`/projects/${projectId}`);
-    redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Шинэ task амжилттай үүслээ.")}`);
+    redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Шинэ ажил амжилттай үүслээ.")}`);
   } catch (error) {
     redirectWithMessage(`/projects/${projectId}`, "error", getErrorMessage(error));
   }

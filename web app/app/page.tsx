@@ -4,13 +4,24 @@ import Link from "next/link";
 import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
 import { getRoleLabel, requireSession } from "@/lib/auth";
-import { loadMunicipalSnapshot } from "@/lib/odoo";
+import { loadGarbageExecutiveSnapshot } from "@/lib/garbage-executive";
 
 import styles from "./page.module.css";
 
-export const dynamic = "force-dynamic";
+type PageProps = {
+  searchParams?: Promise<{
+    date?: string | string[];
+  }>;
+};
 
-function MetricCard({
+function getParam(value?: string | string[]) {
+  if (Array.isArray(value)) {
+    return value[0] ?? "";
+  }
+  return value ?? "";
+}
+
+function KpiCard({
   label,
   value,
   note,
@@ -19,254 +30,335 @@ function MetricCard({
   label: string;
   value: string;
   note: string;
-  tone: "amber" | "teal" | "red" | "slate";
+  tone: "normal" | "warning" | "critical" | "weight";
 }) {
   return (
-    <article className={`${styles.metricCard} ${styles[`tone${tone}`]}`}>
-      <p>{label}</p>
-      <strong>{value}</strong>
-      <span>{note}</span>
+    <article className={`${styles.executiveKpiCard} ${styles[`kpi${tone}`]}`}>
+      <span className={styles.executiveKpiLabel}>{label}</span>
+      <strong className={styles.executiveKpiValue}>{value}</strong>
+      <p className={styles.executiveKpiNote}>{note}</p>
     </article>
   );
 }
 
-export default async function Home() {
+function StatusBadge({
+  statusKey,
+  statusLabel,
+}: {
+  statusKey: "planned" | "working" | "review" | "verified" | "problem";
+  statusLabel: string;
+}) {
+  return (
+    <span className={`${styles.statusBadge} ${styles[`status${statusKey}`]}`}>
+      {statusLabel}
+    </span>
+  );
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function Home({ searchParams }: PageProps) {
   const session = await requireSession();
-  const snapshot = await loadMunicipalSnapshot({
-    login: session.login,
-    password: session.password,
-  });
-  const canCreateProject =
-    session.role === "general_manager" || session.role === "system_admin";
+  const params = (await searchParams) ?? {};
+  const selectedDate = getParam(params.date);
+
+  const snapshot = await loadGarbageExecutiveSnapshot(
+    {
+      login: session.login,
+      password: session.password,
+    },
+    selectedDate,
+  );
 
   return (
     <main className={styles.shell}>
-      <header className={styles.topbar}>
-        <div className={styles.brandBlock}>
-          <div className={styles.brandMark}>
+      <header className={styles.executiveHeader}>
+        <div className={styles.executiveBrand}>
+          <div className={styles.executiveBrandMark}>
             <Image
               src="/logo.png"
-              alt="Хан-Уул дүүргийн тохижилт үйлчилгээний төв онөаатүг лого"
-              width={180}
-              height={60}
+              alt="Хот тохижилтын удирдлагын төвийн лого"
+              width={164}
+              height={56}
               className={styles.brandLogo}
               priority
               unoptimized
             />
           </div>
-          <div>
-            <p className={styles.kicker}>Municipal Operations Platform</p>
-            <h1>Хот тохижилтын удирдлагын төв</h1>
+
+          <div className={styles.executiveTitleBlock}>
+            <span className={styles.executiveKicker}>Хог тээвэрлэлт</span>
+            <h1>Хог тээвэрлэлт - Ерөнхий хяналт</h1>
+            <p>
+              Өнөөдрийн хог тээвэрлэлтийн явц, анхаарах асуудал, баталгаажсан
+              жингийн мэдээлэл
+            </p>
           </div>
         </div>
 
-        <div className={styles.topbarActions}>
-          <div className={styles.userPanel}>
-            <span>{getRoleLabel(session.role)}</span>
-            <strong>{session.name}</strong>
-            <small>{session.login}</small>
-          </div>
-
-          <form action={logoutAction}>
-            <button type="submit" className={styles.logoutButton}>
-              Гарах
-            </button>
+        <div className={styles.executiveHeaderAside}>
+          <form className={styles.dateFilterForm} method="get">
+            <label htmlFor="dashboard-date" className={styles.dateFilterLabel}>
+              Огноо
+            </label>
+            <div className={styles.dateFilterRow}>
+              <input
+                id="dashboard-date"
+                name="date"
+                type="date"
+                defaultValue={snapshot.selectedDateInput}
+                className={styles.dateFilterInput}
+              />
+              <button type="submit" className={styles.dateFilterButton}>
+                Харах
+              </button>
+            </div>
           </form>
+
+          <div className={styles.executiveMeta}>
+            <Link
+              href="#alerts-section"
+              className={styles.notificationButton}
+              aria-label="Анхаарах асуудал руу очих"
+            >
+              <span aria-hidden>🔔</span>
+              <strong>{snapshot.notificationCount}</strong>
+            </Link>
+
+            <div className={styles.executiveUserCard}>
+              <span>{getRoleLabel(session.role)}</span>
+              <strong>{session.name}</strong>
+              <small>Сүүлд шинэчлэгдсэн: {snapshot.generatedAtLabel}</small>
+            </div>
+
+            <form action={logoutAction}>
+              <button type="submit" className={styles.logoutButton}>
+                Гарах
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
-      <AppMenu active="dashboard" canCreateProject={canCreateProject} />
+      <AppMenu active="dashboard" variant="executive" />
 
-      <section className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <span className={styles.eyebrow}>
-            {snapshot.source === "live" ? "Live Odoo Sync" : "Demo Fallback"}
-          </span>
-          <h2>Хяналтын самбар</h2>
-          <p>
-            Энэ нүүр дээр зөвхөн ерөнхий dashboard харагдана. Төсөл нэмэх, төсөл
-            хянах, шалгах ажлууд, тайлан харах үйлдлүүдийг дээд menu-гээс тус тусад нь нээнэ.
-          </p>
-          <div className={styles.heroActions}>
-            <Link className={styles.primaryAction} href="/projects">
-              Төсөл хянах
-            </Link>
-            <Link className={styles.secondaryAction} href="/review">
-              Шалгах ажлууд
-            </Link>
-            {canCreateProject ? (
-              <Link className={styles.secondaryAction} href="/projects/new">
-                Төсөл нэмэх
-              </Link>
-            ) : null}
-            <Link className={styles.secondaryAction} href="/reports">
-              Тайлан харах
-            </Link>
-          </div>
+      <section className={styles.compactSummaryStrip}>
+        <div>
+          <span className={styles.summaryLabel}>Сонгосон огноо</span>
+          <strong>{snapshot.selectedDateLabel}</strong>
         </div>
-
-        <aside className={styles.syncPanel}>
-          <div className={styles.syncTopline}>
-            <span className={styles.syncDot} />
-            <p>Сүүлд шинэчилсэн</p>
-          </div>
-          <strong>{snapshot.generatedAt}</strong>
-          <ul className={styles.syncFacts}>
-            <li>
-              <span>Эх үүсвэр</span>
-              <b>{snapshot.source === "live" ? "Odoo 19 JSON-RPC" : "Demo snapshot"}</b>
-            </li>
-            <li>
-              <span>Нийт task</span>
-              <b>{snapshot.totalTasks}</b>
-            </li>
-            <li>
-              <span>Алба нэгж</span>
-              <b>{snapshot.departments.length}</b>
-            </li>
-          </ul>
-        </aside>
+        <div>
+          <span className={styles.summaryLabel}>Жингийн тайлан</span>
+          <strong>{snapshot.previousDateLabel}</strong>
+        </div>
+        <div>
+          <span className={styles.summaryLabel}>Жингийн шинэчлэл</span>
+          <strong>Шөнийн таталтаар орно</strong>
+        </div>
       </section>
 
-      <section className={styles.metricsGrid}>
-        {snapshot.metrics.map((metric) => (
-          <MetricCard key={metric.label} {...metric} />
+      <section className={styles.executiveKpiGrid}>
+        {snapshot.kpis.map((card) => (
+          <KpiCard key={card.label} {...card} />
         ))}
       </section>
 
-      <section className={styles.dualGrid}>
-        <section className={styles.panel}>
-          <div className={styles.sectionHeader}>
+      <section className={styles.executiveSignalGrid}>
+        <section className={styles.executivePanel} id="alerts-section">
+          <div className={styles.executiveSectionHeader}>
             <div>
-              <span className={styles.kicker}>Шуурхай цэс</span>
-              <h2>Үндсэн үйлдлүүд</h2>
-              <small className={styles.sectionNote}>
-                Дэлгэрэнгүй жагсаалтууд menu-гийн тусдаа хуудсанд байна
-              </small>
+              <span className={styles.executiveSectionKicker}>Анхаарах хэсэг</span>
+              <h2>Анхаарах асуудал</h2>
             </div>
           </div>
 
-          <div className={styles.quickActions}>
-            <Link href="/projects" className={styles.quickAction}>
-              <strong>{snapshot.projects.length}</strong>
-              <span>Төслүүдийн хяналтын самбар</span>
-            </Link>
-            <Link href="/review" className={styles.quickAction}>
-              <strong>{snapshot.reviewQueue.length}</strong>
-              <span>Шалгалт хүлээж буй ажил</span>
-            </Link>
-            <Link href="/reports" className={styles.quickAction}>
-              <strong>{snapshot.reports.length}</strong>
-              <span>Тайлангийн урсгал</span>
-            </Link>
-            {canCreateProject ? (
-              <Link href="/projects/new" className={styles.quickAction}>
-                <strong>+</strong>
-                <span>Шинэ төсөл бүртгэх</span>
-              </Link>
-            ) : (
-              <Link href="/projects" className={styles.quickAction}>
-                <strong>{snapshot.liveTasks.length}</strong>
-                <span>Явагдаж буй task харах</span>
-              </Link>
-            )}
+          {snapshot.alerts.length ? (
+            <div className={styles.alertList}>
+              {snapshot.alerts.map((alert) => (
+                <Link key={alert.id} href={alert.href} className={styles.alertItem}>
+                  <div className={styles.alertHeading}>
+                    <span
+                      className={`${styles.severityBadge} ${
+                        alert.severity === "red"
+                          ? styles.severityRed
+                          : styles.severityAmber
+                      }`}
+                    >
+                      {alert.severityLabel}
+                    </span>
+                    <strong>{alert.title}</strong>
+                  </div>
+                  <p>{alert.note}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyStateBox}>
+              Одоогоор анхаарах асуудал бүртгэгдээгүй байна.
+            </div>
+          )}
+        </section>
+
+        <aside className={`${styles.executivePanel} ${styles.signalPanel}`}>
+          <div className={styles.executiveSectionHeader}>
+            <div>
+              <span className={styles.executiveSectionKicker}>Шуурхай дохио</span>
+              <h2>Шуурхай төлөв</h2>
+            </div>
+          </div>
+
+          <div className={styles.signalList}>
+            {snapshot.signals.map((item) => (
+              <article key={item.label} className={styles.signalItem}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+                <small>{item.note}</small>
+              </article>
+            ))}
+          </div>
+        </aside>
+      </section>
+
+      <section className={styles.executivePanel}>
+        <div className={styles.executiveSectionHeader}>
+          <div>
+            <span className={styles.executiveSectionKicker}>Өнөөдрийн урсгал</span>
+            <h2>Өнөөдрийн ажил</h2>
+          </div>
+          <Link
+            href={`/tasks?date=${encodeURIComponent(snapshot.selectedDateInput)}`}
+            className={styles.inlineLink}
+          >
+            Бүгдийг харах
+          </Link>
+        </div>
+
+        <div className={styles.taskTableWrap}>
+          <table className={styles.taskTable}>
+            <thead>
+              <tr>
+                <th>Машин</th>
+                <th>Маршрут</th>
+                <th>Төлөв</th>
+                <th>Явц</th>
+                <th>Жин</th>
+                <th>Дэлгэрэнгүй</th>
+              </tr>
+            </thead>
+            <tbody>
+              {snapshot.todayTasks.slice(0, 8).map((task) => (
+                <tr key={task.id}>
+                  <td>
+                    <strong>{task.vehicleName}</strong>
+                    <span>{task.driverName}</span>
+                  </td>
+                  <td>{task.routeName}</td>
+                  <td>
+                    <StatusBadge
+                      statusKey={task.statusKey}
+                      statusLabel={task.statusLabel}
+                    />
+                  </td>
+                  <td>
+                    <div className={styles.inlineProgress}>
+                      <span>{task.progress}%</span>
+                      <div className={styles.inlineProgressTrack}>
+                        <span style={{ width: `${task.progress}%` }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td>{task.finalWeightLabel}</td>
+                  <td>
+                    <Link href={task.detailHref} className={styles.inlineLink}>
+                      Харах
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className={styles.executiveWeightGrid}>
+        <section className={styles.executivePanel}>
+          <div className={styles.executiveSectionHeader}>
+            <div>
+              <span className={styles.executiveSectionKicker}>Шөнийн таталт</span>
+              <h2>Өчигдрийн хог тээвэрлэлтийн тайлан</h2>
+            </div>
+          </div>
+
+          <div className={styles.weightStatGrid}>
+            <article className={styles.weightStatCard}>
+              <span>Нийт жин</span>
+              <strong>{snapshot.yesterdayWeight.totalLabel}</strong>
+            </article>
+            <article className={styles.weightStatCard}>
+              <span>Хамгийн их жинтэй машин</span>
+              <strong>{snapshot.yesterdayWeight.topVehicleName}</strong>
+              <small>{snapshot.yesterdayWeight.topVehicleLabel}</small>
+            </article>
+            <article className={styles.weightStatCard}>
+              <span>Дундаж жин / машин</span>
+              <strong>{snapshot.yesterdayWeight.averageLabel}</strong>
+            </article>
           </div>
         </section>
 
-        <section className={styles.panel}>
-          <div className={styles.sectionHeader}>
+        <section className={styles.executivePanel}>
+          <div className={styles.executiveSectionHeader}>
             <div>
-              <span className={styles.kicker}>Өнөөдрийн төлөв</span>
-              <h2>Хяналтын товч зураглал</h2>
+              <span className={styles.executiveSectionKicker}>Сарын зураглал</span>
+              <h2>Сарын гүйцэтгэл</h2>
             </div>
           </div>
 
-          <div className={styles.statusList}>
-            <div className={styles.statusItem}>
-              <span>Идэвхтэй төсөл</span>
-              <strong>{snapshot.projects.length}</strong>
-              <small>Алба нэгжээр ангилсан</small>
-            </div>
-            <div className={styles.statusItem}>
-              <span>Талбарын ажил</span>
-              <strong>{snapshot.liveTasks.length}</strong>
-              <small>Явагдаж буй task</small>
-            </div>
-            <div className={styles.statusItem}>
-              <span>Шалгалтын мөр</span>
-              <strong>{snapshot.reviewQueue.length}</strong>
-              <small>Баталгаажуулалт хүлээж байна</small>
-            </div>
-            <div className={styles.statusItem}>
-              <span>Тайлангийн урсгал</span>
-              <strong>{snapshot.reports.length}</strong>
-              <small>Сүүлийн proof of work</small>
-            </div>
+          <div className={styles.weightStatGrid}>
+            <article className={styles.weightStatCard}>
+              <span>Энэ сарын нийт жин</span>
+              <strong>{snapshot.monthlyWeight.totalLabel}</strong>
+            </article>
+            <article className={styles.weightStatCard}>
+              <span>Өчигдөр нэмэгдсэн жин</span>
+              <strong>{snapshot.monthlyWeight.addedYesterdayLabel}</strong>
+            </article>
+          </div>
+
+          <div className={styles.trendChart}>
+            {snapshot.monthlyWeight.trend.map((point) => (
+              <div key={point.dateKey} className={styles.trendColumn}>
+                <span className={styles.trendValue}>{point.totalLabel}</span>
+                <div className={styles.trendBarTrack}>
+                  <span
+                    className={styles.trendBar}
+                    style={{ height: `${point.heightPercent}%` }}
+                  />
+                </div>
+                <small>{point.dateLabel}</small>
+              </div>
+            ))}
           </div>
         </section>
       </section>
 
-      <section className={styles.departmentsSection}>
-        <div className={styles.sectionHeader}>
+      <section className={styles.executivePanel}>
+        <div className={styles.executiveSectionHeader}>
           <div>
-            <span className={styles.kicker}>Алба нэгжийн зураглал</span>
-            <h2>5 үндсэн нэгжийн dashboard</h2>
-            <small className={styles.sectionNote}>
-              Алба нэгж бүрийн нээлттэй ажил ба гүйцэтгэлийн товч төлөв
-            </small>
+            <span className={styles.executiveSectionKicker}>Шуурхай харах</span>
+            <h2>Шуурхай холбоос</h2>
           </div>
         </div>
-        <div className={styles.departmentGrid}>
-          {snapshot.departments.map((department) => (
-            <article key={department.name} className={styles.departmentCard}>
-              <span
-                className={styles.departmentAccent}
-                style={{ background: department.accent }}
-              />
-              <div className={styles.departmentBody}>
-                <h3>{department.name}</h3>
-                <p>{department.label}</p>
-                <div className={styles.departmentMeta}>
-                  <span>{department.openTasks} нээлттэй</span>
-                  <span>{department.reviewTasks} review</span>
-                  <strong>{department.completion}%</strong>
-                </div>
-                <div className={styles.progressTrack}>
-                  <span style={{ width: `${department.completion}%` }} />
-                </div>
-              </div>
-            </article>
+
+        <div className={styles.quickLinkGrid}>
+          {snapshot.quickLinks.map((item) => (
+            <Link key={item.label} href={item.href} className={styles.quickLinkCard}>
+              <strong>{item.label}</strong>
+              <span>{item.note}</span>
+            </Link>
           ))}
         </div>
       </section>
-
-      <nav className={styles.mobileDock} aria-label="Mobile quick navigation">
-        <Link href="/" className={styles.mobileDockLink}>
-          <span>Самбар</span>
-          <strong>{snapshot.projects.length}</strong>
-        </Link>
-        <Link href="/projects" className={styles.mobileDockLink}>
-          <span>Төсөл</span>
-          <strong>{snapshot.liveTasks.length}</strong>
-        </Link>
-        <Link href="/review" className={styles.mobileDockLink}>
-          <span>Шалгах</span>
-          <strong>{snapshot.reviewQueue.length}</strong>
-        </Link>
-        <Link href="/reports" className={styles.mobileDockLink}>
-          <span>Тайлан</span>
-          <strong>{snapshot.reports.length}</strong>
-        </Link>
-        {canCreateProject ? (
-          <Link
-            href="/projects/new"
-            className={`${styles.mobileDockLink} ${styles.mobileDockPrimary}`}
-          >
-            <span>Шинэ</span>
-            <strong>+</strong>
-          </Link>
-        ) : null}
-      </nav>
     </main>
   );
 }
