@@ -1,35 +1,157 @@
+.menuShell {
+  position: relative;
+  width: min(280px, 100%);
+  margin: 0 0 18px;
+}
+
+.menuShellExecutive {
+  margin-bottom: 16px;
+}
+
+.menuToggleInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.menuMobileSpacer,
+.menuMobileBar,
+.menuOverlay {
+  display: none;
+}
+
 .menuBar {
-  max-width: 1360px;
-  margin: 0 auto 18px;
-  padding: 10px;
+  position: sticky;
+  top: 18px;
+  width: min(280px, 100%);
+  padding: 12px;
   border: 1px solid var(--line-soft);
-  border-radius: 24px;
+  border-radius: 28px;
   background: var(--surface-panel-soft);
-  box-shadow: 0 12px 28px var(--shadow-soft);
+  box-shadow: 0 18px 40px var(--shadow-soft);
+}
+
+.menuBarExecutive {
+  background: rgba(248, 253, 247, 0.92);
+}
+
+.menuHeader {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.menuBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menuBrandLogo {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(74, 154, 93, 0.14);
+}
+
+.menuLogo {
+  width: 100%;
+  height: auto;
+}
+
+.menuBrandText {
+  display: grid;
+  gap: 6px;
+}
+
+.menuKicker {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.12);
+  color: var(--brand-800);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.menuBrandText strong {
+  color: var(--ink-900);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+.menuCloseButton {
+  display: none;
+}
+
+.menuUserCard {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(74, 154, 93, 0.12);
+}
+
+.menuUserCard span,
+.menuUserMeta small {
+  color: var(--ink-600);
+  font-size: 0.82rem;
+}
+
+.menuUserCard strong {
+  color: var(--ink-900);
+  font-size: 1.08rem;
+}
+
+.menuUserMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.menuUserMeta small {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.08);
+}
+
+.menuScrollArea {
+  max-height: calc(100vh - 320px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .menuInner {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 10px;
 }
 
 .menuLink {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 999px;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
   background: rgba(74, 154, 93, 0.08);
   color: var(--ink-900);
-  font-size: 0.95rem;
-  font-weight: 700;
   transition: transform 160ms ease, background 160ms ease, color 160ms ease;
 }
 
 .menuLink:hover {
-  transform: translateY(-1px);
+  transform: translateX(2px);
   background: rgba(74, 154, 93, 0.12);
 }
 
@@ -38,24 +160,316 @@
   color: #f7fcf6;
 }
 
-@media (max-width: 720px) {
-  .menuBar {
-    padding: 8px;
-    border-radius: 20px;
+.menuLinkIcon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(74, 154, 93, 0.12);
+  color: var(--brand-900);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.menuLinkActive .menuLinkIcon {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f7fcf6;
+}
+
+.menuLinkBody {
+  display: grid;
+  gap: 3px;
+}
+
+.menuLabel {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.menuNote {
+  color: var(--ink-700);
+  font-size: 0.84rem;
+}
+
+.menuLinkActive .menuNote {
+  color: rgba(247, 252, 246, 0.84);
+}
+
+.menuFooter {
+  margin-top: 14px;
+}
+
+.menuLogoutButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 18px;
+  border: 1px solid rgba(74, 154, 93, 0.14);
+  border-radius: 18px;
+  background: rgba(74, 154, 93, 0.08);
+  color: var(--brand-900);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.menuMobileBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.menuMobileLogo {
+  width: 88px;
+  height: auto;
+}
+
+.menuMobileBrand span {
+  color: #e8f6ff;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuToggleButton {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f4fbff;
+  cursor: pointer;
+}
+
+.menuToggleIcon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+@media (max-width: 900px) {
+  .menuShell {
+    width: 100%;
+    margin: 0;
   }
 
-  .menuInner {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 2px;
-    scroll-snap-type: x mandatory;
+  .menuMobileSpacer {
+    display: block;
+    height: 0;
+  }
+
+  .menuMobileBar {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: auto;
+    z-index: 80;
+    display: block;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .menuOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: block;
+    background: rgba(11, 20, 16, 0.28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  .menuBar {
+    position: fixed;
+    top: 14px;
+    bottom: 14px;
+    left: 12px;
+    z-index: 90;
+    width: min(348px, calc(100vw - 24px));
+    padding: 18px;
+    border-radius: 30px;
+    border: 1px solid rgba(202, 222, 204, 0.9);
+    background: linear-gradient(180deg, #f7fcf5 0%, #edf7ea 100%);
+    box-shadow: 0 24px 40px rgba(18, 28, 39, 0.16);
+    transform: translateX(calc(-100% - 20px));
+    transition: transform 180ms ease;
+    overflow: hidden;
+  }
+
+  .menuHeader {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .menuBrandLogo {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(74, 154, 93, 0.14);
+  }
+
+  .menuKicker {
+    background: rgba(74, 154, 93, 0.12);
+    color: var(--brand-800);
+  }
+
+  .menuBrandText strong {
+    color: var(--ink-900);
+  }
+
+  .menuCloseButton {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    background: rgba(238, 244, 238, 0.96);
+    border: 1px solid rgba(202, 222, 204, 0.9);
+    color: var(--ink-900);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .menuUserCard {
+    margin-top: 14px;
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(202, 222, 204, 0.88);
+  }
+
+  .menuUserCard span,
+  .menuUserMeta small {
+    color: var(--ink-600);
+  }
+
+  .menuUserCard strong {
+    color: var(--ink-900);
+  }
+
+  .menuUserMeta small {
+    background: rgba(74, 154, 93, 0.1);
+    color: var(--brand-800);
+  }
+
+  .menuScrollArea {
+    max-height: calc(100vh - 286px);
+    margin-top: 18px;
+    padding-right: 6px;
+  }
+
+  .menuScrollArea::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .menuScrollArea::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(74, 154, 93, 0.36);
   }
 
   .menuLink {
-    scroll-snap-align: start;
-    white-space: nowrap;
+    padding: 14px 16px;
+    border-radius: 22px;
+    border: 1px solid rgba(202, 222, 204, 0.78);
+    background: rgba(235, 244, 232, 0.82);
+    color: var(--ink-900);
+  }
+
+  .menuLink:hover {
+    transform: none;
+    background: rgba(225, 239, 224, 0.96);
+  }
+
+  .menuLinkActive {
+    background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+    border-color: rgba(31, 95, 49, 0.22);
+    color: #ffffff;
+    box-shadow: 0 16px 28px rgba(31, 95, 49, 0.16);
+  }
+
+  .menuLinkIcon {
+    width: 46px;
+    height: 46px;
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(202, 222, 204, 0.82);
+    color: var(--brand-900);
+  }
+
+  .menuLabel {
+    font-size: 1.06rem;
+  }
+
+  .menuNote {
+    display: block;
+    color: var(--ink-600);
+    font-size: 0.92rem;
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+
+  .menuLinkActive .menuNote {
+    color: rgba(247, 252, 246, 0.88);
+  }
+
+  .menuFooter {
+    position: sticky;
+    bottom: 0;
+    margin-top: 18px;
+    padding-top: 16px;
+    background: linear-gradient(180deg, rgba(237, 247, 234, 0), rgba(237, 247, 234, 0.96) 32%);
+  }
+
+  .menuLogoutButton {
+    min-height: 54px;
+    border-radius: 20px;
+    background: rgba(235, 244, 232, 0.96);
+    border-color: rgba(202, 222, 204, 0.9);
+    color: var(--brand-900);
+  }
+
+  .menuToggleInput:checked ~ .menuOverlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .menuToggleInput:checked ~ .menuBar {
+    transform: translateX(0);
+  }
+
+  .menuMobileBrand {
+    display: none;
+  }
+
+  .menuMobileLogo {
+    display: none;
+  }
+
+  .menuMobileBrand span {
+    display: none;
+  }
+
+  .menuToggleButton {
+    width: 48px;
+    height: 48px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(24, 40, 57, 0.98), rgba(16, 30, 45, 0.98));
+    border: 1px solid rgba(54, 83, 108, 0.42);
+    box-shadow: 0 14px 28px rgba(8, 18, 30, 0.24);
+  }
+
+  .menuToggleIcon {
+    font-size: 1.22rem;
   }
 }

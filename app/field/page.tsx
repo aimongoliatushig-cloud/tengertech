@@ -144,6 +144,8 @@ export default async function FieldPage({ searchParams }: PageProps) {
           canCreateProject={canCreateProject}
           canViewQualityCenter={canViewQualityCenter}
           canUseFieldConsole={canUseFieldConsole}
+          userName={session.name}
+          roleLabel={getRoleLabel(session.role)}
         />
 
         <section className={`${workspaceStyles.heroCard} ${fieldStyles.heroCard}`}>

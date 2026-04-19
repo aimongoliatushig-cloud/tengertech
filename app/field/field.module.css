@@ -2,6 +2,14 @@
   margin-bottom: 18px;
 }
 
+.heroCard h1 {
+  font-size: clamp(2rem, 4vw, 3.1rem);
+}
+
+.heroCard p {
+  max-width: 62ch;
+}
+
 .heroFacts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -10,10 +18,14 @@
 }
 
 .routeSelector {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
   gap: 12px;
+  overflow-x: auto;
   margin: 0 0 18px;
+  padding-bottom: 2px;
+  scroll-snap-type: x proximity;
 }
 
 .routeChip {
@@ -24,6 +36,7 @@
   background: rgba(255, 255, 255, 0.92);
   color: var(--ink-900);
   box-shadow: 0 16px 36px rgba(42, 63, 48, 0.08);
+  scroll-snap-align: start;
 }
 
 .routeChip span,
@@ -47,7 +60,7 @@
 .summaryGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  gap: 16px;
+  gap: 18px;
   align-items: start;
 }
 
@@ -161,6 +174,8 @@
 }
 
 .stopCard {
+  display: grid;
+  gap: 18px;
   padding: 20px;
   border: 1px solid var(--line-soft);
   border-radius: 28px;
@@ -219,6 +234,15 @@
 
 .actionRow {
   margin-bottom: 18px;
+}
+
+.actionRow form {
+  flex: 1 1 220px;
+}
+
+.actionRow :global(button) {
+  width: 100%;
+  min-height: 52px;
 }
 
 .detailsGrid {
@@ -311,5 +335,13 @@
 
   .stopCard {
     padding: 18px;
+  }
+
+  .routeSelector {
+    grid-auto-columns: 88%;
+  }
+
+  .actionRow {
+    flex-direction: column;
   }
 }

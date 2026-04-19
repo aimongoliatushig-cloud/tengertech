@@ -1,6 +1,10 @@
-.toolbar,
-.tableShell {
-  margin-top: 18px;
+.pageHeader,
+.summaryStrip,
+.filterPanel,
+.taskSection,
+.taskCard,
+.tableShell,
+.emptyState {
   border: 1px solid var(--line-soft);
   border-radius: 28px;
   background: var(--surface-panel-soft);
@@ -8,31 +12,118 @@
   box-shadow: 0 18px 48px var(--shadow-soft);
 }
 
-.toolbar {
-  display: grid;
-  gap: 16px;
-  padding: 20px;
+.pageHeader,
+.filterPanel,
+.taskSection,
+.emptyState {
+  padding: 22px;
 }
 
-.dateFilterForm {
+.pageHeader {
   display: grid;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.pageHeaderMain,
+.pageHeaderAside,
+.titleBlock,
+.userBlock,
+.dateFilterForm,
+.summaryCard,
+.taskCard,
+.taskIdentity,
+.taskInfoItem,
+.cardActions,
+.emptyState {
+  display: grid;
+  gap: 10px;
+}
+
+.titleBlock h1,
+.filterHeader h2,
+.sectionHeader h2,
+.emptyState h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
+}
+
+.titleBlock h1 {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 0.96;
+}
+
+.titleBlock p,
+.filterHeader p,
+.subtleNote,
+.emptyState p {
+  color: var(--ink-700);
+  line-height: 1.65;
+}
+
+.pageKicker,
+.filterKicker {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.12);
+  color: var(--brand-800);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.userBlock {
+  align-content: start;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(74, 154, 93, 0.08);
+  border: 1px solid rgba(74, 154, 93, 0.16);
+}
+
+.userBlock span,
+.summaryCard span,
+.taskInfoItem span,
+.progressLabel span {
+  color: var(--ink-600);
+  font-size: 0.88rem;
+}
+
+.userBlock strong {
+  font-size: 1.3rem;
+}
+
+.pageHeaderAside {
+  align-content: start;
 }
 
 .dateFilterForm label {
-  color: var(--ink-700);
-  font-size: 0.88rem;
+  color: var(--ink-900);
+  font-size: 0.92rem;
   font-weight: 700;
 }
 
-.dateRow {
+.dateRow,
+.headerActions,
+.filterHeader,
+.sectionHeader,
+.taskCardTop,
+.progressLabel {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .dateInput {
   flex: 1;
-  min-height: 46px;
+  min-height: 48px;
   padding: 0 14px;
   border: 1px solid var(--line-soft);
   border-radius: 16px;
@@ -41,52 +132,212 @@
   font: inherit;
 }
 
-.dateButton {
-  min-width: 92px;
-  min-height: 46px;
+.dateButton,
+.logoutButton,
+.secondaryLink,
+.primaryLink,
+.inlineLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.dateButton,
+.logoutButton,
+.primaryLink {
   border: 0;
-  border-radius: 16px;
   background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
   color: #f7fcf6;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
 }
 
-.filterTabs {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.filterTab {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 48px;
-  padding: 0 14px;
-  border-radius: 18px;
-  background: rgba(74, 154, 93, 0.08);
-  color: var(--ink-900);
-  font-weight: 700;
-}
-
-.filterTab strong {
+.secondaryLink,
+.inlineLink {
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.92);
   color: var(--brand-800);
 }
 
-.filterTabActive {
+.logoutButton {
+  cursor: pointer;
+  font: inherit;
+}
+
+.summaryStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 14px;
+  margin: 18px 0;
+}
+
+.summaryCard {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(74, 154, 93, 0.1);
+}
+
+.summaryCard strong {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.summaryCard small {
+  color: var(--ink-700);
+}
+
+.filterPanel {
+  margin-bottom: 18px;
+}
+
+.filterHeader {
+  margin-bottom: 16px;
+}
+
+.filterHeader h2,
+.sectionHeader h2 {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1;
+}
+
+.filterHeader p,
+.sectionHeader p {
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(74, 154, 93, 0.08);
+  border: 1px solid rgba(74, 154, 93, 0.14);
+  text-align: right;
+}
+
+.filterScroller {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(170px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.filterChip {
+  display: grid;
+  gap: 6px;
+  min-height: 78px;
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(74, 154, 93, 0.08);
+  color: var(--ink-900);
+  border: 1px solid transparent;
+}
+
+.filterChip strong {
+  color: var(--brand-900);
+  font-size: 1.35rem;
+}
+
+.filterChipActive {
   background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
   color: #f7fcf6;
 }
 
-.filterTabActive strong {
+.filterChipActive strong {
   color: #f7fcf6;
+}
+
+.taskSection {
+  display: grid;
+  gap: 18px;
+}
+
+.sectionHeader {
+  margin-bottom: 0;
+}
+
+.taskCardList {
+  display: grid;
+  gap: 16px;
+}
+
+.taskCard {
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(74, 154, 93, 0.1);
+}
+
+.taskIdentity strong,
+.taskRoute {
+  color: var(--ink-900);
+}
+
+.taskIdentity strong {
+  font-size: 1.18rem;
+}
+
+.taskIdentity span {
+  color: var(--ink-700);
+}
+
+.taskRoute {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.taskInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.taskInfoItem {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(240, 248, 239, 0.9);
+}
+
+.taskInfoItem strong,
+.progressLabel strong {
+  font-size: 1rem;
+  color: var(--ink-900);
+}
+
+.progressRow {
+  display: grid;
+  gap: 10px;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(95, 117, 99, 0.12);
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--brand-700), #a6d39d);
+}
+
+.cardActions {
+  gap: 8px;
+}
+
+.subtleNote {
+  font-size: 0.92rem;
 }
 
 .tableShell {
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .taskTable {
@@ -98,85 +349,94 @@
 .taskTable td {
   padding: 16px 14px;
   border-bottom: 1px solid var(--line-soft);
-  text-align: left;
   vertical-align: middle;
+  text-align: left;
 }
 
 .taskTable th {
   color: var(--ink-600);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.progressCell {
+.tableProgress {
   display: grid;
   gap: 8px;
   min-width: 120px;
 }
 
-.progressCell span {
-  font-weight: 700;
+.emptyState {
+  text-align: center;
 }
 
-.progressTrack {
-  width: 100%;
-  height: 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(95, 117, 99, 0.12);
-}
-
-.progressTrack span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--brand-700), #9fce96);
-}
-
-.detailLink {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: rgba(74, 154, 93, 0.1);
-  color: var(--brand-800);
-  font-weight: 700;
-}
-
-@media (max-width: 980px) {
-  .filterTabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 1080px) {
+  .pageHeader,
+  .summaryStrip {
+    grid-template-columns: 1fr;
   }
 
-  .taskTable th:nth-child(2),
-  .taskTable td:nth-child(2),
-  .taskTable th:nth-child(6),
-  .taskTable td:nth-child(6) {
+  .filterHeader,
+  .sectionHeader,
+  .dateRow,
+  .headerActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filterHeader p,
+  .sectionHeader p {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+@media (max-width: 820px) {
+  .pageHeader,
+  .filterPanel,
+  .taskSection,
+  .emptyState {
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .summaryStrip {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .taskInfoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tableShell {
+    display: none;
+  }
+}
+
+@media (min-width: 821px) {
+  .taskCardList {
     display: none;
   }
 }
 
 @media (max-width: 640px) {
-  .toolbar,
-  .tableShell {
-    border-radius: 24px;
+  .pageHeader {
+    margin-bottom: 14px;
   }
 
-  .dateRow,
-  .filterTabs {
-    grid-template-columns: 1fr;
+  .filterScroller {
+    grid-auto-columns: minmax(150px, 78%);
   }
 
-  .dateRow {
-    display: grid;
-  }
-
-  .taskTable th:nth-child(3),
-  .taskTable td:nth-child(3) {
-    display: none;
+  .dateButton,
+  .logoutButton,
+  .secondaryLink,
+  .primaryLink,
+  .inlineLink {
+    width: 100%;
   }
 }
