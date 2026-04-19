@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
-import { logoutAction } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
 import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
@@ -90,16 +89,30 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const requestedDepartment = getDepartmentParam(params.department);
 
   const selectedDepartment =
-    snapshot.departments.find((department) => department.name === requestedDepartment) ??
-    snapshot.departments.find((department) =>
-      snapshot.projects.some((project) => project.departmentName === department.name),
-    ) ??
-    snapshot.departments[0];
+    requestedDepartment && requestedDepartment !== "all"
+      ? snapshot.departments.find((department) => department.name === requestedDepartment) ?? null
+      : null;
 
-  const selectedDepartmentName = selectedDepartment?.name ?? "Тодорхойгүй";
+  const displayDepartment = selectedDepartment ?? {
+    name: "Бүх алба нэгж",
+    label: "Odoo ERP дээрх бүх алба нэгжийн төсөл, ажил, тайланг нэг дор харуулна.",
+    icon: "🏢",
+    accent: "var(--tone-slate)",
+    openTasks: snapshot.taskDirectory.filter((task) => task.statusKey !== "verified").length,
+    reviewTasks: snapshot.taskDirectory.filter((task) => task.statusKey === "review").length,
+    completion: snapshot.totalTasks
+      ? Math.round(
+          (snapshot.taskDirectory.filter((task) => task.statusKey === "verified").length /
+            snapshot.totalTasks) *
+            100,
+        )
+      : 0,
+  };
+
+  const selectedDepartmentName = displayDepartment.name;
 
   const visibleProjects = snapshot.projects
-    .filter((project) => project.departmentName === selectedDepartmentName)
+    .filter((project) => !selectedDepartment || project.departmentName === selectedDepartment.name)
     .sort((left, right) => right.completion - left.completion);
 
   const visibleProjectNames = new Set(visibleProjects.map((project) => project.name));
@@ -107,32 +120,39 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const visibleLiveTasks = snapshot.liveTasks
     .filter(
       (task) =>
-        matchesDepartment(selectedDepartmentName, task.departmentName, task.projectName, task.name) ||
+        (!selectedDepartment ||
+          matchesDepartment(selectedDepartment.name, task.departmentName, task.projectName, task.name)) ||
         visibleProjectNames.has(task.projectName),
     )
     .sort((left, right) => right.progress - left.progress);
 
   const visibleReviewQueue = snapshot.reviewQueue
-    .filter((task) =>
-      matchesDepartment(selectedDepartmentName, task.departmentName, task.projectName, task.name),
+    .filter(
+      (task) =>
+        !selectedDepartment ||
+        matchesDepartment(selectedDepartment.name, task.departmentName, task.projectName, task.name),
     )
     .sort((left, right) => right.progress - left.progress);
 
   const visibleQualityAlerts = snapshot.qualityAlerts
-    .filter((alert) =>
-      matchesDepartment(selectedDepartmentName, alert.departmentName, alert.projectName, alert.name),
+    .filter(
+      (alert) =>
+        !selectedDepartment ||
+        matchesDepartment(selectedDepartment.name, alert.departmentName, alert.projectName, alert.name),
     )
     .sort((left, right) => right.exceptionCount - left.exceptionCount);
 
   const visibleReports = snapshot.reports
     .filter(
       (report) =>
-        matchesDepartment(
-          selectedDepartmentName,
-          report.departmentName,
-          report.projectName,
-          report.taskName,
-        ) || visibleProjectNames.has(report.projectName),
+        (!selectedDepartment ||
+          matchesDepartment(
+            selectedDepartment.name,
+            report.departmentName,
+            report.projectName,
+            report.taskName,
+          )) ||
+        visibleProjectNames.has(report.projectName),
     )
     .slice(0, 6);
 
@@ -141,114 +161,119 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
     ? Math.round(
         visibleLiveTasks.reduce((sum, task) => sum + task.progress, 0) / visibleLiveTasks.length,
       )
-    : selectedDepartment?.completion ?? 0;
+    : displayDepartment.completion;
 
   return (
     <main className={styles.shell}>
       <div className={styles.container} id="projects-top">
-        <header className={styles.navBar}>
-          <div className={styles.navLinks}>
-            <Link href="/" className={styles.backLink}>
-              Хяналтын самбар
-            </Link>
-            <span>{getRoleLabel(session.role)}</span>
-          </div>
+        <div className={styles.contentWithMenu}>
+          <aside className={styles.menuColumn}>
+            <AppMenu
+              active="projects"
+              canCreateProject={canCreateProject}
+              canViewQualityCenter={canViewQualityCenter}
+              canUseFieldConsole={canUseFieldConsole}
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+            />
+          </aside>
 
-          <div className={styles.navActions}>
-            {canCreateProject ? (
-              <Link href="/projects/new" className={styles.smallLink}>
-                Шинэ төсөл
-              </Link>
-            ) : null}
-            <form action={logoutAction}>
-              <button type="submit" className={styles.secondaryButton}>
-                Гарах
-              </button>
-            </form>
-          </div>
-        </header>
+          <div className={styles.pageContent}>
+            <section className={dashboardStyles.projectsSection}>
+              <div className={dashboardStyles.sectionHeader}>
+                <div>
+                  <span className={dashboardStyles.kicker}>Алба нэгжийн цэс</span>
+                  <h2>Алба нэгж сонгох</h2>
+                  <small className={dashboardStyles.sectionNote}>
+                    Сонголт бүр тухайн албаны самбарыг нээнэ
+                  </small>
+                </div>
+              </div>
 
-        <AppMenu
-          active="projects"
-          canCreateProject={canCreateProject}
-          canViewQualityCenter={canViewQualityCenter}
-          canUseFieldConsole={canUseFieldConsole}
-        />
-
-        <section className={styles.heroCard}>
-          <span className={styles.eyebrow}>Алба нэгжийн самбар</span>
-          <h1>Тухайн алба нэгжийн ажлын нэгдсэн зураглал</h1>
-          <p>
-            Доорх алба нэгжийн tab-аас сонгоход тухайн нэгжийн төсөл, идэвхтэй ажил, шалгалтын
-            мөр, анхаарах зүйлс болон сүүлийн тайлангууд нэг дор харагдана.
-          </p>
-
-          <div className={styles.statsGrid}>
-            <article className={styles.statCard}>
-              <span>Сонгосон алба нэгж</span>
-              <strong>{selectedDepartmentName}</strong>
-            </article>
-            <article className={styles.statCard}>
-              <span>Нийт төсөл</span>
-              <strong>{visibleProjects.length}</strong>
-            </article>
-            <article className={styles.statCard}>
-              <span>Идэвхтэй ажил</span>
-              <strong>{visibleLiveTasks.length}</strong>
-            </article>
-            <article className={styles.statCard}>
-              <span>Анхаарах ажил</span>
-              <strong>{visibleQualityAlerts.length}</strong>
-            </article>
-          </div>
-        </section>
-
-        <section className={dashboardStyles.projectsSection}>
-          <div className={dashboardStyles.sectionHeader}>
-            <div>
-              <span className={dashboardStyles.kicker}>Алба нэгжийн цэс</span>
-              <h2>Алба нэгж сонгох</h2>
-              <small className={dashboardStyles.sectionNote}>
-                Tab бүр тухайн алба нэгжийн нэгдсэн самбарыг нээнэ
-              </small>
-            </div>
-          </div>
-
-          <nav className={dashboardStyles.departmentSelector} aria-label="Алба нэгж сонгох цэс">
-            <div className={dashboardStyles.departmentTabBar}>
-              {snapshot.departments.map((department) => {
-                const isActive = department.name === selectedDepartmentName;
-
-                return (
+              <nav className={dashboardStyles.departmentSelector} aria-label="Алба нэгж сонгох цэс">
+                <div className={dashboardStyles.departmentTabBar}>
                   <Link
-                    key={department.name}
-                    href={`/projects?department=${encodeURIComponent(department.name)}`}
+                    href="/projects"
                     className={`${dashboardStyles.departmentTab} ${
-                      isActive ? dashboardStyles.departmentTabActive : ""
+                      !selectedDepartment ? dashboardStyles.departmentTabActive : ""
                     }`}
-                    aria-current={isActive ? "page" : undefined}
+                    aria-current={!selectedDepartment ? "page" : undefined}
                   >
-                    <span>{department.name}</span>
-                    <strong>{department.openTasks}</strong>
+                    <span className={dashboardStyles.departmentTabLabel}>
+                      <span className={dashboardStyles.departmentTabIcon} aria-hidden>
+                        🏢
+                      </span>
+                      <span>Бүгд</span>
+                    </span>
+                    <strong>{snapshot.totalTasks}</strong>
                   </Link>
-                );
-              })}
-            </div>
-          </nav>
-        </section>
+                  {snapshot.departments.map((department) => {
+                    const isActive = department.name === selectedDepartmentName;
 
-        {selectedDepartment ? (
+                    return (
+                      <Link
+                        key={department.name}
+                        href={`/projects?department=${encodeURIComponent(department.name)}`}
+                        className={`${dashboardStyles.departmentTab} ${
+                          isActive ? dashboardStyles.departmentTabActive : ""
+                        }`}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        <span className={dashboardStyles.departmentTabLabel}>
+                          <span className={dashboardStyles.departmentTabIcon} aria-hidden>
+                            {department.icon}
+                          </span>
+                          <span>{department.name}</span>
+                        </span>
+                        <strong>{department.openTasks}</strong>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </nav>
+            </section>
+
+            <section className={styles.heroCard}>
+              <span className={styles.eyebrow}>Алба нэгжийн самбар</span>
+              <h1>Албаны нэгдсэн самбар</h1>
+              <p>Сонгосон албаны төсөл, ажил, шалгалт, тайланг нэг дороос харуулна.</p>
+
+              <div className={styles.statsGrid}>
+                <article className={styles.statCard}>
+                  <span>Сонгосон алба</span>
+                  <strong>{selectedDepartmentName}</strong>
+                </article>
+                <article className={styles.statCard}>
+                  <span>Нийт төсөл</span>
+                  <strong>{visibleProjects.length}</strong>
+                </article>
+                <article className={styles.statCard}>
+                  <span>Идэвхтэй ажил</span>
+                  <strong>{visibleLiveTasks.length}</strong>
+                </article>
+                <article className={styles.statCard}>
+                  <span>Анхаарах ажил</span>
+                  <strong>{visibleQualityAlerts.length}</strong>
+                </article>
+              </div>
+            </section>
+
           <>
             <section className={dashboardStyles.projectsSection}>
               <div className={dashboardStyles.selectedDepartmentHeader}>
                 <div>
                   <span
                     className={dashboardStyles.departmentAccentBadge}
-                    style={{ background: selectedDepartment.accent }}
+                    style={{ background: displayDepartment.accent }}
                   />
-                  <h2>{selectedDepartment.name}</h2>
+                  <div className={dashboardStyles.selectedDepartmentTitle}>
+                    <span className={dashboardStyles.departmentHeroIcon} aria-hidden>
+                      {displayDepartment.icon}
+                    </span>
+                    <h2>{displayDepartment.name}</h2>
+                  </div>
                   <p className={dashboardStyles.selectedDepartmentNote}>
-                    {selectedDepartment.label}
+                    {displayDepartment.label}
                   </p>
                 </div>
 
@@ -312,7 +337,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                 </div>
               ) : (
                 <div className={dashboardStyles.emptyColumnState}>
-                  Одоогоор {selectedDepartment.name} дээр бүртгэгдсэн төсөл алга.
+                  Одоогоор {displayDepartment.name} дээр бүртгэгдсэн төсөл алга.
                 </div>
               )}
             </section>
@@ -375,7 +400,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                 <div className={dashboardStyles.statusList}>
                   <div className={dashboardStyles.statusItem}>
                     <span>Нээлттэй ажил</span>
-                    <strong>{selectedDepartment.openTasks}</strong>
+                    <strong>{displayDepartment.openTasks}</strong>
                     <small>Тухайн алба нэгжийн одоо хаагдаагүй ажил</small>
                   </div>
                   <div className={dashboardStyles.statusItem}>
@@ -509,13 +534,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                 </div>
               )}
             </section>
-          </>
-        ) : (
-          <section className={styles.emptyState}>
-            <h2>Алба нэгж олдсонгүй</h2>
-            <p>Сонгосон алба нэгжийн өгөгдөл хараахан бэлэн биш байна.</p>
-          </section>
-        )}
+        </>
 
         <nav className={styles.mobileDock} aria-label="Алба нэгжийн самбарын гар утасны цэс">
           <Link href="/" className={styles.jumpLink}>
@@ -534,6 +553,8 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             </Link>
           )}
         </nav>
+          </div>
+        </div>
       </div>
     </main>
   );

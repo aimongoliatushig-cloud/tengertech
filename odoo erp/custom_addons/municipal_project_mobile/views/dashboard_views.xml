@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mpm_dashboard_form" model="ir.ui.view">
+        <field name="name">municipal.project.dashboard.form</field>
+        <field name="model">municipal.project.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Хяналтын самбар" create="false" edit="false" delete="false">
+                <sheet class="mpm_dashboard_sheet">
+                    <field name="role_code" invisible="1"/>
+
+                    <div class="mpm_intro_card">
+                        <div class="mpm_intro_text">
+                            <h1>Талбайн төслийн мобайл хяналт</h1>
+                            <p><field name="summary_text" nolabel="1" readonly="1"/></p>
+                            <div class="mpm_intro_actions">
+                                <button name="action_open_new_project" type="object" string="Шинэ төсөл" class="btn btn-primary mpm_primary_button" invisible="role_code != 'general_manager'"/>
+                                <button name="action_open_new_task" type="object" string="Ажил нэмэх" class="btn btn-primary mpm_primary_button" invisible="role_code != 'project_manager'"/>
+                                <button name="action_open_report_tasks" type="object" string="Тайлан оруулах" class="btn btn-primary mpm_primary_button" invisible="role_code != 'team_leader'"/>
+                                <button name="action_open_today_tasks" type="object" string="Өнөөдрийн ажил" class="btn btn-primary mpm_primary_button" invisible="role_code != 'worker'"/>
+                                <button name="action_refresh_dashboard" type="object" string="Шинэчлэх" class="btn btn-secondary mpm_secondary_button"/>
+                            </div>
+                        </div>
+                        <div class="mpm_intro_meta">
+                            <span class="mpm_meta_label">Үүрэг</span>
+                            <strong><field name="role_label" nolabel="1" readonly="1"/></strong>
+                            <span class="mpm_meta_label">Огноо</span>
+                            <strong><field name="dashboard_date" nolabel="1"/></strong>
+                        </div>
+                    </div>
+
+                    <div class="mpm_metric_grid" invisible="role_code != 'general_manager'">
+                        <button type="object" name="action_open_all_projects" class="oe_stat_button mpm_metric_card" icon="fa-folder-open">
+                            <field name="total_projects" widget="statinfo" string="Нийт төсөл"/>
+                        </button>
+                        <button type="object" name="action_open_delayed_projects" class="oe_stat_button mpm_metric_card mpm_metric_warn" icon="fa-exclamation-triangle">
+                            <field name="delayed_projects" widget="statinfo" string="Хоцролттой"/>
+                        </button>
+                        <button type="object" name="action_open_pending_approvals" class="oe_stat_button mpm_metric_card mpm_metric_attention" icon="fa-check-square">
+                            <field name="pending_approvals" widget="statinfo" string="Шалгах тайлан"/>
+                        </button>
+                    </div>
+
+                    <div class="mpm_metric_grid" invisible="role_code != 'project_manager'">
+                        <button type="object" name="action_open_my_projects" class="oe_stat_button mpm_metric_card" icon="fa-briefcase">
+                            <field name="my_projects" widget="statinfo" string="Миний төсөл"/>
+                        </button>
+                        <button type="object" name="action_open_pending_approvals" class="oe_stat_button mpm_metric_card mpm_metric_attention" icon="fa-check-square">
+                            <field name="pending_approvals" widget="statinfo" string="Шалгах тайлан"/>
+                        </button>
+                        <button type="object" name="action_open_attention_tasks" class="oe_stat_button mpm_metric_card mpm_metric_warn" icon="fa-bell">
+                            <field name="attention_tasks" widget="statinfo" string="Анхаарах ажил"/>
+                        </button>
+                        <button type="object" name="action_open_missing_reports" class="oe_stat_button mpm_metric_card" icon="fa-file-text-o">
+                            <field name="missing_reports" widget="statinfo" string="Дутуу тайлан"/>
+                        </button>
+                    </div>
+
+                    <div class="mpm_metric_grid" invisible="role_code != 'team_leader'">
+                        <button type="object" name="action_open_today_tasks" class="oe_stat_button mpm_metric_card" icon="fa-list-ul">
+                            <field name="today_tasks" widget="statinfo" string="Өнөөдрийн ажил"/>
+                        </button>
+                        <button type="object" name="action_open_report_tasks" class="oe_stat_button mpm_metric_card mpm_metric_attention" icon="fa-camera">
+                            <field name="pending_reports" widget="statinfo" string="Илгээх тайлан"/>
+                        </button>
+                        <button type="object" name="action_open_attention_tasks" class="oe_stat_button mpm_metric_card mpm_metric_warn" icon="fa-ban">
+                            <field name="attention_tasks" widget="statinfo" string="Саатсан ажил"/>
+                        </button>
+                    </div>
+
+                    <div class="mpm_metric_grid" invisible="role_code != 'worker'">
+                        <button type="object" name="action_open_today_tasks" class="oe_stat_button mpm_metric_card" icon="fa-calendar-check-o">
+                            <field name="today_tasks" widget="statinfo" string="Өнөөдрийн ажил"/>
+                        </button>
+                        <button type="object" name="action_open_monthly_tasks" class="oe_stat_button mpm_metric_card" icon="fa-calendar">
+                            <field name="monthly_tasks" widget="statinfo" string="Сарын хуваарь"/>
+                        </button>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code not in ('general_manager', 'project_manager') or pending_approvals == 0">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Шийдвэр хүлээж буй тайлан</h2>
+                                <p>Эхэнд нь шалгах шаардлагатай тайлангууд.</p>
+                            </div>
+                        </div>
+                        <field name="review_task_ids" nolabel="1" readonly="1">
+                            <list>
+                                <field name="name" string="Ажил"/>
+                                <field name="project_id" string="Төсөл"/>
+                                <field name="mpm_team_leader_id" string="Багийн ахлагч"/>
+                                <field name="report_status" string="Тайлангийн төлөв" widget="badge"/>
+                                <field name="mpm_report_submitted_at" string="Илгээсэн цаг"/>
+                            </list>
+                        </field>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code != 'general_manager'">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Шуурхай нэвтрэх</h2>
+                                <p>Ерөнхий хяналтад хамгийн хэрэгтэй холбоосууд.</p>
+                            </div>
+                        </div>
+                        <div class="mpm_link_grid">
+                            <button type="object" name="action_open_all_projects" string="Төсөл харах" class="btn btn-outline-primary mpm_link_button"/>
+                            <button type="object" name="action_open_pending_approvals" string="Шалгах тайлан" class="btn btn-outline-primary mpm_link_button"/>
+                            <button type="object" name="action_open_delayed_projects" string="Хоцролттой төсөл" class="btn btn-outline-primary mpm_link_button"/>
+                        </div>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code != 'project_manager' or attention_tasks == 0">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Анхаарах ажил</h2>
+                                <p>Хоцорсон эсвэл саатсан ажлыг түрүүлж харуулна.</p>
+                            </div>
+                            <button type="object" name="action_open_attention_tasks" string="Бүгдийг харах" class="btn btn-secondary mpm_inline_button"/>
+                        </div>
+                        <field name="attention_task_ids" nolabel="1" readonly="1">
+                            <list decoration-danger="mpm_execution_state == 'blocked' or mpm_is_delayed">
+                                <field name="mpm_is_delayed" column_invisible="True"/>
+                                <field name="name" string="Ажил"/>
+                                <field name="project_id" string="Төсөл"/>
+                                <field name="date_deadline" string="Эцсийн хугацаа"/>
+                                <field name="mpm_execution_state" string="Ажлын төлөв" widget="badge"/>
+                                <field name="issue_note" string="Саад"/>
+                            </list>
+                        </field>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code != 'project_manager'">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Шуурхай нэвтрэх</h2>
+                                <p>Төсөл, ажил, шалгалтын урсгал руу шууд орно.</p>
+                            </div>
+                        </div>
+                        <div class="mpm_link_grid">
+                            <button type="object" name="action_open_my_projects" string="Миний төсөл" class="btn btn-outline-primary mpm_link_button"/>
+                            <button type="object" name="action_open_pending_approvals" string="Шалгах тайлан" class="btn btn-outline-primary mpm_link_button"/>
+                            <button type="object" name="action_open_attention_tasks" string="Анхаарах ажил" class="btn btn-outline-primary mpm_link_button"/>
+                        </div>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code != 'team_leader' or today_tasks == 0">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Өнөөдрийн ажил</h2>
+                                <p>Юу хийх ёстойгоо нэг дороос хурдан харна.</p>
+                            </div>
+                            <button type="object" name="action_open_today_tasks" string="Бүгдийг харах" class="btn btn-secondary mpm_inline_button"/>
+                        </div>
+                        <field name="today_task_ids" nolabel="1" readonly="1">
+                            <list>
+                                <field name="name" string="Ажил"/>
+                                <field name="project_id" string="Төсөл"/>
+                                <field name="date_deadline" string="Эцсийн хугацаа"/>
+                                <field name="mpm_execution_state" string="Ажлын төлөв" widget="badge"/>
+                                <field name="report_status" string="Тайлангийн төлөв" widget="badge"/>
+                                <field name="progress_percent" string="Гүйцэтгэл" widget="progressbar"/>
+                            </list>
+                        </field>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code != 'team_leader' or attention_tasks == 0">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Саатсан ажил</h2>
+                                <p>Анхаарах шаардлагатай ажлыг түрүүлж харуулна.</p>
+                            </div>
+                            <button type="object" name="action_open_attention_tasks" string="Бүгдийг харах" class="btn btn-secondary mpm_inline_button"/>
+                        </div>
+                        <field name="attention_task_ids" nolabel="1" readonly="1">
+                            <list decoration-danger="mpm_execution_state == 'blocked' or mpm_is_delayed">
+                                <field name="mpm_is_delayed" column_invisible="True"/>
+                                <field name="name" string="Ажил"/>
+                                <field name="project_id" string="Төсөл"/>
+                                <field name="date_deadline" string="Эцсийн хугацаа"/>
+                                <field name="mpm_execution_state" string="Ажлын төлөв" widget="badge"/>
+                                <field name="issue_note" string="Саад"/>
+                            </list>
+                        </field>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code != 'team_leader'">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Шуурхай нэвтрэх</h2>
+                                <p>Тайлан, ажил, саатлын урсгал руу шууд орно.</p>
+                            </div>
+                        </div>
+                        <div class="mpm_link_grid">
+                            <button type="object" name="action_open_report_tasks" string="Тайлан оруулах" class="btn btn-outline-primary mpm_link_button"/>
+                            <button type="object" name="action_open_today_tasks" string="Өнөөдрийн ажил" class="btn btn-outline-primary mpm_link_button"/>
+                            <button type="object" name="action_open_attention_tasks" string="Саатсан ажил" class="btn btn-outline-primary mpm_link_button"/>
+                        </div>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code != 'worker' or today_tasks == 0">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Өнөөдрийн ажил</h2>
+                                <p>Өнөөдөр харах ёстой ажлууд.</p>
+                            </div>
+                            <button type="object" name="action_open_today_tasks" string="Бүгдийг харах" class="btn btn-secondary mpm_inline_button"/>
+                        </div>
+                        <field name="today_task_ids" nolabel="1" readonly="1">
+                            <list>
+                                <field name="name" string="Ажил"/>
+                                <field name="project_id" string="Төсөл"/>
+                                <field name="date_deadline" string="Эцсийн хугацаа"/>
+                                <field name="mpm_execution_state" string="Ажлын төлөв" widget="badge"/>
+                                <field name="progress_percent" string="Гүйцэтгэл" widget="progressbar"/>
+                            </list>
+                        </field>
+                    </div>
+
+                    <div class="mpm_section_card" invisible="role_code != 'worker'">
+                        <div class="mpm_section_head">
+                            <div>
+                                <h2>Шуурхай нэвтрэх</h2>
+                                <p>Өдөр тутам харах хоёр үндсэн хэсэг.</p>
+                            </div>
+                        </div>
+                        <div class="mpm_link_grid">
+                            <button type="object" name="action_open_today_tasks" string="Өнөөдрийн ажил" class="btn btn-outline-primary mpm_link_button"/>
+                            <button type="object" name="action_open_monthly_tasks" string="Сарын хуваарь" class="btn btn-outline-primary mpm_link_button"/>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

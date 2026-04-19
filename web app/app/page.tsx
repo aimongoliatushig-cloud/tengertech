@@ -3,25 +3,12 @@ import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
-import { getRoleLabel, requireSession } from "@/lib/auth";
-import { loadGarbageExecutiveSnapshot } from "@/lib/garbage-executive";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 import styles from "./page.module.css";
 
-type PageProps = {
-  searchParams?: Promise<{
-    date?: string | string[];
-  }>;
-};
-
-function getParam(value?: string | string[]) {
-  if (Array.isArray(value)) {
-    return value[0] ?? "";
-  }
-  return value ?? "";
-}
-
-function KpiCard({
+function MetricCard({
   label,
   value,
   note,
@@ -30,335 +17,378 @@ function KpiCard({
   label: string;
   value: string;
   note: string;
-  tone: "normal" | "warning" | "critical" | "weight";
+  tone: "amber" | "teal" | "red" | "slate";
 }) {
   return (
-    <article className={`${styles.executiveKpiCard} ${styles[`kpi${tone}`]}`}>
-      <span className={styles.executiveKpiLabel}>{label}</span>
-      <strong className={styles.executiveKpiValue}>{value}</strong>
-      <p className={styles.executiveKpiNote}>{note}</p>
+    <article className={`${styles.commandCard} ${styles[`tone${tone}`]}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{note}</small>
     </article>
   );
 }
 
-function StatusBadge({
-  statusKey,
-  statusLabel,
+function StagePill({
+  label,
+  bucket,
 }: {
-  statusKey: "planned" | "working" | "review" | "verified" | "problem";
-  statusLabel: string;
+  label: string;
+  bucket: "todo" | "progress" | "review" | "done" | "unknown";
 }) {
-  return (
-    <span className={`${styles.statusBadge} ${styles[`status${statusKey}`]}`}>
-      {statusLabel}
-    </span>
-  );
+  const tone =
+    bucket === "done"
+      ? styles.stageDone
+      : bucket === "review"
+        ? styles.stageReview
+        : bucket === "progress"
+          ? styles.stageProgress
+          : styles.stageTodo;
+
+  return <span className={`${styles.stagePill} ${tone}`}>{label}</span>;
 }
 
 export const dynamic = "force-dynamic";
 
-export default async function Home({ searchParams }: PageProps) {
+export default async function Home() {
   const session = await requireSession();
-  const params = (await searchParams) ?? {};
-  const selectedDate = getParam(params.date);
+  const snapshot = await loadMunicipalSnapshot({
+    login: session.login,
+    password: session.password,
+  });
 
-  const snapshot = await loadGarbageExecutiveSnapshot(
-    {
-      login: session.login,
-      password: session.password,
-    },
-    selectedDate,
-  );
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
+
+  const featuredProjects = snapshot.projects.slice(0, 6);
+  const reviewQueue = snapshot.reviewQueue.slice(0, 5);
+  const qualityAlerts = snapshot.qualityAlerts.slice(0, 5);
+  const recentReports = snapshot.reports.slice(0, 4);
+  const teamLeaders = snapshot.teamLeaders.slice(0, 4);
 
   return (
     <main className={styles.shell}>
-      <header className={styles.executiveHeader}>
-        <div className={styles.executiveBrand}>
-          <div className={styles.executiveBrandMark}>
-            <Image
-              src="/logo.png"
-              alt="Хот тохижилтын удирдлагын төвийн лого"
-              width={164}
-              height={56}
-              className={styles.brandLogo}
-              priority
-              unoptimized
-            />
-          </div>
+      <div className={styles.layoutGrid}>
+        <aside className={styles.sideRail}>
+          <AppMenu
+            active="dashboard"
+            canCreateProject={canCreateProject}
+            canViewQualityCenter={canViewQualityCenter}
+            canUseFieldConsole={canUseFieldConsole}
+            userName={session.name}
+            roleLabel={getRoleLabel(session.role)}
+          />
+        </aside>
 
-          <div className={styles.executiveTitleBlock}>
-            <span className={styles.executiveKicker}>Хог тээвэрлэлт</span>
-            <h1>Хог тээвэрлэлт - Ерөнхий хяналт</h1>
-            <p>
-              Өнөөдрийн хог тээвэрлэлтийн явц, анхаарах асуудал, баталгаажсан
-              жингийн мэдээлэл
-            </p>
-          </div>
-        </div>
+        <div className={styles.mainColumn}>
+          <header className={styles.topbar}>
+            <div className={styles.brandBlock}>
+              <div className={styles.brandMark}>
+                <Image
+                  src="/logo.png"
+                  alt="Хот тохижилтын удирдлагын төвийн лого"
+                  width={180}
+                  height={56}
+                  className={styles.brandLogo}
+                  priority
+                  unoptimized
+                />
+              </div>
 
-        <div className={styles.executiveHeaderAside}>
-          <form className={styles.dateFilterForm} method="get">
-            <label htmlFor="dashboard-date" className={styles.dateFilterLabel}>
-              Огноо
-            </label>
-            <div className={styles.dateFilterRow}>
-              <input
-                id="dashboard-date"
-                name="date"
-                type="date"
-                defaultValue={snapshot.selectedDateInput}
-                className={styles.dateFilterInput}
-              />
-              <button type="submit" className={styles.dateFilterButton}>
-                Харах
-              </button>
-            </div>
-          </form>
-
-          <div className={styles.executiveMeta}>
-            <Link
-              href="#alerts-section"
-              className={styles.notificationButton}
-              aria-label="Анхаарах асуудал руу очих"
-            >
-              <span aria-hidden>🔔</span>
-              <strong>{snapshot.notificationCount}</strong>
-            </Link>
-
-            <div className={styles.executiveUserCard}>
-              <span>{getRoleLabel(session.role)}</span>
-              <strong>{session.name}</strong>
-              <small>Сүүлд шинэчлэгдсэн: {snapshot.generatedAtLabel}</small>
+              <div>
+                <span className={styles.kicker}>Нэгдсэн хяналт</span>
+                <h1>Хот тохижилтын нэгдсэн хяналтын самбар</h1>
+              </div>
             </div>
 
-            <form action={logoutAction}>
-              <button type="submit" className={styles.logoutButton}>
-                Гарах
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+            <div className={styles.topbarActions}>
+              <div className={styles.userPanel}>
+                <span>{getRoleLabel(session.role)}</span>
+                <strong>{session.name}</strong>
+                <small>Сүүлд шинэчлэгдсэн: {snapshot.generatedAt}</small>
+              </div>
 
-      <AppMenu active="dashboard" variant="executive" />
-
-      <section className={styles.compactSummaryStrip}>
-        <div>
-          <span className={styles.summaryLabel}>Сонгосон огноо</span>
-          <strong>{snapshot.selectedDateLabel}</strong>
-        </div>
-        <div>
-          <span className={styles.summaryLabel}>Жингийн тайлан</span>
-          <strong>{snapshot.previousDateLabel}</strong>
-        </div>
-        <div>
-          <span className={styles.summaryLabel}>Жингийн шинэчлэл</span>
-          <strong>Шөнийн таталтаар орно</strong>
-        </div>
-      </section>
-
-      <section className={styles.executiveKpiGrid}>
-        {snapshot.kpis.map((card) => (
-          <KpiCard key={card.label} {...card} />
-        ))}
-      </section>
-
-      <section className={styles.executiveSignalGrid}>
-        <section className={styles.executivePanel} id="alerts-section">
-          <div className={styles.executiveSectionHeader}>
-            <div>
-              <span className={styles.executiveSectionKicker}>Анхаарах хэсэг</span>
-              <h2>Анхаарах асуудал</h2>
+              <form action={logoutAction}>
+                <button type="submit" className={styles.logoutButton}>
+                  Гарах
+                </button>
+              </form>
             </div>
-          </div>
+          </header>
 
-          {snapshot.alerts.length ? (
-            <div className={styles.alertList}>
-              {snapshot.alerts.map((alert) => (
-                <Link key={alert.id} href={alert.href} className={styles.alertItem}>
-                  <div className={styles.alertHeading}>
+          <section className={styles.departmentsSection}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <span className={styles.kicker}>Алба нэгжүүд</span>
+                <h2>Алба нэгжийн товч зураглал</h2>
+              </div>
+            </div>
+
+            <div className={styles.departmentGrid}>
+              {snapshot.departments.map((department) => (
+                <article key={department.name} className={styles.departmentCard}>
+                  <Link
+                    href={`/projects?department=${encodeURIComponent(department.name)}`}
+                    className={styles.departmentCardLink}
+                  >
                     <span
-                      className={`${styles.severityBadge} ${
-                        alert.severity === "red"
-                          ? styles.severityRed
-                          : styles.severityAmber
-                      }`}
-                    >
-                      {alert.severityLabel}
-                    </span>
-                    <strong>{alert.title}</strong>
+                      className={styles.departmentAccent}
+                      style={{ background: department.accent }}
+                    />
+
+                    <div className={styles.departmentBody}>
+                      <div className={styles.departmentTitleRow}>
+                        <span className={styles.departmentCardIcon} aria-hidden>
+                          {department.icon}
+                        </span>
+                        <h3>{department.name}</h3>
+                      </div>
+
+                      <p>{department.label}</p>
+
+                      <div className={styles.departmentMeta}>
+                        <div>
+                          <span>Нээлттэй</span>
+                          <strong>{department.openTasks}</strong>
+                        </div>
+                        <div>
+                          <span>Шалгалт</span>
+                          <strong>{department.reviewTasks}</strong>
+                        </div>
+                        <div>
+                          <span>Гүйцэтгэл</span>
+                          <strong>{department.completion}%</strong>
+                        </div>
+                      </div>
+
+                      <div className={styles.cardFooter}>
+                        <span className={styles.cardLinkLabel}>Самбарыг нээх</span>
+                        <strong aria-hidden>→</strong>
+                      </div>
+                    </div>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className={styles.commandStrip}>
+            {snapshot.metrics.map((metric) => (
+              <MetricCard key={metric.label} {...metric} />
+            ))}
+          </section>
+
+          <section className={styles.metricsGrid}>
+            {snapshot.qualityMetrics.map((metric) => (
+              <article
+                key={metric.label}
+                className={`${styles.metricCard} ${styles[`tone${metric.tone}`]}`}
+              >
+                <p>{metric.label}</p>
+                <strong>{metric.value}</strong>
+                <span>{metric.note}</span>
+              </article>
+            ))}
+          </section>
+
+          <section className={styles.dualGrid}>
+            <section className={styles.panel}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Шалгалт</span>
+                  <h2>Шалгалтын мөр</h2>
+                </div>
+                <p>Баталгаажуулалт хүлээж буй ажлуудыг priority дарааллаар харуулна.</p>
+              </div>
+
+              {reviewQueue.length ? (
+                <div className={styles.reviewList}>
+                  {reviewQueue.map((task) => (
+                    <Link key={task.id} href={task.href} className={styles.reviewItem}>
+                      <div>
+                        <h3>{task.name}</h3>
+                        <p>
+                          {task.departmentName} / {task.projectName}
+                        </p>
+                      </div>
+
+                      <div className={styles.reviewMeta}>
+                        <strong>{task.progress}%</strong>
+                        <span>{task.stageLabel}</span>
+                        <span>{task.deadline}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyColumnState}>
+                  Одоогоор шалгалт хүлээж буй ажил алга.
+                </div>
+              )}
+            </section>
+
+            <section className={styles.panel}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Анхаарах зүйлс</span>
+                  <h2>Чанарын анхааруулга</h2>
+                </div>
+                <p>Зураг, маршрут, синк, нээлттэй цэгтэй холбоотой асуудлууд.</p>
+              </div>
+
+              {qualityAlerts.length ? (
+                <div className={styles.reviewList}>
+                  {qualityAlerts.map((alert) => (
+                    <Link key={alert.id} href={alert.href} className={styles.reviewItem}>
+                      <div>
+                        <h3>{alert.name}</h3>
+                        <p>
+                          {alert.departmentName} / {alert.routeName}
+                        </p>
+                      </div>
+
+                      <div className={styles.reviewMeta}>
+                        <strong>{alert.exceptionCount}</strong>
+                        <span>{alert.operationTypeLabel}</span>
+                        <span>
+                          {alert.hasWeightWarning
+                            ? "Жингийн синк шалгана"
+                            : "Чанарын мөр"}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyColumnState}>
+                  Одоогоор чанарын анхааруулга алга.
+                </div>
+              )}
+            </section>
+          </section>
+
+          <section className={styles.projectsSection}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <span className={styles.kicker}>Төслүүд</span>
+                <h2>Сүүлийн төслүүд</h2>
+              </div>
+              <p>Бүх алба нэгжийн хамгийн идэвхтэй төслүүдийг эндээс нээнэ.</p>
+            </div>
+
+            <div className={styles.projectRail}>
+              {featuredProjects.map((project) => (
+                <Link key={project.id} href={project.href} className={styles.projectCard}>
+                  <div className={styles.projectCardTop}>
+                    <span>{project.deadline}</span>
+                    <StagePill label={project.stageLabel} bucket={project.stageBucket} />
                   </div>
-                  <p>{alert.note}</p>
+
+                  <h3>{project.name}</h3>
+                  <p>
+                    {project.departmentName} / Менежер: {project.manager}
+                  </p>
+
+                  <div className={styles.projectMeta}>
+                    <div>
+                      <span>Нээлттэй ажил</span>
+                      <strong>{project.openTasks}</strong>
+                    </div>
+                    <div>
+                      <span>Гүйцэтгэл</span>
+                      <strong>{project.completion}%</strong>
+                    </div>
+                  </div>
+
+                  <div className={styles.progressTrack}>
+                    <span style={{ width: `${project.completion}%` }} />
+                  </div>
+
+                  <div className={styles.cardFooter}>
+                    <span className={styles.cardLinkLabel}>Төслийг нээх</span>
+                    <strong aria-hidden>→</strong>
+                  </div>
                 </Link>
               ))}
             </div>
-          ) : (
-            <div className={styles.emptyStateBox}>
-              Одоогоор анхаарах асуудал бүртгэгдээгүй байна.
-            </div>
-          )}
-        </section>
+          </section>
 
-        <aside className={`${styles.executivePanel} ${styles.signalPanel}`}>
-          <div className={styles.executiveSectionHeader}>
-            <div>
-              <span className={styles.executiveSectionKicker}>Шуурхай дохио</span>
-              <h2>Шуурхай төлөв</h2>
-            </div>
-          </div>
-
-          <div className={styles.signalList}>
-            {snapshot.signals.map((item) => (
-              <article key={item.label} className={styles.signalItem}>
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-                <small>{item.note}</small>
-              </article>
-            ))}
-          </div>
-        </aside>
-      </section>
-
-      <section className={styles.executivePanel}>
-        <div className={styles.executiveSectionHeader}>
-          <div>
-            <span className={styles.executiveSectionKicker}>Өнөөдрийн урсгал</span>
-            <h2>Өнөөдрийн ажил</h2>
-          </div>
-          <Link
-            href={`/tasks?date=${encodeURIComponent(snapshot.selectedDateInput)}`}
-            className={styles.inlineLink}
-          >
-            Бүгдийг харах
-          </Link>
-        </div>
-
-        <div className={styles.taskTableWrap}>
-          <table className={styles.taskTable}>
-            <thead>
-              <tr>
-                <th>Машин</th>
-                <th>Маршрут</th>
-                <th>Төлөв</th>
-                <th>Явц</th>
-                <th>Жин</th>
-                <th>Дэлгэрэнгүй</th>
-              </tr>
-            </thead>
-            <tbody>
-              {snapshot.todayTasks.slice(0, 8).map((task) => (
-                <tr key={task.id}>
-                  <td>
-                    <strong>{task.vehicleName}</strong>
-                    <span>{task.driverName}</span>
-                  </td>
-                  <td>{task.routeName}</td>
-                  <td>
-                    <StatusBadge
-                      statusKey={task.statusKey}
-                      statusLabel={task.statusLabel}
-                    />
-                  </td>
-                  <td>
-                    <div className={styles.inlineProgress}>
-                      <span>{task.progress}%</span>
-                      <div className={styles.inlineProgressTrack}>
-                        <span style={{ width: `${task.progress}%` }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td>{task.finalWeightLabel}</td>
-                  <td>
-                    <Link href={task.detailHref} className={styles.inlineLink}>
-                      Харах
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className={styles.executiveWeightGrid}>
-        <section className={styles.executivePanel}>
-          <div className={styles.executiveSectionHeader}>
-            <div>
-              <span className={styles.executiveSectionKicker}>Шөнийн таталт</span>
-              <h2>Өчигдрийн хог тээвэрлэлтийн тайлан</h2>
-            </div>
-          </div>
-
-          <div className={styles.weightStatGrid}>
-            <article className={styles.weightStatCard}>
-              <span>Нийт жин</span>
-              <strong>{snapshot.yesterdayWeight.totalLabel}</strong>
-            </article>
-            <article className={styles.weightStatCard}>
-              <span>Хамгийн их жинтэй машин</span>
-              <strong>{snapshot.yesterdayWeight.topVehicleName}</strong>
-              <small>{snapshot.yesterdayWeight.topVehicleLabel}</small>
-            </article>
-            <article className={styles.weightStatCard}>
-              <span>Дундаж жин / машин</span>
-              <strong>{snapshot.yesterdayWeight.averageLabel}</strong>
-            </article>
-          </div>
-        </section>
-
-        <section className={styles.executivePanel}>
-          <div className={styles.executiveSectionHeader}>
-            <div>
-              <span className={styles.executiveSectionKicker}>Сарын зураглал</span>
-              <h2>Сарын гүйцэтгэл</h2>
-            </div>
-          </div>
-
-          <div className={styles.weightStatGrid}>
-            <article className={styles.weightStatCard}>
-              <span>Энэ сарын нийт жин</span>
-              <strong>{snapshot.monthlyWeight.totalLabel}</strong>
-            </article>
-            <article className={styles.weightStatCard}>
-              <span>Өчигдөр нэмэгдсэн жин</span>
-              <strong>{snapshot.monthlyWeight.addedYesterdayLabel}</strong>
-            </article>
-          </div>
-
-          <div className={styles.trendChart}>
-            {snapshot.monthlyWeight.trend.map((point) => (
-              <div key={point.dateKey} className={styles.trendColumn}>
-                <span className={styles.trendValue}>{point.totalLabel}</span>
-                <div className={styles.trendBarTrack}>
-                  <span
-                    className={styles.trendBar}
-                    style={{ height: `${point.heightPercent}%` }}
-                  />
+          <section className={styles.dualGrid}>
+            <section className={styles.panel}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Тайлан</span>
+                  <h2>Сүүлийн тайлангууд</h2>
                 </div>
-                <small>{point.dateLabel}</small>
+                <p>Талбараас ирсэн хамгийн сүүлийн тайлангийн урсгалыг харуулна.</p>
               </div>
-            ))}
-          </div>
-        </section>
-      </section>
 
-      <section className={styles.executivePanel}>
-        <div className={styles.executiveSectionHeader}>
-          <div>
-            <span className={styles.executiveSectionKicker}>Шуурхай харах</span>
-            <h2>Шуурхай холбоос</h2>
-          </div>
-        </div>
+              {recentReports.length ? (
+                <div className={styles.reportFeed}>
+                  {recentReports.map((report) => (
+                    <article key={report.id} className={styles.reportCard}>
+                      <div className={styles.reportTop}>
+                        <div>
+                          <strong>{report.reporter}</strong>
+                          <h3>{report.taskName}</h3>
+                        </div>
+                        <span>{report.submittedAt}</span>
+                      </div>
 
-        <div className={styles.quickLinkGrid}>
-          {snapshot.quickLinks.map((item) => (
-            <Link key={item.label} href={item.href} className={styles.quickLinkCard}>
-              <strong>{item.label}</strong>
-              <span>{item.note}</span>
-            </Link>
-          ))}
+                      <p>{report.departmentName}</p>
+                      <p className={styles.reportSummary}>
+                        {report.summary}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyColumnState}>
+                  Одоогоор сүүлийн тайлангийн бүртгэл алга.
+                </div>
+              )}
+            </section>
+
+            <section className={styles.panel}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Ахлагчид</span>
+                  <h2>Багийн ахлагчдын зураглал</h2>
+                </div>
+                <p>Хэн дээр ачаалал төвлөрснийг хурдан харахад зориулав.</p>
+              </div>
+
+              {teamLeaders.length ? (
+                <div className={styles.leaderGrid}>
+                  {teamLeaders.map((leader) => (
+                    <article key={leader.name} className={styles.leaderCard}>
+                      <div className={styles.leaderBadge} aria-hidden>
+                        {leader.name.charAt(0)}
+                      </div>
+
+                      <div className={styles.leaderContent}>
+                        <h3>{leader.name}</h3>
+                        <p>
+                          {leader.activeTasks} идэвхтэй ажил, {leader.reviewTasks} шалгалтын
+                          мөр
+                        </p>
+                        <div className={styles.leaderMeta}>
+                          <strong>{leader.averageCompletion}%</strong>
+                          <span>{leader.squadSize} хүний бүрэлдэхүүн</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyColumnState}>
+                  Одоогоор ахлагчийн нэгтгэсэн зураглал алга.
+                </div>
+              )}
+            </section>
+          </section>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

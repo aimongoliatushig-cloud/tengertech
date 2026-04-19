@@ -7,9 +7,32 @@
   color: var(--ink-900);
 }
 
+@media (max-width: 900px) {
+  .shell {
+    padding-top: 94px;
+  }
+}
+
 .container {
   max-width: 1220px;
   margin: 0 auto;
+}
+
+.contentWithMenu {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.menuColumn {
+  position: sticky;
+  top: 18px;
+  align-self: start;
+}
+
+.pageContent {
+  min-width: 0;
 }
 
 .navBar,
@@ -513,6 +536,16 @@
 }
 
 @media (max-width: 1080px) {
+  .contentWithMenu {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .menuColumn {
+    position: static;
+    top: auto;
+  }
+
   .statsGrid,
   .panelGrid {
     grid-template-columns: 1fr;
@@ -530,7 +563,7 @@
 
 @media (max-width: 720px) {
   .shell {
-    padding: 16px 14px calc(112px + env(safe-area-inset-bottom, 0px));
+    padding: 16px 14px calc(28px + env(safe-area-inset-bottom, 0px));
   }
 
   .navBar,
@@ -551,7 +584,38 @@
   }
 
   .statsGrid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .heroCard {
+    padding: 16px;
+  }
+
+  .heroCard h1 {
+    margin: 12px 0 8px;
+    font-size: clamp(1.9rem, 8vw, 2.55rem);
+    line-height: 1.02;
+  }
+
+  .heroCard p {
+    display: none;
+  }
+
+  .eyebrow {
+    padding: 6px 12px;
+    font-size: 0.7rem;
+  }
+
+  .statCard {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .statCard strong {
+    margin-top: 8px;
+    font-size: 1.48rem;
   }
 
   .jumpRail {
@@ -606,20 +670,7 @@
   }
 
   .mobileDock {
-    position: fixed;
-    right: 14px;
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    left: 14px;
-    z-index: 30;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    padding: 10px;
-    border: 1px solid var(--line-soft);
-    border-radius: 24px;
-    background: rgba(248, 253, 247, 0.94);
-    backdrop-filter: blur(16px);
-    box-shadow: 0 18px 40px rgba(31, 95, 49, 0.14);
+    display: none;
   }
 
   .reportFrame {
@@ -632,9 +683,4 @@
     border-radius: 20px;
   }
 
-  .mobileDock .jumpLink {
-    min-height: 52px;
-    padding: 0 12px;
-    background: rgba(74, 154, 93, 0.08);
-  }
 }

@@ -17,7 +17,7 @@ type OdooTaskRecord = {
   id: number;
   name: string;
   project_id: OdooRelation;
-  ops_department_id: OdooRelation;
+  ops_department_id?: OdooRelation;
   stage_id: OdooRelation;
   ops_team_leader_id: OdooRelation;
   user_ids: number[];
@@ -70,9 +70,15 @@ type OdooUserRecord = {
   ops_user_type: string | false;
 };
 
+type OdooDepartmentRecord = {
+  id: number;
+  name: string;
+};
+
 type DepartmentCard = {
   name: string;
   label: string;
+  icon: string;
   accent: string;
   openTasks: number;
   reviewTasks: number;
@@ -119,6 +125,30 @@ type LiveTask = {
   leaderName: string;
   priorityLabel: string;
   progress: number;
+  href: string;
+};
+
+export type TaskStatusKey = "planned" | "working" | "review" | "verified" | "problem";
+
+export type TaskDirectoryItem = {
+  id: number;
+  name: string;
+  departmentName: string;
+  projectName: string;
+  stageLabel: string;
+  stageBucket: StageBucket;
+  statusKey: TaskStatusKey;
+  statusLabel: string;
+  deadline: string;
+  leaderName: string;
+  priorityLabel: string;
+  progress: number;
+  plannedQuantity: number;
+  completedQuantity: number;
+  remainingQuantity: number;
+  measurementUnit: string;
+  operationTypeLabel: string;
+  issueFlag: boolean;
   href: string;
 };
 
@@ -202,6 +232,7 @@ export type DashboardSnapshot = {
   qualityMetrics: DashboardMetric[];
   departments: DepartmentCard[];
   projects: ProjectCard[];
+  taskDirectory: TaskDirectoryItem[];
   liveTasks: LiveTask[];
   reviewQueue: ReviewItem[];
   qualityAlerts: QualityAlert[];
@@ -266,6 +297,16 @@ const STAGE_LABELS: Record<StageBucket, string> = {
   done: "Дууссан ажил",
   unknown: "Тодорхойгүй",
 };
+
+const TASK_STATUS_LABELS: Record<TaskStatusKey, string> = {
+  planned: "Төлөвлөгдсөн",
+  working: "Ажиллаж байна",
+  review: "Шалгаж байна",
+  verified: "Баталгаажсан",
+  problem: "Асуудалтай",
+};
+
+const UNKNOWN_DEPARTMENT = "Тодорхойгүй";
 
 const KNOWN_STAGE_MATCHERS: Array<[StageBucket, string[]]> = [
   ["todo", ["хийгдэх", "todo", "task"]],
@@ -346,14 +387,14 @@ function mapTaskToDepartment(task: Pick<OdooTaskRecord, "name" | "project_id">) 
   if (haystack.includes("зам") || haystack.includes("талбай") || haystack.includes("цэвэрлэгээ")) {
     return "Зам талбайн цэвэрлэгээ";
   }
-  return "Тохижилт үйлчилгээ";
+  return UNKNOWN_DEPARTMENT;
 }
 
 function resolveTaskDepartmentName(
   task: Pick<OdooTaskRecord, "name" | "project_id" | "ops_department_id">,
   projectDepartmentById: Map<number, string>,
 ) {
-  const directDepartmentName = relationName(task.ops_department_id, "").trim();
+  const directDepartmentName = relationName(task.ops_department_id ?? false, "").trim();
   if (directDepartmentName) {
     return directDepartmentName;
   }
@@ -375,9 +416,32 @@ function operationTypeLabel(operationType?: string | false) {
 
 function resolveProjectDepartmentName(
   project: Pick<OdooProjectRecord, "ops_department_id">,
-  fallback = "Тодорхойгүй",
+  fallback = UNKNOWN_DEPARTMENT,
 ) {
   return relationName(project.ops_department_id, fallback);
+}
+
+function getTaskStatusKey(task: Pick<OdooTaskRecord, "stage_id" | "mfo_quality_exception_count" | "mfo_weight_sync_warning">): TaskStatusKey {
+  if ((task.mfo_quality_exception_count ?? 0) > 0 || task.mfo_weight_sync_warning) {
+    return "problem";
+  }
+
+  switch (getStageBucket(relationName(task.stage_id, ""))) {
+    case "progress":
+      return "working";
+    case "review":
+      return "review";
+    case "done":
+      return "verified";
+    case "todo":
+    case "unknown":
+    default:
+      return "planned";
+  }
+}
+
+function getTaskStatusLabel(statusKey: TaskStatusKey) {
+  return TASK_STATUS_LABELS[statusKey];
 }
 
 function resolveDepartmentLabel(name: string) {
@@ -386,6 +450,32 @@ function resolveDepartmentLabel(name: string) {
 
 function resolveDepartmentAccent(name: string) {
   return DEPARTMENT_ACCENTS[name as keyof typeof DEPARTMENT_ACCENTS] ?? "var(--tone-slate)";
+}
+
+function resolveDepartmentIcon(name: string) {
+  const normalized = name.trim().toLowerCase();
+
+  if (normalized.includes("авто") || normalized.includes("машин") || normalized.includes("техник")) {
+    return "🚚";
+  }
+
+  if (normalized.includes("хог") || normalized.includes("ачилт") || normalized.includes("маршрут")) {
+    return "♻️";
+  }
+
+  if (normalized.includes("ногоон") || normalized.includes("мод") || normalized.includes("зүлэг")) {
+    return "🌿";
+  }
+
+  if (normalized.includes("зам") || normalized.includes("цэвэрлэгээ") || normalized.includes("гудамж")) {
+    return "🧹";
+  }
+
+  if (normalized.includes("тохижилт") || normalized.includes("үйлчилгээ") || normalized.includes("засвар")) {
+    return "🏙️";
+  }
+
+  return "🏢";
 }
 
 async function jsonRpc<T>(
@@ -539,12 +629,96 @@ async function executeKw<T>(
   kwargs: Record<string, unknown>,
   connection: OdooConnection,
 ) {
+  if (method === "search_read") {
+    const [domain = [], positionalFields] = methodArgs as [unknown?, unknown?];
+    const fields =
+      Array.isArray(positionalFields)
+        ? positionalFields
+        : Array.isArray(kwargs.fields)
+          ? kwargs.fields
+          : [];
+
+    const searchKw: Record<string, unknown> = {};
+    const readKw: Record<string, unknown> = {};
+
+    for (const key of ["offset", "limit", "order", "context"]) {
+      if (kwargs[key] !== undefined) {
+        searchKw[key] = kwargs[key];
+      }
+    }
+
+    for (const key of ["load", "context"]) {
+      if (kwargs[key] !== undefined) {
+        readKw[key] = kwargs[key];
+      }
+    }
+
+    if (fields.length) {
+      readKw.fields = fields;
+    }
+
+    const ids = await jsonRpc<number[]>(
+      "object",
+      "execute_kw",
+      [connection.db, uid, connection.password, model, "search", [domain], searchKw],
+      connection,
+    );
+
+    if (!ids.length) {
+      return [] as T;
+    }
+
+    return jsonRpc<T>(
+      "object",
+      "execute_kw",
+      [connection.db, uid, connection.password, model, "read", [ids], readKw],
+      connection,
+    );
+  }
+
   return jsonRpc<T>(
     "object",
     "execute_kw",
     [connection.db, uid, connection.password, model, method, methodArgs, kwargs],
     connection,
   );
+}
+
+async function searchReadAll<T>(
+  uid: number,
+  model: string,
+  domain: unknown[],
+  kwargs: Record<string, unknown>,
+  connection: OdooConnection,
+  batchSize = 400,
+) {
+  const records: T[] = [];
+  let offset = 0;
+
+  while (true) {
+    const batch = await executeKw<T[]>(
+      uid,
+      model,
+      "search_read",
+      [domain],
+      {
+        ...kwargs,
+        limit: batchSize,
+        offset,
+      },
+      connection,
+    );
+
+    records.push(...batch);
+
+    if (batch.length < batchSize) {
+      break;
+    }
+
+    offset += batch.length;
+  }
+
+  return records;
 }
 
 export async function executeOdooKw<T>(
@@ -626,29 +800,25 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     throw new Error("Odoo authentication failed");
   }
 
-  const [projects, tasks, reports] = await Promise.all([
-    executeKw<OdooProjectRecord[]>(
+  const [projects, tasks, reports, departmentsFromOdoo] = await Promise.all([
+    searchReadAll<OdooProjectRecord>(
       uid,
       "project.project",
-      "search_read",
-      [[]],
+      [],
       {
         fields: ["name", "user_id", "ops_department_id", "date_start", "date"],
-        limit: 500,
         order: "create_date desc",
       },
       connection,
     ),
-    executeKw<OdooTaskRecord[]>(
+    searchReadAll<OdooTaskRecord>(
       uid,
       "project.task",
-      "search_read",
-      [[["project_id", "!=", false]]],
+      [["project_id", "!=", false]],
       {
         fields: [
           "name",
           "project_id",
-          "ops_department_id",
           "stage_id",
           "ops_team_leader_id",
           "user_ids",
@@ -670,16 +840,14 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
           "mfo_weight_sync_warning",
           "mfo_quality_exception_count",
         ],
-        limit: 2000,
         order: "priority desc, date_deadline asc, create_date desc",
       },
       connection,
     ),
-    executeKw<OdooReportRecord[]>(
+    searchReadAll<OdooReportRecord>(
       uid,
       "ops.task.report",
-      "search_read",
-      [[]],
+      [],
       {
         fields: [
           "task_id",
@@ -692,11 +860,22 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
           "image_attachment_ids",
           "audio_attachment_ids",
         ],
-        limit: 200,
         order: "report_datetime desc",
       },
       connection,
+      200,
     ),
+    searchReadAll<OdooDepartmentRecord>(
+      uid,
+      "hr.department",
+      [],
+      {
+        fields: ["name"],
+        order: "name asc",
+      },
+      connection,
+      200,
+    ).catch(() => []),
   ]);
 
   const totalTasks = tasks.length;
@@ -730,29 +909,36 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     resolveTaskDepartmentName(task, projectDepartmentById),
   );
 
-  const departmentNames = [
-    ...DEPARTMENT_ORDER.filter((name) =>
-      [...projectDepartmentById.values(), ...taskDepartmentNames].includes(name),
+  const derivedDepartmentNames = Array.from(
+    new Set(
+      [...projectDepartmentById.values(), ...taskDepartmentNames]
+        .map((name) => name.trim())
+        .filter((name) => Boolean(name) && name !== UNKNOWN_DEPARTMENT),
     ),
-    ...new Set(
-      [...projectDepartmentById.values(), ...taskDepartmentNames].filter(Boolean),
-    ),
-  ]
-    .filter(
-      (name, index, collection) =>
-        collection.indexOf(name) === index &&
-        !DEPARTMENT_ORDER.includes(name as (typeof DEPARTMENT_ORDER)[number]),
-    )
-    .sort((left, right) => left.localeCompare(right, "mn"));
+  );
 
-  const orderedDepartmentNames = [
-    ...DEPARTMENT_ORDER.filter((name) =>
-      [...projectDepartmentById.values(), ...taskDepartmentNames].includes(name),
-    ),
-    ...departmentNames,
-  ];
+  const orderedDepartmentNames = Array.from(
+    new Set([
+      ...departmentsFromOdoo
+        .map((department) => department.name.trim())
+        .filter(Boolean),
+      ...DEPARTMENT_ORDER.filter((name) => derivedDepartmentNames.includes(name)),
+      ...derivedDepartmentNames
+        .filter(
+          (name) => !DEPARTMENT_ORDER.includes(name as (typeof DEPARTMENT_ORDER)[number]),
+        )
+        .sort((left, right) => left.localeCompare(right, "mn")),
+    ]),
+  );
 
-  const departments = orderedDepartmentNames.map((department) => {
+  const departmentSourceNames =
+    orderedDepartmentNames.length > 0
+      ? orderedDepartmentNames
+      : tasks.length || projects.length
+        ? [UNKNOWN_DEPARTMENT]
+        : [];
+
+  const departments = departmentSourceNames.map((department) => {
     const departmentTasks = tasks.filter((task) => {
       const departmentName = resolveTaskDepartmentName(task, projectDepartmentById);
       return departmentName === department;
@@ -767,6 +953,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     return {
       name: department,
       label: resolveDepartmentLabel(department),
+      icon: resolveDepartmentIcon(department),
       accent: resolveDepartmentAccent(department),
       openTasks: departmentTasks.length - departmentDone.length,
       reviewTasks: departmentReview.length,
@@ -799,7 +986,8 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       id: project.id,
       name: project.name,
       manager: relationName(project.user_id),
-      departmentName: resolveProjectDepartmentName(project),
+      departmentName:
+        projectDepartmentById.get(project.id) ?? resolveProjectDepartmentName(project),
       stageLabel: STAGE_LABELS[stageBucket],
       stageBucket,
       openTasks: projectTasks.length - completed,
@@ -808,6 +996,50 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       href: `/projects/${project.id}`,
     } satisfies ProjectCard;
   });
+
+  const taskDirectory = tasks
+    .map((task) => {
+      const stageBucket = getStageBucket(relationName(task.stage_id, ""));
+      const statusKey = getTaskStatusKey(task);
+
+      return {
+        id: task.id,
+        name: task.name,
+        departmentName: resolveTaskDepartmentName(task, projectDepartmentById),
+        projectName: relationName(task.project_id, "Төсөлгүй"),
+        stageLabel: STAGE_LABELS[stageBucket],
+        stageBucket,
+        statusKey,
+        statusLabel: getTaskStatusLabel(statusKey),
+        deadline: formatCompactDate(task.date_deadline),
+        leaderName: relationName(task.ops_team_leader_id),
+        priorityLabel: priorityLabel(task.priority),
+        progress: Math.round(task.ops_progress_percent ?? 0),
+        plannedQuantity: task.ops_planned_quantity ?? 0,
+        completedQuantity: task.ops_completed_quantity ?? 0,
+        remainingQuantity: task.ops_remaining_quantity ?? 0,
+        measurementUnit: task.ops_measurement_unit || "ш",
+        operationTypeLabel: operationTypeLabel(task.mfo_operation_type),
+        issueFlag: statusKey === "problem",
+        href: `/tasks/${task.id}`,
+      } satisfies TaskDirectoryItem;
+    })
+    .sort((left, right) => {
+      const statusPriority: Record<TaskStatusKey, number> = {
+        problem: 0,
+        review: 1,
+        working: 2,
+        planned: 3,
+        verified: 4,
+      };
+
+      const statusDiff = statusPriority[left.statusKey] - statusPriority[right.statusKey];
+      if (statusDiff !== 0) {
+        return statusDiff;
+      }
+
+      return left.name.localeCompare(right.name, "mn");
+    });
 
   const liveTasks = activeTasks.map((task) => ({
     id: task.id,
@@ -850,16 +1082,16 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
 
   const attachmentMap = new Map<number, OdooAttachmentRecord>();
   if (attachmentIds.length) {
-    const attachments = await executeKw<OdooAttachmentRecord[]>(
+    const attachments = await searchReadAll<OdooAttachmentRecord>(
       uid,
       "ir.attachment",
-      "search_read",
-      [[["id", "in", attachmentIds]]],
+      [["id", "in", attachmentIds]],
       {
         fields: ["name", "mimetype"],
-        limit: attachmentIds.length,
+        order: "id asc",
       },
       connection,
+      200,
     );
 
     for (const attachment of attachments) {
@@ -1043,6 +1275,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     ],
     departments,
     projects: projectsWithStats,
+    taskDirectory,
     liveTasks,
     reviewQueue,
     qualityAlerts,
@@ -1113,6 +1346,7 @@ function fallbackSnapshot(): DashboardSnapshot {
     departments: DEPARTMENT_ORDER.map((name, index) => ({
       name,
       label: DEPARTMENT_LABELS[name],
+      icon: resolveDepartmentIcon(name),
       accent: DEPARTMENT_ACCENTS[name],
       openTasks: [4, 5, 9, 6, 4][index],
       reviewTasks: [1, 0, 2, 1, 0][index],
@@ -1154,6 +1388,92 @@ function fallbackSnapshot(): DashboardSnapshot {
         completion: 35,
         deadline: "4-р сарын 17, 06:00",
         href: "/projects/3",
+      },
+    ],
+    taskDirectory: [
+      {
+        id: 201,
+        name: "5-р хороо - 32 модны тайлан",
+        departmentName: "Ногоон байгууламж",
+        projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
+        stageLabel: "Шалгагдаж буй ажил",
+        stageBucket: "review",
+        statusKey: "review",
+        statusLabel: "Шалгаж байна",
+        deadline: "Өнөөдөр 16:30",
+        leaderName: "suldee",
+        priorityLabel: "Өндөр",
+        progress: 100,
+        plannedQuantity: 32,
+        completedQuantity: 32,
+        remainingQuantity: 0,
+        measurementUnit: "мод",
+        operationTypeLabel: "Ерөнхий ажил",
+        issueFlag: false,
+        href: "/tasks/201",
+      },
+      {
+        id: 202,
+        name: "Хог тээврийн 2-р маршрут",
+        departmentName: "Хог тээвэрлэлт",
+        projectName: "Хог тээвэрлэлтийн өглөөний маршрут",
+        stageLabel: "Явагдаж буй ажил",
+        stageBucket: "progress",
+        statusKey: "problem",
+        statusLabel: "Асуудалтай",
+        deadline: "Өнөөдөр 19:00",
+        leaderName: "sarangerel",
+        priorityLabel: "Яаралтай",
+        progress: 88,
+        plannedQuantity: 5,
+        completedQuantity: 4,
+        remainingQuantity: 1,
+        measurementUnit: "ачилт",
+        operationTypeLabel: "Хог цуглуулалт",
+        issueFlag: true,
+        href: "/tasks/202",
+      },
+      {
+        id: 102,
+        name: "7-р хороо - Төв замын захын цэвэрлэгээ",
+        departmentName: "Зам талбайн цэвэрлэгээ",
+        projectName: "Зам талбайн шөнийн цэвэрлэгээ",
+        stageLabel: "Хийгдэх ажил",
+        stageBucket: "todo",
+        statusKey: "planned",
+        statusLabel: "Төлөвлөгдсөн",
+        deadline: "Маргааш 06:00",
+        leaderName: "temuulen",
+        priorityLabel: "Яаралтай",
+        progress: 0,
+        plannedQuantity: 12,
+        completedQuantity: 0,
+        remainingQuantity: 12,
+        measurementUnit: "км²",
+        operationTypeLabel: "Гудамж цэвэрлэгээ",
+        issueFlag: false,
+        href: "/tasks/102",
+      },
+      {
+        id: 103,
+        name: "Авто бааз - 3 машинд урсгал үйлчилгээ",
+        departmentName: "Авто бааз",
+        projectName: "Техникийн өдөр тутмын бэлэн байдал",
+        stageLabel: "Явагдаж буй ажил",
+        stageBucket: "progress",
+        statusKey: "working",
+        statusLabel: "Ажиллаж байна",
+        deadline: "Өнөөдөр 17:30",
+        leaderName: "bold",
+        priorityLabel: "Дунд",
+        progress: 33,
+        plannedQuantity: 3,
+        completedQuantity: 1,
+        remainingQuantity: 2,
+        measurementUnit: "машин",
+        operationTypeLabel: "Ерөнхий ажил",
+        issueFlag: false,
+        href: "/tasks/103",
       },
     ],
     liveTasks: [
