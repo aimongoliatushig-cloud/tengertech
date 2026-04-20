@@ -1,0 +1,23 @@
+{
+    "name": "HR Discipline and Transfer MN",
+    "summary": "Монгол хэл дээрх HR сахилга ба шилжилт хөдөлгөөний бүртгэл",
+    "version": "19.0.1.0.0",
+    "category": "Human Resources",
+    "author": "OpenAI",
+    "website": "https://www.odoo.com",
+    "license": "LGPL-3",
+    "depends": ["hr", "mail"],
+    "data": [
+        "security/hr_discipline_transfer_security.xml",
+        "security/ir.model.access.csv",
+        "data/sequence_data.xml",
+        "report/report_actions.xml",
+        "views/hr_disciplinary_action_views.xml",
+        "views/hr_employee_transfer_views.xml",
+        "views/hr_employee_views.xml",
+        "views/hr_discipline_transfer_menus.xml",
+        "report/report_templates.xml",
+    ],
+    "application": True,
+    "installable": True,
+}

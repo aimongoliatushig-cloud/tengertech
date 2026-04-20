@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="res_groups_privilege_hr_discipline_transfer" model="res.groups.privilege">
+            <field name="name">HR сахилга ба шилжилт</field>
+            <field name="sequence">40</field>
+            <field name="category_id" ref="base.module_category_human_resources"/>
+        </record>
+
+        <record id="group_hr_discipline_user" model="res.groups">
+            <field name="name">HR шийтгэлийн ажилтан</field>
+            <field name="privilege_id" ref="res_groups_privilege_hr_discipline_transfer"/>
+            <field name="implied_ids" eval="[(4, ref('hr.group_hr_user'))]"/>
+        </record>
+
+        <record id="group_hr_discipline_manager" model="res.groups">
+            <field name="name">HR шийтгэлийн менежер</field>
+            <field name="privilege_id" ref="res_groups_privilege_hr_discipline_transfer"/>
+            <field name="implied_ids" eval="[(4, ref('group_hr_discipline_user'))]"/>
+        </record>
+
+        <record id="group_hr_transfer_user" model="res.groups">
+            <field name="name">HR шилжилт хөдөлгөөний ажилтан</field>
+            <field name="privilege_id" ref="res_groups_privilege_hr_discipline_transfer"/>
+            <field name="implied_ids" eval="[(4, ref('hr.group_hr_user'))]"/>
+        </record>
+
+        <record id="group_hr_transfer_manager" model="res.groups">
+            <field name="name">HR шилжилт хөдөлгөөний менежер</field>
+            <field name="privilege_id" ref="res_groups_privilege_hr_discipline_transfer"/>
+            <field name="implied_ids" eval="[(4, ref('group_hr_transfer_user'))]"/>
+        </record>
+
+        <record id="group_hr_director_approval" model="res.groups">
+            <field name="name">Захирлын баталгаажуулагч</field>
+            <field name="privilege_id" ref="res_groups_privilege_hr_discipline_transfer"/>
+            <field name="implied_ids" eval="[(4, ref('hr.group_hr_user'))]"/>
+        </record>
+
+        <record id="rule_hr_disciplinary_action_user_company" model="ir.rule">
+            <field name="name">Сахилгын бүртгэл: компанийн хүрээ</field>
+            <field name="model_id" ref="model_hr_disciplinary_action"/>
+            <field name="groups" eval="[(4, ref('group_hr_discipline_user'))]"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="rule_hr_disciplinary_action_manager_all" model="ir.rule">
+            <field name="name">Сахилгын бүртгэл: менежер бүхийг харна</field>
+            <field name="model_id" ref="model_hr_disciplinary_action"/>
+            <field name="groups" eval="[(4, ref('group_hr_discipline_manager')), (4, ref('hr.group_hr_manager')), (4, ref('base.group_system'))]"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+        </record>
+
+        <record id="rule_hr_disciplinary_action_director" model="ir.rule">
+            <field name="name">Сахилгын бүртгэл: захирал илгээсэн ба батлагдсаныг харна</field>
+            <field name="model_id" ref="model_hr_disciplinary_action"/>
+            <field name="groups" eval="[(4, ref('group_hr_director_approval'))]"/>
+            <field name="domain_force">[('company_id', 'in', company_ids), ('state', 'in', ['submitted', 'approved'])]</field>
+        </record>
+
+        <record id="rule_hr_employee_transfer_user_company" model="ir.rule">
+            <field name="name">Шилжилт хөдөлгөөн: компанийн хүрээ</field>
+            <field name="model_id" ref="model_hr_employee_transfer"/>
+            <field name="groups" eval="[(4, ref('group_hr_transfer_user'))]"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="rule_hr_employee_transfer_manager_all" model="ir.rule">
+            <field name="name">Шилжилт хөдөлгөөн: менежер бүхийг харна</field>
+            <field name="model_id" ref="model_hr_employee_transfer"/>
+            <field name="groups" eval="[(4, ref('group_hr_transfer_manager')), (4, ref('hr.group_hr_manager')), (4, ref('base.group_system'))]"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+        </record>
+
+        <record id="rule_hr_employee_transfer_director" model="ir.rule">
+            <field name="name">Шилжилт хөдөлгөөн: захирал илгээсэн ба батлагдсаныг харна</field>
+            <field name="model_id" ref="model_hr_employee_transfer"/>
+            <field name="groups" eval="[(4, ref('group_hr_director_approval'))]"/>
+            <field name="domain_force">[('company_id', 'in', company_ids), ('state', 'in', ['submitted', 'approved'])]</field>
+        </record>
+    </data>
+</odoo>

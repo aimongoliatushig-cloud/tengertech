@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_employee_transfer_search" model="ir.ui.view">
+        <field name="name">hr.employee.transfer.search</field>
+        <field name="model">hr.employee.transfer</field>
+        <field name="arch" type="xml">
+            <search string="Шилжилт хөдөлгөөний бүртгэл">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="current_department_id"/>
+                <field name="new_department_id"/>
+                <field name="movement_type"/>
+                <field name="effective_date"/>
+                <filter string="Хэлтэс шилжүүлэлт" name="filter_department_transfer" domain="[('movement_type', '=', 'department_transfer')]"/>
+                <filter string="Албан тушаал өөрчлөлт" name="filter_job_change" domain="[('movement_type', '=', 'job_change')]"/>
+                <filter string="Түр томилолт" name="filter_temporary_assignment" domain="[('movement_type', '=', 'temporary_assignment')]"/>
+                <separator/>
+                <filter string="Ноорог" name="filter_draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Батлагдсан" name="filter_approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Огноо" name="filter_effective_date" date="effective_date"/>
+                <group>
+                    <filter string="Одоогийн хэлтэс" name="group_current_department" context="{'group_by': 'current_department_id'}"/>
+                    <filter string="Шинэ хэлтэс" name="group_new_department" context="{'group_by': 'new_department_id'}"/>
+                    <filter string="Төрөл" name="group_movement_type" context="{'group_by': 'movement_type'}"/>
+                    <filter string="Сар" name="group_effective_month" context="{'group_by': 'effective_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_hr_employee_transfer_list" model="ir.ui.view">
+        <field name="name">hr.employee.transfer.list</field>
+        <field name="model">hr.employee.transfer</field>
+        <field name="arch" type="xml">
+            <list string="Шилжилт хөдөлгөөний бүртгэл" default_order="effective_date desc"
+                  decoration-info="state == 'submitted'"
+                  decoration-success="state == 'approved'"
+                  decoration-muted="state == 'rejected'">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="current_department_id"/>
+                <field name="new_department_id"/>
+                <field name="movement_type"/>
+                <field name="effective_date"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_employee_transfer_form" model="ir.ui.view">
+        <field name="name">hr.employee.transfer.form</field>
+        <field name="model">hr.employee.transfer</field>
+        <field name="arch" type="xml">
+            <form string="Шилжилт хөдөлгөөний бүртгэл">
+                <header>
+                    <button name="button_submit"
+                            string="Илгээх"
+                            type="object"
+                            class="btn btn-primary"
+                            invisible="state != 'draft'"
+                            groups="hr_discipline_transfer_mn.group_hr_transfer_user,hr_discipline_transfer_mn.group_hr_transfer_manager,hr.group_hr_manager,base.group_system"/>
+                    <button name="button_approve"
+                            string="Батлах"
+                            type="object"
+                            class="btn btn-primary"
+                            invisible="state != 'submitted'"
+                            groups="hr_discipline_transfer_mn.group_hr_director_approval,hr_discipline_transfer_mn.group_hr_transfer_manager,hr.group_hr_manager,base.group_system"/>
+                    <button name="button_reject"
+                            string="Цуцлах"
+                            type="object"
+                            class="btn btn-secondary"
+                            invisible="state != 'submitted'"
+                            groups="hr_discipline_transfer_mn.group_hr_director_approval,hr_discipline_transfer_mn.group_hr_transfer_manager,hr.group_hr_manager,base.group_system"/>
+                    <button name="button_reset_to_draft"
+                            string="Ноорог болгох"
+                            type="object"
+                            class="btn btn-secondary"
+                            invisible="state not in ('approved', 'rejected')"
+                            groups="hr_discipline_transfer_mn.group_hr_transfer_manager,hr.group_hr_manager,base.group_system"/>
+                    <button name="%(action_report_hr_employee_transfer)d"
+                            string="Хэвлэх"
+                            type="action"
+                            class="btn btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,rejected"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Цуцлагдсан" bg_color="text-bg-danger" invisible="state != 'rejected'"/>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="employee_id" readonly="state != 'draft'"/>
+                            <field name="movement_type" readonly="state != 'draft'"/>
+                            <field name="requested_by_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="order_date" readonly="state == 'approved'"/>
+                            <field name="effective_date" readonly="state == 'approved'"/>
+                            <field name="approved_by_id"/>
+                            <field name="approved_date"/>
+                        </group>
+                    </group>
+                    <group string="Шилжилтийн мэдээлэл">
+                        <group>
+                            <field name="current_department_id" readonly="1"/>
+                            <field name="new_department_id" readonly="state == 'approved'"/>
+                            <field name="current_job_id" readonly="1"/>
+                            <field name="new_job_id" readonly="state == 'approved'"/>
+                        </group>
+                        <group>
+                            <field name="reason" readonly="state == 'approved'"/>
+                            <field name="note" readonly="state == 'approved'"/>
+                        </group>
+                    </group>
+                    <group string="Хавсралт">
+                        <field name="attachment_ids" widget="many2many_binary" readonly="state == 'approved'"/>
+                        <field name="director_order_attachment_ids"
+                               widget="many2many_binary"
+                               readonly="state == 'approved'"
+                               invisible="state == 'draft'"/>
+                    </group>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hr_employee_transfer_graph" model="ir.ui.view">
+        <field name="name">hr.employee.transfer.graph</field>
+        <field name="model">hr.employee.transfer</field>
+        <field name="arch" type="xml">
+            <graph string="Шилжилт хөдөлгөөний тайлан" type="bar">
+                <field name="current_department_id"/>
+                <field name="new_department_id"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_hr_employee_transfer_pivot" model="ir.ui.view">
+        <field name="name">hr.employee.transfer.pivot</field>
+        <field name="model">hr.employee.transfer</field>
+        <field name="arch" type="xml">
+            <pivot string="Шилжилт хөдөлгөөний тайлан">
+                <field name="current_department_id" type="row"/>
+                <field name="new_department_id" type="row"/>
+                <field name="movement_type" type="col"/>
+                <field name="effective_date" interval="month" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_hr_employee_transfer" model="ir.actions.act_window">
+        <field name="name">Шилжилт хөдөлгөөний бүртгэл</field>
+        <field name="res_model">hr.employee.transfer</field>
+        <field name="view_mode">list,form,graph,pivot</field>
+        <field name="search_view_id" ref="view_hr_employee_transfer_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Шинэ шилжилт хөдөлгөөний бүртгэл үүсгэнэ үү.</p>
+        </field>
+    </record>
+
+    <record id="action_hr_employee_transfer_report" model="ir.actions.act_window">
+        <field name="name">Шилжилт хөдөлгөөний тайлан</field>
+        <field name="res_model">hr.employee.transfer</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="search_view_id" ref="view_hr_employee_transfer_search"/>
+    </record>
+</odoo>

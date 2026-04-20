@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_hr_disciplinary_action_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Сахилгын бүртгэл</h2>
+                        <table class="table table-sm o_main_table">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Дугаар</strong></td>
+                                    <td><span t-field="doc.name"/></td>
+                                    <td><strong>Төлөв</strong></td>
+                                    <td><span t-field="doc.state"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ажилтан</strong></td>
+                                    <td><span t-field="doc.employee_id"/></td>
+                                    <td><strong>Хэлтэс</strong></td>
+                                    <td><span t-field="doc.employee_department_id"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Албан тушаал</strong></td>
+                                    <td><span t-field="doc.employee_job_id"/></td>
+                                    <td><strong>Төрөл</strong></td>
+                                    <td><span t-field="doc.action_type"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Зөрчил гарсан огноо</strong></td>
+                                    <td><span t-field="doc.violation_date"/></td>
+                                    <td><strong>Хүчин төгөлдөр огноо</strong></td>
+                                    <td><span t-field="doc.effective_date"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h4>Товч гарчиг</h4>
+                        <p t-field="doc.violation_title"/>
+                        <h4>Дэлгэрэнгүй тайлбар</h4>
+                        <p t-field="doc.violation_description"/>
+                        <div t-if="doc.rejection_reason">
+                            <h4>Цуцалсан шалтгаан</h4>
+                            <p t-field="doc.rejection_reason"/>
+                        </div>
+                        <div class="mt32">
+                            <p><strong>Баталсан:</strong> <span t-field="doc.approved_by_id"/></p>
+                            <p><strong>Баталсан огноо:</strong> <span t-field="doc.approved_date"/></p>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_hr_employee_transfer_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Шилжилт хөдөлгөөний хураангуй</h2>
+                        <table class="table table-sm o_main_table">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Дугаар</strong></td>
+                                    <td><span t-field="doc.name"/></td>
+                                    <td><strong>Төлөв</strong></td>
+                                    <td><span t-field="doc.state"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ажилтан</strong></td>
+                                    <td><span t-field="doc.employee_id"/></td>
+                                    <td><strong>Төрөл</strong></td>
+                                    <td><span t-field="doc.movement_type"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Одоогийн хэлтэс</strong></td>
+                                    <td><span t-field="doc.current_department_id"/></td>
+                                    <td><strong>Шинэ хэлтэс</strong></td>
+                                    <td><span t-field="doc.new_department_id"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Одоогийн албан тушаал</strong></td>
+                                    <td><span t-field="doc.current_job_id"/></td>
+                                    <td><strong>Шинэ албан тушаал</strong></td>
+                                    <td><span t-field="doc.new_job_id"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Тушаалын огноо</strong></td>
+                                    <td><span t-field="doc.order_date"/></td>
+                                    <td><strong>Хүчин төгөлдөр огноо</strong></td>
+                                    <td><span t-field="doc.effective_date"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h4>Шалтгаан</h4>
+                        <p t-field="doc.reason"/>
+                        <div t-if="doc.note">
+                            <h4>Тэмдэглэл</h4>
+                            <p t-field="doc.note"/>
+                        </div>
+                        <div class="mt32">
+                            <p><strong>Баталсан:</strong> <span t-field="doc.approved_by_id"/></p>
+                            <p><strong>Баталсан огноо:</strong> <span t-field="doc.approved_date"/></p>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

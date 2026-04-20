@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_disciplinary_action_user,hr.disciplinary.action.user,model_hr_disciplinary_action,hr_discipline_transfer_mn.group_hr_discipline_user,1,1,1,0
+access_hr_disciplinary_action_manager,hr.disciplinary.action.manager,model_hr_disciplinary_action,hr_discipline_transfer_mn.group_hr_discipline_manager,1,1,1,1
+access_hr_disciplinary_action_hr_manager,hr.disciplinary.action.hr.manager,model_hr_disciplinary_action,hr.group_hr_manager,1,1,1,1
+access_hr_disciplinary_action_director,hr.disciplinary.action.director,model_hr_disciplinary_action,hr_discipline_transfer_mn.group_hr_director_approval,1,1,0,0
+access_hr_employee_transfer_user,hr.employee.transfer.user,model_hr_employee_transfer,hr_discipline_transfer_mn.group_hr_transfer_user,1,1,1,0
+access_hr_employee_transfer_manager,hr.employee.transfer.manager,model_hr_employee_transfer,hr_discipline_transfer_mn.group_hr_transfer_manager,1,1,1,1
+access_hr_employee_transfer_hr_manager,hr.employee.transfer.hr.manager,model_hr_employee_transfer,hr.group_hr_manager,1,1,1,1
+access_hr_employee_transfer_director,hr.employee.transfer.director,model_hr_employee_transfer,hr_discipline_transfer_mn.group_hr_director_approval,1,1,0,0

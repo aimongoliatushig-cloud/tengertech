@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_employee_form_inherit_clearance_mn" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.clearance.mn</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_clearance_records"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text-o"
+                        groups="hr.group_hr_user">
+                    <div class="o_stat_info">
+                        Тойрох хуудас
+                        <span class="o_stat_value">
+                            <field name="clearance_count"/>
+                        </span>
+                    </div>
+                </button>
+                <button name="action_create_clearance"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-plus-circle"
+                        groups="hr.group_hr_user">
+                    <div class="o_stat_info">
+                        Тойрох хуудас үүсгэх
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Тойрох хуудасны түүх" groups="hr.group_hr_user">
+                    <field name="clearance_ids" nolabel="1" readonly="1">
+                        <list string="Тойрох хуудасны түүх">
+                            <field name="name"/>
+                            <field name="clearance_type"/>
+                            <field name="request_date"/>
+                            <field name="effective_date"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

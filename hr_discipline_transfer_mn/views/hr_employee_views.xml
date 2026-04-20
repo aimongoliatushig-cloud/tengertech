@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_employee_form_inherit_discipline_transfer_mn" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.discipline.transfer.mn</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_disciplinary_actions"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-gavel"
+                        groups="hr.group_hr_user">
+                    <div class="o_stat_info">
+                        Шийтгэл
+                        <span class="o_stat_value">
+                            <field name="disciplinary_action_count"/>
+                        </span>
+                    </div>
+                </button>
+                <button name="action_open_transfer_history"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-exchange"
+                        groups="hr.group_hr_user">
+                    <div class="o_stat_info">
+                        Шилжилт хөдөлгөөн
+                        <span class="o_stat_value">
+                            <field name="transfer_count"/>
+                        </span>
+                    </div>
+                </button>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Шийтгэлийн түүх" groups="hr.group_hr_user">
+                    <field name="disciplinary_action_ids" nolabel="1" readonly="1">
+                        <list string="Шийтгэлийн түүх">
+                            <field name="name"/>
+                            <field name="action_type"/>
+                            <field name="violation_title"/>
+                            <field name="violation_date"/>
+                            <field name="effective_date"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Шилжилт хөдөлгөөний түүх" groups="hr.group_hr_user">
+                    <field name="transfer_ids" nolabel="1" readonly="1">
+                        <list string="Шилжилт хөдөлгөөний түүх">
+                            <field name="name"/>
+                            <field name="movement_type"/>
+                            <field name="current_department_id"/>
+                            <field name="new_department_id"/>
+                            <field name="effective_date"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Ажил эрхлэлтийн төлөв" groups="hr.group_hr_user">
+                    <group>
+                        <group>
+                            <field name="employment_status" widget="badge"/>
+                            <field name="termination_date" invisible="employment_status != 'terminated'"/>
+                        </group>
+                        <group>
+                            <field name="termination_reason" invisible="employment_status != 'terminated'"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

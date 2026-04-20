@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_hr_discipline_root"
+              name="Сахилга"
+              parent="hr.menu_hr_root"
+              sequence="30"
+              groups="hr_discipline_transfer_mn.group_hr_discipline_user,hr_discipline_transfer_mn.group_hr_discipline_manager,hr_discipline_transfer_mn.group_hr_director_approval,hr.group_hr_manager,base.group_system"/>
+
+    <menuitem id="menu_hr_disciplinary_action"
+              name="Сахилгын бүртгэл"
+              parent="menu_hr_discipline_root"
+              action="action_hr_disciplinary_action"
+              sequence="10"
+              groups="hr_discipline_transfer_mn.group_hr_discipline_user,hr_discipline_transfer_mn.group_hr_discipline_manager,hr_discipline_transfer_mn.group_hr_director_approval,hr.group_hr_manager,base.group_system"/>
+
+    <menuitem id="menu_hr_transfer_root"
+              name="Шилжилт хөдөлгөөн"
+              parent="hr.menu_hr_root"
+              sequence="31"
+              groups="hr_discipline_transfer_mn.group_hr_transfer_user,hr_discipline_transfer_mn.group_hr_transfer_manager,hr_discipline_transfer_mn.group_hr_director_approval,hr.group_hr_manager,base.group_system"/>
+
+    <menuitem id="menu_hr_employee_transfer"
+              name="Шилжилт хөдөлгөөний бүртгэл"
+              parent="menu_hr_transfer_root"
+              action="action_hr_employee_transfer"
+              sequence="10"
+              groups="hr_discipline_transfer_mn.group_hr_transfer_user,hr_discipline_transfer_mn.group_hr_transfer_manager,hr_discipline_transfer_mn.group_hr_director_approval,hr.group_hr_manager,base.group_system"/>
+
+    <menuitem id="menu_hr_disciplinary_report"
+              name="Шийтгэлийн тайлан"
+              parent="hr.hr_menu_hr_reports"
+              action="action_hr_disciplinary_report"
+              sequence="10"
+              groups="hr_discipline_transfer_mn.group_hr_discipline_user,hr_discipline_transfer_mn.group_hr_discipline_manager,hr_discipline_transfer_mn.group_hr_director_approval,hr.group_hr_manager,base.group_system"/>
+
+    <menuitem id="menu_hr_transfer_report"
+              name="Шилжилт хөдөлгөөний тайлан"
+              parent="hr.hr_menu_hr_reports"
+              action="action_hr_employee_transfer_report"
+              sequence="20"
+              groups="hr_discipline_transfer_mn.group_hr_transfer_user,hr_discipline_transfer_mn.group_hr_transfer_manager,hr_discipline_transfer_mn.group_hr_director_approval,hr.group_hr_manager,base.group_system"/>
+</odoo>

@@ -1,0 +1,20 @@
+{
+    "name": "HR Clearance MN",
+    "summary": "Монгол ажилтны тойрох хуудасны workflow",
+    "version": "19.0.1.0.0",
+    "category": "Human Resources",
+    "author": "OpenAI",
+    "website": "https://www.odoo.com",
+    "license": "LGPL-3",
+    "depends": ["hr", "mail"],
+    "data": [
+        "security/hr_clearance_security.xml",
+        "security/ir.model.access.csv",
+        "data/sequence_data.xml",
+        "views/hr_employee_clearance_views.xml",
+        "views/hr_employee_views.xml",
+        "views/hr_clearance_menus.xml",
+    ],
+    "application": True,
+    "installable": True,
+}
