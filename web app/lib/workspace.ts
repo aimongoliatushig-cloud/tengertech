@@ -156,9 +156,25 @@ type StageBucket = "todo" | "progress" | "review" | "done" | "unknown";
 const STAGE_ALIASES: Array<[StageBucket, string[]]> = [
   ["todo", ["хийгдэх ажил", "hiigdeh ajil", "todo", "task"]],
   ["progress", ["явагдаж буй ажил", "yovagdaj bui ajil", "progress", "in progress"]],
-  ["review", ["шалгагдаж буй ажил", "shalgagdaj bui ajil", "review", "changes requested"]],
+  ["review", ["шалгагдаж буй ажил", "хянагдаж буй ажил", "shalgagdaj bui ajil", "hyanagdaj bui ajil", "review", "changes requested"]],
   ["done", ["дууссан ажил", "duussan ajil", "done", "completed"]],
 ];
+
+function displayStageLabel(name: string) {
+  const bucket = normalizeStageBucket(name);
+  switch (bucket) {
+    case "todo":
+      return "Хийгдэх ажил";
+    case "progress":
+      return "Явагдаж буй ажил";
+    case "review":
+      return "Хянагдаж буй ажил";
+    case "done":
+      return "Дууссан ажил";
+    default:
+      return name || "Тодорхойгүй";
+  }
+}
 
 function relationName(relation: Relation, fallback = "Тодорхойгүй") {
   return Array.isArray(relation) ? relation[1] : fallback;
@@ -337,7 +353,7 @@ export async function loadProjectDetail(
 
   const project = projects[0];
   if (!project) {
-    throw new Error("Төсөл олдсонгүй.");
+    throw new Error("Ажил олдсонгүй.");
   }
 
   const doneCount = tasks.filter(
@@ -364,7 +380,7 @@ export async function loadProjectDetail(
       id: task.id,
       name: task.name,
       href: `/tasks/${task.id}`,
-      stageLabel: relationName(task.stage_id, "Тодорхойгүй"),
+      stageLabel: displayStageLabel(relationName(task.stage_id, "")),
       stageBucket: normalizeStageBucket(relationName(task.stage_id, "")),
       progress: Math.round(task.ops_progress_percent ?? 0),
       deadline: formatDateLabel(task.date_deadline),
@@ -464,7 +480,7 @@ export async function loadTaskDetail(
     name: task.name,
     projectId: relationId(task.project_id),
     projectName: relationName(task.project_id),
-    stageLabel: relationName(task.stage_id, "Тодорхойгүй"),
+    stageLabel: displayStageLabel(relationName(task.stage_id, "")),
     stageBucket: normalizeStageBucket(relationName(task.stage_id, "")),
     state: task.state,
     deadline: formatDateLabel(task.date_deadline),

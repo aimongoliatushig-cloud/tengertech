@@ -63,6 +63,31 @@
   margin: 0 auto 24px;
 }
 
+.sourceNotice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: var(--page-width);
+  margin: 0 auto 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(198, 138, 44, 0.22);
+  border-radius: 22px;
+  background: rgba(255, 248, 232, 0.92);
+  box-shadow: 0 12px 26px rgba(120, 96, 33, 0.08);
+}
+
+.sourceNotice strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #8f5d11;
+}
+
+.sourceNotice p {
+  color: var(--ink-700);
+  line-height: 1.55;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -445,6 +470,27 @@
   color: var(--ink-700);
   line-height: 1.6;
   text-align: right;
+}
+
+.sectionLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid rgba(31, 95, 49, 0.12);
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.08);
+  color: var(--brand-900);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.sectionLink:hover {
+  transform: translateY(-1px);
+  background: rgba(74, 154, 93, 0.14);
+  border-color: rgba(31, 95, 49, 0.2);
 }
 
 .sectionNote {
@@ -842,6 +888,10 @@
   gap: 16px;
 }
 
+.taskList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .taskStats span,
 .reportMeta span,
 .leaderMeta span {
@@ -1118,6 +1168,7 @@
   .metricsGrid,
   .quickActions,
   .projectRail,
+  .taskList,
   .departmentBoard,
   .departmentGrid,
   .leaderGrid,
@@ -1170,6 +1221,11 @@
     padding: 16px 14px calc(28px + env(safe-area-inset-bottom, 0px));
   }
 
+  .sourceNotice {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .topbar,
   .heroCopy,
   .syncPanel,
@@ -1186,12 +1242,15 @@
   }
 
   .brandMark {
-    min-width: 0;
-    width: 100%;
+    display: none;
   }
 
-  .brandLogo {
-    width: min(100%, 180px);
+  .topbarActions {
+    display: none;
+  }
+
+  .brandBlock h1 {
+    font-size: clamp(1.45rem, 8vw, 2rem);
   }
 
   .metricsGrid {

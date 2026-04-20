@@ -1,10 +1,9 @@
 import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
-import { logoutAction } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
-import { getRoleLabel, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 import styles from "./tasks.module.css";
@@ -21,7 +20,7 @@ type PageProps = {
 const FILTERS: Array<{ key: FilterKey; label: string }> = [
   { key: "all", label: "Бүгд" },
   { key: "working", label: "Ажиллаж байна" },
-  { key: "review", label: "Шалгаж байна" },
+  { key: "review", label: "Хянагдаж байна" },
   { key: "problem", label: "Асуудалтай" },
   { key: "verified", label: "Баталгаажсан" },
 ];
@@ -64,6 +63,10 @@ export default async function TasksPage({ searchParams }: PageProps) {
     password: session.password,
   });
 
+  const canCreateProject = hasCapability(session, "create_projects");
+  const canViewQualityCenter = hasCapability(session, "view_quality_center");
+  const canUseFieldConsole = hasCapability(session, "use_field_console");
+
   const selectedDepartment =
     requestedDepartment && requestedDepartment !== "all"
       ? snapshot.departments.find((department) => department.name === requestedDepartment) ?? null
@@ -96,238 +99,239 @@ export default async function TasksPage({ searchParams }: PageProps) {
   return (
     <main className={shellStyles.shell}>
       <div className={shellStyles.container}>
-        <header className={styles.pageHeader}>
-          <div className={styles.pageHeaderMain}>
-            <div className={styles.titleBlock}>
-              <span className={styles.pageKicker}>Бүх урсгал</span>
-              <h1>Бүх ажил</h1>
-              <p>
-                Odoo ERP дээр бүртгэгдсэн бүх task-ийг алба нэгж, төсөл, төлөвөөр нь нэг дор
-                харуулна. Асуудалтай болон шалгалт хүлээж буй ажлыг эхэнд нь гаргаж,
-                дэлгэрэнгүй рүү шууд нээнэ.
-              </p>
-            </div>
+        <div className={shellStyles.contentWithMenu}>
+          <aside className={shellStyles.menuColumn}>
+            <AppMenu
+              active="tasks"
+              variant={session.role === "general_manager" ? "executive" : "default"}
+              canCreateProject={canCreateProject}
+              canViewQualityCenter={canViewQualityCenter}
+              canUseFieldConsole={canUseFieldConsole}
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+            />
+          </aside>
 
-            <div className={styles.userBlock}>
-              <span>{getRoleLabel(session.role)}</span>
-              <strong>{session.name}</strong>
-              <small>Сүүлд шинэчлэгдсэн: {snapshot.generatedAt}</small>
-            </div>
-          </div>
+          <div className={shellStyles.pageContent}>
+            <header className={styles.pageHeader}>
+              <div className={styles.pageHeaderMain}>
+                <div className={styles.titleBlock}>
+                  <span className={styles.pageKicker}>Бүх урсгал</span>
+                  <h1>Бүх ажилбар</h1>
+                  <p>
+                    Odoo ERP дээр бүртгэгдсэн бүх ажилбарыг алба нэгж, ажил, төлөвөөр нь нэг
+                    дороос харуулна. Асуудалтай болон хяналт хүлээж буй ажилбарыг эхэнд нь ялгаж,
+                    дэлгэрэнгүй рүү шууд нээнэ.
+                  </p>
+                </div>
 
-          <div className={styles.pageHeaderAside}>
-            <form className={styles.dateFilterForm} method="get">
-              <label htmlFor="tasks-department">Алба нэгж</label>
-              <div className={styles.dateRow}>
-                <select
-                  id="tasks-department"
-                  name="department"
-                  defaultValue={selectedDepartment?.name ?? "all"}
-                  className={styles.dateInput}
-                >
-                  <option value="all">Бүх алба нэгж</option>
-                  {snapshot.departments.map((department) => (
-                    <option key={department.name} value={department.name}>
-                      {department.name}
-                    </option>
-                  ))}
-                </select>
-                <input type="hidden" name="filter" value={activeFilter} />
-                <button type="submit" className={styles.dateButton}>
-                  Харах
-                </button>
-              </div>
-            </form>
-
-            <div className={styles.headerActions}>
-              <Link href="/" className={styles.secondaryLink}>
-                Хяналтын самбар
-              </Link>
-              <form action={logoutAction}>
-                <button type="submit" className={styles.logoutButton}>
-                  Гарах
-                </button>
-              </form>
-            </div>
-          </div>
-        </header>
-
-        <AppMenu
-          active="tasks"
-          variant="executive"
-          userName={session.name}
-          roleLabel={getRoleLabel(session.role)}
-        />
-
-        <section className={styles.summaryStrip}>
-          <article className={styles.summaryCard}>
-            <span>Сонгосон алба нэгж</span>
-            <strong>{selectedDepartmentLabel}</strong>
-            <small>{snapshot.departments.length} алба нэгжээс шүүж байна</small>
-          </article>
-          <article className={styles.summaryCard}>
-            <span>Нийт ажил</span>
-            <strong>{counts.all}</strong>
-            <small>Odoo ERP-ээс орж ирсэн бүх task</small>
-          </article>
-          <article className={styles.summaryCard}>
-            <span>Нийт төсөл</span>
-            <strong>{scopedProjects.length}</strong>
-            <small>Энэ шүүлтэд хамаарах төслүүд</small>
-          </article>
-        </section>
-
-        <section className={styles.filterPanel}>
-          <div className={styles.filterHeader}>
-            <div>
-              <span className={styles.filterKicker}>Төлөвийн шүүлт</span>
-              <h2>Ажлыг хурдан ангилж харах</h2>
-            </div>
-            <p>Эхлээд асуудалтай, дараа нь шалгалт хүлээж буй ажлуудыг ялгаж харахад тохиромжтой.</p>
-          </div>
-
-          <div className={styles.filterScroller}>
-            {FILTERS.map((item) => {
-              const hrefParams = new URLSearchParams();
-              if (selectedDepartment?.name) {
-                hrefParams.set("department", selectedDepartment.name);
-              }
-              if (item.key !== "all") {
-                hrefParams.set("filter", item.key);
-              }
-
-              return (
-                <Link
-                  key={item.key}
-                  href={`/tasks?${hrefParams.toString()}`}
-                  className={`${styles.filterChip} ${
-                    activeFilter === item.key ? styles.filterChipActive : ""
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  <strong>{counts[item.key]}</strong>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className={styles.taskSection}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <span className={styles.filterKicker}>Ажлын жагсаалт</span>
-              <h2>Odoo-оос татсан бүх task</h2>
-            </div>
-            <p>{visibleTasks.length} ажил одоогоор дэлгэц дээр харагдаж байна</p>
-          </div>
-
-          {visibleTasks.length ? (
-            <>
-              <div className={styles.taskCardList}>
-                {visibleTasks.map((task) => (
-                  <article key={task.id} className={styles.taskCard}>
-                    <div className={styles.taskCardTop}>
-                      <div className={styles.taskIdentity}>
-                        <strong>{task.name}</strong>
-                        <span>{task.projectName}</span>
-                      </div>
-                      <StatusBadge statusKey={task.statusKey} statusLabel={task.statusLabel} />
-                    </div>
-
-                    <p className={styles.taskRoute}>{task.departmentName}</p>
-
-                    <div className={styles.taskInfoGrid}>
-                      <div className={styles.taskInfoItem}>
-                        <span>Ахлагч</span>
-                        <strong>{task.leaderName}</strong>
-                      </div>
-                      <div className={styles.taskInfoItem}>
-                        <span>Хугацаа</span>
-                        <strong>{task.deadline}</strong>
-                      </div>
-                      <div className={styles.taskInfoItem}>
-                        <span>Төрөл</span>
-                        <strong>{task.operationTypeLabel}</strong>
-                      </div>
-                    </div>
-
-                    <div className={styles.progressRow}>
-                      <div className={styles.progressLabel}>
-                        <span>Ажлын явц</span>
-                        <strong>{task.progress}%</strong>
-                      </div>
-                      <div className={styles.progressTrack}>
-                        <span style={{ width: `${task.progress}%` }} />
-                      </div>
-                    </div>
-
-                    <div className={styles.cardActions}>
-                      <Link href={task.href} className={styles.primaryLink}>
-                        Дэлгэрэнгүй харах
-                      </Link>
-                      <span className={styles.subtleNote}>
-                        {task.completedQuantity}/{task.plannedQuantity} {task.measurementUnit} •{" "}
-                        {task.priorityLabel}
-                      </span>
-                    </div>
-                  </article>
-                ))}
+                <div className={styles.userBlock}>
+                  <span>Сүүлд шинэчлэгдсэн</span>
+                  <strong>{snapshot.generatedAt}</strong>
+                  <small>{selectedDepartmentLabel}</small>
+                </div>
               </div>
 
-              <div className={styles.tableShell}>
-                <table className={styles.taskTable}>
-                  <thead>
-                    <tr>
-                      <th>Ажил</th>
-                      <th>Алба нэгж</th>
-                      <th>Төсөл</th>
-                      <th>Төлөв</th>
-                      <th>Ахлагч</th>
-                      <th>Явц</th>
-                      <th>Дэлгэрэнгүй</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className={styles.pageHeaderAside}>
+                <form className={styles.dateFilterForm} method="get">
+                  <label htmlFor="tasks-department">Алба нэгж</label>
+                  <div className={styles.dateRow}>
+                    <select
+                      id="tasks-department"
+                      name="department"
+                      defaultValue={selectedDepartment?.name ?? "all"}
+                      className={styles.dateInput}
+                    >
+                      <option value="all">Бүх алба нэгж</option>
+                      {snapshot.departments.map((department) => (
+                        <option key={department.name} value={department.name}>
+                          {department.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input type="hidden" name="filter" value={activeFilter} />
+                    <button type="submit" className={styles.dateButton}>
+                      Харах
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </header>
+
+            <section className={styles.summaryStrip}>
+              <article className={styles.summaryCard}>
+                <span>Сонгосон алба нэгж</span>
+                <strong>{selectedDepartmentLabel}</strong>
+                <small>{snapshot.departments.length} алба нэгжээс шүүж байна</small>
+              </article>
+              <article className={styles.summaryCard}>
+                <span>Нийт ажилбар</span>
+                <strong>{counts.all}</strong>
+                <small>Odoo ERP-ээс орж ирсэн бүх ажилбар</small>
+              </article>
+              <article className={styles.summaryCard}>
+                <span>Нийт ажил</span>
+                <strong>{scopedProjects.length}</strong>
+                <small>Энэ шүүлтэд хамаарах ажлууд</small>
+              </article>
+            </section>
+
+            <section className={styles.filterPanel}>
+              <div className={styles.filterHeader}>
+                <div>
+                  <span className={styles.filterKicker}>Төлөвийн шүүлт</span>
+                  <h2>Ажлыг хурдан ангилж харах</h2>
+                </div>
+                <p>
+                  Эхлээд асуудалтай, дараа нь хяналт хүлээж буй ажилбаруудыг ялгаж харахад
+                  тохиромжтой.
+                </p>
+              </div>
+
+              <div className={styles.filterScroller}>
+                {FILTERS.map((item) => {
+                  const hrefParams = new URLSearchParams();
+                  if (selectedDepartment?.name) {
+                    hrefParams.set("department", selectedDepartment.name);
+                  }
+                  if (item.key !== "all") {
+                    hrefParams.set("filter", item.key);
+                  }
+
+                  return (
+                    <Link
+                      key={item.key}
+                      href={`/tasks?${hrefParams.toString()}`}
+                      className={`${styles.filterChip} ${
+                        activeFilter === item.key ? styles.filterChipActive : ""
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      <strong>{counts[item.key]}</strong>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className={styles.taskSection}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.filterKicker}>Ажлын жагсаалт</span>
+                  <h2>Odoo-оос татсан бүх ажилбар</h2>
+                </div>
+                <p>{visibleTasks.length} ажилбар одоогоор дэлгэц дээр харагдаж байна</p>
+              </div>
+
+              {visibleTasks.length ? (
+                <>
+                  <div className={styles.taskCardList}>
                     {visibleTasks.map((task) => (
-                      <tr key={task.id}>
-                        <td>
-                          <strong>{task.name}</strong>
-                        </td>
-                        <td>{task.departmentName}</td>
-                        <td>{task.projectName}</td>
-                        <td>
-                          <StatusBadge
-                            statusKey={task.statusKey}
-                            statusLabel={task.statusLabel}
-                          />
-                        </td>
-                        <td>{task.leaderName}</td>
-                        <td>
-                          <div className={styles.tableProgress}>
-                            <span>{task.progress}%</span>
-                            <div className={styles.progressTrack}>
-                              <span style={{ width: `${task.progress}%` }} />
-                            </div>
+                      <article key={task.id} className={styles.taskCard}>
+                        <div className={styles.taskCardTop}>
+                          <div className={styles.taskIdentity}>
+                            <strong>{task.name}</strong>
+                            <span>{task.projectName}</span>
                           </div>
-                        </td>
-                        <td>
-                          <Link href={task.href} className={styles.inlineLink}>
-                            Нээх
+                          <StatusBadge statusKey={task.statusKey} statusLabel={task.statusLabel} />
+                        </div>
+
+                        <p className={styles.taskRoute}>{task.departmentName}</p>
+
+                        <div className={styles.taskInfoGrid}>
+                          <div className={styles.taskInfoItem}>
+                            <span>Ахлагч</span>
+                            <strong>{task.leaderName}</strong>
+                          </div>
+                          <div className={styles.taskInfoItem}>
+                            <span>Хугацаа</span>
+                            <strong>{task.deadline}</strong>
+                          </div>
+                          <div className={styles.taskInfoItem}>
+                            <span>Ангилал</span>
+                            <strong>{task.operationTypeLabel}</strong>
+                          </div>
+                        </div>
+
+                        <div className={styles.progressRow}>
+                          <div className={styles.progressLabel}>
+                            <span>Ажлын явц</span>
+                            <strong>{task.progress}%</strong>
+                          </div>
+                          <div className={styles.progressTrack}>
+                            <span style={{ width: `${task.progress}%` }} />
+                          </div>
+                        </div>
+
+                        <div className={styles.cardActions}>
+                          <Link href={task.href} className={styles.primaryLink}>
+                            Дэлгэрэнгүй харах
                           </Link>
-                        </td>
-                      </tr>
+                          <span className={styles.subtleNote}>
+                            {task.completedQuantity}/{task.plannedQuantity} {task.measurementUnit} •{" "}
+                            {task.priorityLabel}
+                          </span>
+                        </div>
+                      </article>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : (
-            <div className={styles.emptyState}>
-              <h3>Энэ шүүлтээр ажил олдсонгүй</h3>
-              <p>Өөр алба нэгж эсвэл өөр төлөв сонгоод дахин шүүж үзнэ үү.</p>
-            </div>
-          )}
-        </section>
+                  </div>
+
+                  <div className={styles.tableShell}>
+                    <table className={styles.taskTable}>
+                      <thead>
+                        <tr>
+                          <th>Ажил</th>
+                          <th>Алба нэгж</th>
+                        <th>Ажил</th>
+                          <th>Төлөв</th>
+                          <th>Ахлагч</th>
+                          <th>Явц</th>
+                          <th>Дэлгэрэнгүй</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleTasks.map((task) => (
+                          <tr key={task.id}>
+                            <td>
+                              <strong>{task.name}</strong>
+                            </td>
+                            <td>{task.departmentName}</td>
+                            <td>{task.projectName}</td>
+                            <td>
+                              <StatusBadge
+                                statusKey={task.statusKey}
+                                statusLabel={task.statusLabel}
+                              />
+                            </td>
+                            <td>{task.leaderName}</td>
+                            <td>
+                              <div className={styles.tableProgress}>
+                                <span>{task.progress}%</span>
+                                <div className={styles.progressTrack}>
+                                  <span style={{ width: `${task.progress}%` }} />
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <Link href={task.href} className={styles.inlineLink}>
+                                Нээх
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <div className={styles.emptyState}>
+                  <h3>Энэ шүүлтээр ажил олдсонгүй</h3>
+                  <p>Өөр алба нэгж эсвэл өөр төлөв сонгоод дахин шүүж үзнэ үү.</p>
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
       </div>
     </main>
   );

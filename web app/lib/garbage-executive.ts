@@ -131,7 +131,7 @@ const TIME_ZONE = "Asia/Ulaanbaatar";
 const STATUS_LABELS: Record<ExecutiveStatusKey, string> = {
   planned: "Төлөвлөгдсөн",
   working: "Ажиллаж байна",
-  review: "Шалгаж байна",
+  review: "Хянагдаж байна",
   verified: "Баталгаажсан",
   problem: "Асуудалтай",
 };
@@ -266,7 +266,7 @@ function buildFallbackSnapshot(selectedDate?: string): GarbageExecutiveSnapshot 
       },
       {
         id: "fallback-2",
-        title: "3 ажил шалгалт хүлээж байна",
+      title: "3 ажил хяналт хүлээж байна",
         note: "Баталгаажуулалтын мөр удааширсан байна.",
         severity: "amber",
         severityLabel: "Анхаарах",
@@ -291,7 +291,7 @@ function buildFallbackSnapshot(selectedDate?: string): GarbageExecutiveSnapshot 
     ],
     signals: [
       { label: "Эхлээгүй машин", value: 2, note: "Төлөвлөгдсөн хэвээр байна" },
-      { label: "Шалгалт хүлээж буй ажил", value: 3, note: "Хянагчид очсон" },
+    { label: "Хяналт хүлээж буй ажил", value: 3, note: "Хянагчид очсон" },
       { label: "Асуудалтай тээвэрлэлт", value: 1, note: "Шуурхай үзэх шаардлагатай" },
       { label: "Жин хүлээгдэж буй ажил", value: 2, note: "Өчигдрийн таталт дутуу" },
     ],
@@ -368,7 +368,7 @@ function buildFallbackSnapshot(selectedDate?: string): GarbageExecutiveSnapshot 
         href: taskReturnTo(parsed.input, "problem"),
       },
       {
-        label: "Шалгалт хүлээж буй ажил",
+      label: "Хяналт хүлээж буй ажил",
         note: "Баталгаажуулалтын мөрийг нээх",
         href: taskReturnTo(parsed.input, "review"),
       },
@@ -533,7 +533,7 @@ export async function loadGarbageExecutiveSnapshot(
       .forEach((task) => {
         alerts.push({
           id: `review-${task.id}`,
-          title: `${relationName(task.mfo_vehicle_id, "Техник")} шалгалт хүлээж байна`,
+      title: `${relationName(task.mfo_vehicle_id, "Техник")} хяналт хүлээж байна`,
           note: `${relationName(task.mfo_route_id, "Маршрут")} / тайлан ирсэн`,
           severity: "amber",
           severityLabel: "Анхаарах",
@@ -652,7 +652,7 @@ export async function loadGarbageExecutiveSnapshot(
           tone: "normal",
         },
         {
-          label: "Шалгаж буй",
+      label: "Хянагдаж буй",
           value: formatNumber(reviewCount),
           note: "Хянагчийн мөрөнд байна",
           tone: "warning",
@@ -684,7 +684,7 @@ export async function loadGarbageExecutiveSnapshot(
           note: "Өглөөний гаралт хийгдээгүй",
         },
         {
-          label: "Шалгалт хүлээж буй ажил",
+      label: "Хяналт хүлээж буй ажил",
           value: reviewCount,
           note: "Баталгаажуулалтын мөрөнд байна",
         },
@@ -723,7 +723,7 @@ export async function loadGarbageExecutiveSnapshot(
           href: taskReturnTo(selectedDate, "problem"),
         },
         {
-          label: "Шалгалт хүлээж буй ажил",
+      label: "Хяналт хүлээж буй ажил",
           note: "Баталгаажуулалтын мөр",
           href: taskReturnTo(selectedDate, "review"),
         },

@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
-import { logoutAction } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
 import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
@@ -10,28 +9,65 @@ import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 import styles from "./reports.module.css";
 
-function StagePill({
-  label,
-  bucket,
-}: {
-  label: string;
-  bucket: "todo" | "progress" | "review" | "done" | "unknown";
-}) {
-  const tone =
-    bucket === "done"
-      ? dashboardStyles.stageDone
-      : bucket === "review"
-        ? dashboardStyles.stageReview
-        : bucket === "progress"
-          ? dashboardStyles.stageProgress
-          : dashboardStyles.stageTodo;
+type PageProps = {
+  searchParams?: Promise<{
+    department?: string | string[];
+  }>;
+};
 
-  return <span className={`${dashboardStyles.stagePill} ${tone}`}>{label}</span>;
+type FeedReport = {
+  id: number;
+  reporter: string;
+  taskName: string;
+  departmentName: string;
+  projectName: string;
+  summary: string;
+  reportedQuantity: number;
+  imageCount: number;
+  audioCount: number;
+  submittedAt: string;
+  images: {
+    id: number;
+    name: string;
+    mimetype: string;
+    url: string;
+  }[];
+  audios: {
+    id: number;
+    name: string;
+    mimetype: string;
+    url: string;
+  }[];
+};
+
+type ReportGroup = {
+  projectName: string;
+  departmentName: string;
+  reports: FeedReport[];
+  latestSubmittedAt: string;
+};
+
+function getDepartmentParam(value?: string | string[]) {
+  if (Array.isArray(value)) {
+    return value[0] ?? "";
+  }
+  return value ?? "";
+}
+
+function countReportsByDepartment(
+  departmentName: string | null,
+  reports: Array<{ departmentName: string }>,
+) {
+  if (!departmentName) {
+    return reports.length;
+  }
+
+  return reports.filter((report) => report.departmentName === departmentName).length;
 }
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage() {
+export default async function ReportsPage({ searchParams }: PageProps) {
   const session = await requireSession();
   const snapshot = await loadMunicipalSnapshot({
     login: session.login,
@@ -42,250 +78,265 @@ export default async function ReportsPage() {
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
 
+  const params = (await searchParams) ?? {};
+  const requestedDepartment = getDepartmentParam(params.department);
+
+  const selectedDepartment =
+    requestedDepartment && requestedDepartment !== "all"
+      ? snapshot.departments.find((department) => department.name === requestedDepartment) ?? null
+      : null;
+
+  const filteredReports = snapshot.reports.filter(
+    (report) => !selectedDepartment || report.departmentName === selectedDepartment.name,
+  );
+
+  const filteredReviewQueue = snapshot.reviewQueue.filter(
+    (item) => !selectedDepartment || item.departmentName === selectedDepartment.name,
+  );
+
+  const groupedReports = Array.from(
+    filteredReports.reduce<Map<string, ReportGroup>>((accumulator, report) => {
+      const existing = accumulator.get(report.projectName);
+      if (existing) {
+        existing.reports.push(report);
+        return accumulator;
+      }
+
+      accumulator.set(report.projectName, {
+        projectName: report.projectName,
+        departmentName: report.departmentName,
+        reports: [report],
+        latestSubmittedAt: report.submittedAt,
+      });
+      return accumulator;
+    }, new Map()),
+  )
+    .map(([, group]) => ({
+      ...group,
+      reports: group.reports.sort((left, right) => right.id - left.id),
+    }))
+    .sort((left, right) => right.reports[0].id - left.reports[0].id);
+
+  const selectedDepartmentName = selectedDepartment?.name ?? "Бүх алба нэгж";
+  const totalImages = filteredReports.reduce((sum, report) => sum + report.imageCount, 0);
+  const totalAudios = filteredReports.reduce((sum, report) => sum + report.audioCount, 0);
+
   return (
     <main className={shellStyles.shell}>
       <div className={shellStyles.container} id="reports-top">
-        <header className={styles.pageHeader}>
-          <div className={styles.titleBlock}>
-            <span className={styles.kicker}>Тайлан</span>
-            <h1>Тайлан ба баталгаажуулалт</h1>
-            <p>
-              Шалгалт хүлээж буй ажил, талбайгаас ирсэн тайлан, багийн ахлагчдын гүйцэтгэлийг
-              нэг урсгалаар цэгцтэй харуулна.
-            </p>
-          </div>
-
-          <div className={styles.pageAside}>
-            <div className={styles.dateMeta}>
-              <span>Сүүлд шинэчлэгдсэн</span>
-              <strong>{snapshot.generatedAt}</strong>
-              <small>{getRoleLabel(session.role)}</small>
-            </div>
-
-            <div className={styles.userCard}>
-              <span>Хэрэглэгч</span>
-              <strong>{session.name}</strong>
-            </div>
-
-            <form action={logoutAction}>
-              <button type="submit" className={shellStyles.secondaryButton}>
-                Гарах
-              </button>
-            </form>
-          </div>
-        </header>
-
-        <AppMenu
-          active="reports"
-          canCreateProject={canCreateProject}
-          canViewQualityCenter={canViewQualityCenter}
-          canUseFieldConsole={canUseFieldConsole}
-          variant={session.role === "general_manager" ? "executive" : "default"}
-          userName={session.name}
-          roleLabel={getRoleLabel(session.role)}
-        />
-
-        <section className={styles.summaryStrip}>
-          <article className={styles.summaryCard}>
-            <span>Шалгалтын мөр</span>
-            <strong>{snapshot.reviewQueue.length}</strong>
-            <small>Хүлээгдэж буй ажил</small>
-          </article>
-          <article className={styles.summaryCard}>
-            <span>Орсон тайлан</span>
-            <strong>{snapshot.reports.length}</strong>
-            <small>Сүүлийн тайлангийн урсгал</small>
-          </article>
-          <article className={styles.summaryCard}>
-            <span>Багийн ахлагч</span>
-            <strong>{snapshot.teamLeaders.length}</strong>
-            <small>Идэвхтэй ахлагч</small>
-          </article>
-        </section>
-
-        <section className={styles.pageGrid}>
-          <div className={styles.mainColumn}>
-            <section className={styles.sectionCard}>
-              <div className={styles.sectionHead}>
-                <div>
-                  <span className={styles.kicker}>Шуурхай шийдэх</span>
-                  <h2>Шалгалт хүлээж буй ажил</h2>
-                </div>
-                <p>Нэн түрүүнд шийдэх ажлуудыг дээд хэсэгт төвлөрүүлэв.</p>
-              </div>
-
-              {snapshot.reviewQueue.length ? (
-                <div className={styles.reviewList}>
-                  {snapshot.reviewQueue.map((item) => (
-                    <Link key={item.id} href={item.href} className={styles.reviewCard}>
-                      <div className={styles.reviewTop}>
-                        <div>
-                          <strong>{item.name}</strong>
-                          <p>{item.projectName}</p>
-                        </div>
-                        <StagePill label={item.stageLabel} bucket="review" />
-                      </div>
-
-                      <div className={styles.reviewMeta}>
-                        <span>Явц {item.progress}%</span>
-                        <span>Хугацаа {item.deadline}</span>
-                        <span>Багийн ахлагч {item.leaderName}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.emptyState}>
-                  <h2>Шалгалт хүлээж буй ажил алга</h2>
-                  <p>Одоогоор баталгаажуулалт хүлээж буй ажил бүртгэгдээгүй байна.</p>
-                </div>
-              )}
-            </section>
-
-            <section className={styles.sectionCard}>
-              <div className={styles.sectionHead}>
-                <div>
-                  <span className={styles.kicker}>Тайлангийн урсгал</span>
-                  <h2>Сүүлийн тайлангууд</h2>
-                </div>
-                <p>Зураг, аудио, гол тайлбарыг нэг card дээр харагдуулна.</p>
-              </div>
-
-              {snapshot.reports.length ? (
-                <div className={styles.reportList}>
-                  {snapshot.reports.map((report) => (
-                    <article key={report.id} className={styles.reportCard}>
-                      <div className={styles.reportTop}>
-                        <div>
-                          <strong>{report.taskName}</strong>
-                          <p>
-                            {report.projectName} / {report.reporter}
-                          </p>
-                        </div>
-                        <StagePill label={report.submittedAt} bucket="progress" />
-                      </div>
-
-                      <div className={styles.reportMeta}>
-                        <span>{report.reportedQuantity} нэгж</span>
-                        <span>{report.imageCount} зураг</span>
-                        <span>{report.audioCount} аудио</span>
-                      </div>
-
-                      <p>{report.summary}</p>
-
-                      {report.images.length ? (
-                        <div className={dashboardStyles.reportImageGrid}>
-                          {report.images.map((image) => (
-                            <a
-                              key={image.id}
-                              href={image.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={dashboardStyles.reportImageLink}
-                            >
-                              <Image
-                                src={image.url}
-                                alt={`${report.taskName} - ${image.name}`}
-                                className={dashboardStyles.reportImage}
-                                width={320}
-                                height={240}
-                                unoptimized
-                              />
-                            </a>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      {report.audios.length ? (
-                        <div className={dashboardStyles.reportAudioList}>
-                          {report.audios.map((audio) => (
-                            <div key={audio.id} className={dashboardStyles.reportAudioCard}>
-                              <strong>{audio.name}</strong>
-                              <audio
-                                controls
-                                preload="none"
-                                src={audio.url}
-                                className={dashboardStyles.reportAudioPlayer}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.emptyState}>
-                  <h2>Тайлан алга</h2>
-                  <p>Одоогоор тайлангийн урсгал хоосон байна.</p>
-                </div>
-              )}
-            </section>
-          </div>
-
-          <aside className={styles.sideColumn}>
-            <section className={styles.sectionCard}>
-              <div className={styles.sectionHead}>
-                <div>
-                  <span className={styles.kicker}>Багийн зураглал</span>
-                  <h2>Багийн ахлагчдын товч үзүүлэлт</h2>
-                </div>
-              </div>
-
-              {snapshot.teamLeaders.length ? (
-                <div className={styles.leaderGrid}>
-                  {snapshot.teamLeaders.map((leader) => (
-                    <article key={leader.name} className={styles.leaderCard}>
-                      <strong>{leader.name}</strong>
-                      <div className={styles.leaderMeta}>
-                        <span>Идэвхтэй {leader.activeTasks}</span>
-                        <span>Шалгалт {leader.reviewTasks}</span>
-                        <span>Баг {leader.squadSize}</span>
-                        <span>Гүйцэтгэл {leader.averageCompletion}%</span>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.emptyState}>
-                  <h2>Ахлагчийн мэдээлэл алга</h2>
-                  <p>Тайлан орж ирэх үед энд багийн ахлагчдын зураглал гарна.</p>
-                </div>
-              )}
-            </section>
-
-            <section className={styles.sectionCard}>
-              <div className={styles.sectionHead}>
-                <div>
-                  <span className={styles.kicker}>Шуурхай холбоос</span>
-                  <h2>Дараагийн алхам</h2>
-                </div>
-              </div>
-
-              <Link href="/" className={styles.pillLink}>
-                Хяналтын самбар руу очих
-              </Link>
-              <Link href="/tasks" className={styles.pillLink}>
-                Өнөөдрийн ажил харах
-              </Link>
-              <a href="#reports-top" className={styles.pillLink}>
-                Дээш буцах
-              </a>
-            </section>
+        <div className={shellStyles.contentWithMenu}>
+          <aside className={shellStyles.menuColumn}>
+            <AppMenu
+              active="reports"
+              canCreateProject={canCreateProject}
+              canViewQualityCenter={canViewQualityCenter}
+              canUseFieldConsole={canUseFieldConsole}
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+            />
           </aside>
-        </section>
 
-        <nav className={shellStyles.mobileDock} aria-label="Тайлангийн гар утасны хурдан цэс">
-          <Link href="/" className={shellStyles.jumpLink}>
-            Нүүр
-          </Link>
-          <a href="#reports-top" className={shellStyles.jumpLink}>
-            Дээш
-          </a>
-          <Link href="/tasks" className={shellStyles.jumpLink}>
-            Ажил
-          </Link>
-        </nav>
+          <div className={shellStyles.pageContent}>
+            <header className={styles.pageHeader}>
+              <div className={styles.titleBlock}>
+                <span className={styles.kicker}>Тайлан</span>
+                <h1>Алба нэгжийн тайлан</h1>
+                <p>
+                  Нэг дэлгэц дээр алба нэгжээ сонгоод, тухайн албаны ажлуудаар тайланг бүлэглэж
+                  харуулна.
+                </p>
+              </div>
+
+              <div className={styles.pageAside}>
+                <div className={styles.dateMeta}>
+                  <span>Сүүлд шинэчлэгдсэн</span>
+                  <strong>{snapshot.generatedAt}</strong>
+                  <small>{getRoleLabel(session.role)}</small>
+                </div>
+              </div>
+            </header>
+
+            <section className={styles.sectionCard}>
+              <div className={dashboardStyles.sectionHeader}>
+                <div>
+                  <span className={dashboardStyles.kicker}>Алба нэгжийн шүүлт</span>
+                  <h2>Тайлан харах алба нэгж</h2>
+                  <small className={dashboardStyles.sectionNote}>
+                    Тусдаа сонголтын мөр биш, нэг урсгалтай сонголтоор тайлангаа шүүнэ
+                  </small>
+                </div>
+              </div>
+
+              <nav className={styles.departmentFilterGrid} aria-label="Алба нэгж сонгох">
+                <Link
+                  href="/reports"
+                  className={`${styles.departmentFilterCard} ${
+                    !selectedDepartment ? styles.departmentFilterCardActive : ""
+                  }`}
+                  aria-current={!selectedDepartment ? "page" : undefined}
+                >
+                  <span className={styles.departmentFilterLabel}>
+                    <span className={styles.departmentFilterIcon} aria-hidden>
+                      🏢
+                    </span>
+                    <span>Бүгд</span>
+                  </span>
+                  <strong>{snapshot.reports.length}</strong>
+                </Link>
+
+                {snapshot.departments.map((department) => {
+                  const isActive = selectedDepartment?.name === department.name;
+                  const reportCount = countReportsByDepartment(department.name, snapshot.reports);
+
+                  return (
+                    <Link
+                      key={department.name}
+                      href={`/reports?department=${encodeURIComponent(department.name)}`}
+                      className={`${styles.departmentFilterCard} ${
+                        isActive ? styles.departmentFilterCardActive : ""
+                      }`}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <span className={styles.departmentFilterLabel}>
+                        <span className={styles.departmentFilterIcon} aria-hidden>
+                          {department.icon}
+                        </span>
+                        <span>{department.name}</span>
+                      </span>
+                      <strong>{reportCount}</strong>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </section>
+
+            <section className={styles.summaryStrip}>
+              <article className={styles.summaryCard}>
+                <span>Сонгосон алба</span>
+                <strong>{selectedDepartmentName}</strong>
+                <small>Одоо харагдаж буй тайлангийн хүрээ</small>
+              </article>
+              <article className={styles.summaryCard}>
+                <span>Ажил</span>
+                <strong>{groupedReports.length}</strong>
+                <small>Тайлан орсон ажлууд</small>
+              </article>
+              <article className={styles.summaryCard}>
+                <span>Орсон тайлан</span>
+                <strong>{filteredReports.length}</strong>
+                <small>Сүүлд бүртгэгдсэн урсгал</small>
+              </article>
+              <article className={styles.summaryCard}>
+                <span>Хянах ажилбар</span>
+                <strong>{filteredReviewQueue.length}</strong>
+                <small>Хүлээгдэж буй баталгаажуулалт</small>
+              </article>
+              <article className={styles.summaryCard}>
+                <span>Зураг</span>
+                <strong>{totalImages}</strong>
+                <small>Хавсаргасан зураг</small>
+              </article>
+              <article className={styles.summaryCard}>
+                <span>Аудио</span>
+                <strong>{totalAudios}</strong>
+                <small>Хавсаргасан аудио</small>
+              </article>
+            </section>
+
+            {groupedReports.length ? (
+              <section className={styles.projectStack}>
+                {groupedReports.map((group) => (
+                  <article key={group.projectName} className={styles.projectSection}>
+                    <div className={styles.projectHeader}>
+                      <div>
+                        <span className={styles.kicker}>{group.departmentName}</span>
+                        <h2>{group.projectName}</h2>
+                        <p>{group.reports.length} тайлан орсон ажил</p>
+                      </div>
+                      <div className={styles.projectMeta}>
+                        <div>
+                          <span>Сүүлд орсон</span>
+                          <strong>{group.latestSubmittedAt}</strong>
+                        </div>
+                        <div>
+                          <span>Тайлан</span>
+                          <strong>{group.reports.length}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.reportList}>
+                      {group.reports.map((report) => (
+                        <article key={report.id} className={styles.reportCard}>
+                          <div className={styles.reportTop}>
+                            <div>
+                              <strong>{report.taskName}</strong>
+                              <p>{report.submittedAt}</p>
+                            </div>
+                            <span className={styles.reportStamp}>Тайлан орсон</span>
+                          </div>
+
+                          <div className={styles.reportMeta}>
+                            <span>Илгээгч: {report.reporter}</span>
+                            <span>Хэмжээ: {report.reportedQuantity} нэгж</span>
+                            <span>Зураг: {report.imageCount}</span>
+                            <span>Аудио: {report.audioCount}</span>
+                          </div>
+
+                          <div className={styles.summaryBox}>{report.summary}</div>
+
+                          {report.images.length ? (
+                            <div className={dashboardStyles.reportImageGrid}>
+                              {report.images.map((image) => (
+                                <a
+                                  key={image.id}
+                                  href={image.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={dashboardStyles.reportImageLink}
+                                >
+                                  <Image
+                                    src={image.url}
+                                    alt={`${report.taskName} - ${image.name}`}
+                                    className={dashboardStyles.reportImage}
+                                    width={320}
+                                    height={240}
+                                    unoptimized
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          ) : null}
+
+                          {report.audios.length ? (
+                            <div className={dashboardStyles.reportAudioList}>
+                              {report.audios.map((audio) => (
+                                <div key={audio.id} className={dashboardStyles.reportAudioCard}>
+                                  <strong>{audio.name}</strong>
+                                  <audio
+                                    controls
+                                    preload="none"
+                                    src={audio.url}
+                                    className={dashboardStyles.reportAudioPlayer}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </section>
+            ) : (
+              <section className={styles.emptyState}>
+                <h2>Тайлан алга</h2>
+                <p>{selectedDepartmentName} дээр одоогоор харагдах тайлан бүртгэгдээгүй байна.</p>
+              </section>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );

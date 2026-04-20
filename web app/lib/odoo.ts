@@ -19,25 +19,25 @@ type OdooTaskRecord = {
   project_id: OdooRelation;
   ops_department_id?: OdooRelation;
   stage_id: OdooRelation;
-  ops_team_leader_id: OdooRelation;
-  user_ids: number[];
-  ops_planned_quantity: number;
-  ops_completed_quantity: number;
-  ops_remaining_quantity: number;
-  ops_progress_percent: number;
-  ops_measurement_unit: string | false;
-  priority: string;
-  date_deadline: string | false;
-  state: string;
-  mfo_is_operation_project: boolean;
-  mfo_operation_type: string | false;
-  mfo_route_id: OdooRelation;
-  mfo_unresolved_stop_count: number;
-  mfo_missing_proof_stop_count: number;
-  mfo_route_deviation_stop_count: number;
-  mfo_skipped_without_reason_count: number;
-  mfo_weight_sync_warning: boolean;
-  mfo_quality_exception_count: number;
+  ops_team_leader_id?: OdooRelation;
+  user_ids?: number[];
+  ops_planned_quantity?: number;
+  ops_completed_quantity?: number;
+  ops_remaining_quantity?: number;
+  ops_progress_percent?: number;
+  ops_measurement_unit?: string | false;
+  priority?: string;
+  date_deadline?: string | false;
+  state?: string;
+  mfo_is_operation_project?: boolean;
+  mfo_operation_type?: string | false;
+  mfo_route_id?: OdooRelation;
+  mfo_unresolved_stop_count?: number;
+  mfo_missing_proof_stop_count?: number;
+  mfo_route_deviation_stop_count?: number;
+  mfo_skipped_without_reason_count?: number;
+  mfo_weight_sync_warning?: boolean;
+  mfo_quality_exception_count?: number;
 };
 
 type OdooReportRecord = {
@@ -47,10 +47,10 @@ type OdooReportRecord = {
   report_datetime: string;
   report_summary: string | false;
   reported_quantity: number;
-  image_count: number;
-  audio_count: number;
-  image_attachment_ids: number[];
-  audio_attachment_ids: number[];
+  image_count?: number;
+  audio_count?: number;
+  image_attachment_ids?: number[];
+  audio_attachment_ids?: number[];
 };
 
 type OdooAttachmentRecord = {
@@ -293,7 +293,7 @@ const OPERATION_TYPE_LABELS: Record<string, string> = {
 const STAGE_LABELS: Record<StageBucket, string> = {
   todo: "Хийгдэх ажил",
   progress: "Явагдаж буй ажил",
-  review: "Шалгагдаж буй ажил",
+  review: "Хянагдаж буй ажил",
   done: "Дууссан ажил",
   unknown: "Тодорхойгүй",
 };
@@ -301,7 +301,7 @@ const STAGE_LABELS: Record<StageBucket, string> = {
 const TASK_STATUS_LABELS: Record<TaskStatusKey, string> = {
   planned: "Төлөвлөгдсөн",
   working: "Ажиллаж байна",
-  review: "Шалгаж байна",
+  review: "Хянагдаж байна",
   verified: "Баталгаажсан",
   problem: "Асуудалтай",
 };
@@ -311,7 +311,7 @@ const UNKNOWN_DEPARTMENT = "Тодорхойгүй";
 const KNOWN_STAGE_MATCHERS: Array<[StageBucket, string[]]> = [
   ["todo", ["хийгдэх", "todo", "task"]],
   ["progress", ["явагдаж", "progress", "hiihdej", "in progress"]],
-  ["review", ["шалгагдаж", "review", "changes requested", "shalgagdaj", "shalgah"]],
+  ["review", ["шалгагдаж", "хянагдаж", "review", "changes requested", "shalgagdaj", "shalgah", "hyanagdaj"]],
   ["done", ["дууссан", "done", "completed", "duussan"]],
 ];
 
@@ -324,6 +324,90 @@ function getStageBucket(stageName?: string | null): StageBucket {
   }
   return "unknown";
 }
+
+const TASK_FIELD_VARIANTS: string[][] = [
+  [
+    "name",
+    "project_id",
+    "stage_id",
+    "ops_team_leader_id",
+    "user_ids",
+    "ops_planned_quantity",
+    "ops_completed_quantity",
+    "ops_remaining_quantity",
+    "ops_progress_percent",
+    "ops_measurement_unit",
+    "priority",
+    "date_deadline",
+    "state",
+    "mfo_is_operation_project",
+    "mfo_operation_type",
+    "mfo_route_id",
+    "mfo_unresolved_stop_count",
+    "mfo_missing_proof_stop_count",
+    "mfo_route_deviation_stop_count",
+    "mfo_skipped_without_reason_count",
+    "mfo_weight_sync_warning",
+    "mfo_quality_exception_count",
+  ],
+  [
+    "name",
+    "project_id",
+    "stage_id",
+    "ops_team_leader_id",
+    "user_ids",
+    "ops_planned_quantity",
+    "ops_completed_quantity",
+    "ops_remaining_quantity",
+    "ops_progress_percent",
+    "ops_measurement_unit",
+    "priority",
+    "date_deadline",
+    "state",
+    "mfo_is_operation_project",
+    "mfo_operation_type",
+    "mfo_route_id",
+  ],
+  [
+    "name",
+    "project_id",
+    "stage_id",
+    "ops_team_leader_id",
+    "user_ids",
+    "ops_planned_quantity",
+    "ops_completed_quantity",
+    "ops_remaining_quantity",
+    "ops_progress_percent",
+    "ops_measurement_unit",
+    "priority",
+    "date_deadline",
+    "state",
+  ],
+];
+
+const REPORT_FIELD_VARIANTS: string[][] = [
+  [
+    "task_id",
+    "reporter_id",
+    "report_datetime",
+    "report_summary",
+    "reported_quantity",
+    "image_count",
+    "audio_count",
+    "image_attachment_ids",
+    "audio_attachment_ids",
+  ],
+  [
+    "task_id",
+    "reporter_id",
+    "report_datetime",
+    "report_summary",
+    "reported_quantity",
+    "image_count",
+    "audio_count",
+  ],
+  ["task_id", "reporter_id", "report_datetime", "report_summary", "reported_quantity"],
+];
 
 function relationName(relation: OdooRelation, fallback = "Оноогоогүй") {
   return Array.isArray(relation) ? relation[1] : fallback;
@@ -445,7 +529,7 @@ function getTaskStatusLabel(statusKey: TaskStatusKey) {
 }
 
 function resolveDepartmentLabel(name: string) {
-  return DEPARTMENT_LABELS[name as keyof typeof DEPARTMENT_LABELS] ?? "Төслийн харьяалал";
+  return DEPARTMENT_LABELS[name as keyof typeof DEPARTMENT_LABELS] ?? "Ажлын харьяалал";
 }
 
 function resolveDepartmentAccent(name: string) {
@@ -476,6 +560,10 @@ function resolveDepartmentIcon(name: string) {
   }
 
   return "🏢";
+}
+
+function buildTaskHref(taskId: number, returnTo = "/tasks") {
+  return `/tasks/${taskId}?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
 async function jsonRpc<T>(
@@ -721,6 +809,38 @@ async function searchReadAll<T>(
   return records;
 }
 
+async function searchReadAllWithFieldFallback<T>(
+  uid: number,
+  model: string,
+  domain: unknown[],
+  fieldVariants: string[][],
+  kwargs: Record<string, unknown>,
+  connection: OdooConnection,
+  batchSize = 400,
+) {
+  let lastError: unknown = null;
+
+  for (const fields of fieldVariants) {
+    try {
+      return await searchReadAll<T>(
+        uid,
+        model,
+        domain,
+        {
+          ...kwargs,
+          fields,
+        },
+        connection,
+        batchSize,
+      );
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`${model} өгөгдөл уншихад алдаа гарлаа.`);
+}
+
 export async function executeOdooKw<T>(
   model: string,
   method: string,
@@ -800,7 +920,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     throw new Error("Odoo authentication failed");
   }
 
-  const [projects, tasks, reports, departmentsFromOdoo] = await Promise.all([
+  const [projects, tasks, departmentsFromOdoo] = await Promise.all([
     searchReadAll<OdooProjectRecord>(
       uid,
       "project.project",
@@ -811,59 +931,15 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       },
       connection,
     ),
-    searchReadAll<OdooTaskRecord>(
+    searchReadAllWithFieldFallback<OdooTaskRecord>(
       uid,
       "project.task",
       [["project_id", "!=", false]],
+      TASK_FIELD_VARIANTS,
       {
-        fields: [
-          "name",
-          "project_id",
-          "stage_id",
-          "ops_team_leader_id",
-          "user_ids",
-          "ops_planned_quantity",
-          "ops_completed_quantity",
-          "ops_remaining_quantity",
-          "ops_progress_percent",
-          "ops_measurement_unit",
-          "priority",
-          "date_deadline",
-          "state",
-          "mfo_is_operation_project",
-          "mfo_operation_type",
-          "mfo_route_id",
-          "mfo_unresolved_stop_count",
-          "mfo_missing_proof_stop_count",
-          "mfo_route_deviation_stop_count",
-          "mfo_skipped_without_reason_count",
-          "mfo_weight_sync_warning",
-          "mfo_quality_exception_count",
-        ],
         order: "priority desc, date_deadline asc, create_date desc",
       },
       connection,
-    ),
-    searchReadAll<OdooReportRecord>(
-      uid,
-      "ops.task.report",
-      [],
-      {
-        fields: [
-          "task_id",
-          "reporter_id",
-          "report_datetime",
-          "report_summary",
-          "reported_quantity",
-          "image_count",
-          "audio_count",
-          "image_attachment_ids",
-          "audio_attachment_ids",
-        ],
-        order: "report_datetime desc",
-      },
-      connection,
-      200,
     ),
     searchReadAll<OdooDepartmentRecord>(
       uid,
@@ -877,6 +953,21 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       200,
     ).catch(() => []),
   ]);
+
+  const reports = await searchReadAllWithFieldFallback<OdooReportRecord>(
+    uid,
+    "ops.task.report",
+    [],
+    REPORT_FIELD_VARIANTS,
+    {
+      order: "report_datetime desc",
+    },
+    connection,
+    200,
+  ).catch((error) => {
+    console.warn("ops.task.report өгөгдөл уншихад алдаа гарлаа:", error);
+    return [] as OdooReportRecord[];
+  });
 
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter((task) => getStageBucket(relationName(task.stage_id, "")) === "done");
@@ -1006,14 +1097,14 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
         id: task.id,
         name: task.name,
         departmentName: resolveTaskDepartmentName(task, projectDepartmentById),
-        projectName: relationName(task.project_id, "Төсөлгүй"),
+        projectName: relationName(task.project_id, "Ажилгүй"),
         stageLabel: STAGE_LABELS[stageBucket],
         stageBucket,
         statusKey,
         statusLabel: getTaskStatusLabel(statusKey),
         deadline: formatCompactDate(task.date_deadline),
-        leaderName: relationName(task.ops_team_leader_id),
-        priorityLabel: priorityLabel(task.priority),
+        leaderName: relationName(task.ops_team_leader_id ?? false),
+        priorityLabel: priorityLabel(task.priority || ""),
         progress: Math.round(task.ops_progress_percent ?? 0),
         plannedQuantity: task.ops_planned_quantity ?? 0,
         completedQuantity: task.ops_completed_quantity ?? 0,
@@ -1021,7 +1112,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
         measurementUnit: task.ops_measurement_unit || "ш",
         operationTypeLabel: operationTypeLabel(task.mfo_operation_type),
         issueFlag: statusKey === "problem",
-        href: `/tasks/${task.id}`,
+        href: buildTaskHref(task.id, "/tasks"),
       } satisfies TaskDirectoryItem;
     })
     .sort((left, right) => {
@@ -1053,10 +1144,10 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     completedQuantity: task.ops_completed_quantity ?? 0,
     remainingQuantity: task.ops_remaining_quantity ?? 0,
     measurementUnit: task.ops_measurement_unit || "ш",
-    leaderName: relationName(task.ops_team_leader_id),
-    priorityLabel: priorityLabel(task.priority),
+    leaderName: relationName(task.ops_team_leader_id ?? false),
+    priorityLabel: priorityLabel(task.priority || ""),
     progress: Math.round(task.ops_progress_percent ?? 0),
-    href: `/tasks/${task.id}`,
+    href: buildTaskHref(task.id, "/tasks"),
   }));
 
   const reviewQueue = reviewTasks.map((task) => ({
@@ -1066,9 +1157,9 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     stageLabel: relationName(task.stage_id, STAGE_LABELS.review),
     deadline: formatCompactDate(task.date_deadline),
     projectName: relationName(task.project_id),
-    leaderName: relationName(task.ops_team_leader_id),
+    leaderName: relationName(task.ops_team_leader_id ?? false),
     progress: Math.round(task.ops_progress_percent ?? 0),
-    href: `/tasks/${task.id}`,
+    href: buildTaskHref(task.id, "/review"),
   }));
 
   const attachmentIds = [
@@ -1082,20 +1173,24 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
 
   const attachmentMap = new Map<number, OdooAttachmentRecord>();
   if (attachmentIds.length) {
-    const attachments = await searchReadAll<OdooAttachmentRecord>(
-      uid,
-      "ir.attachment",
-      [["id", "in", attachmentIds]],
-      {
-        fields: ["name", "mimetype"],
-        order: "id asc",
-      },
-      connection,
-      200,
-    );
+    try {
+      const attachments = await searchReadAll<OdooAttachmentRecord>(
+        uid,
+        "ir.attachment",
+        [["id", "in", attachmentIds]],
+        {
+          fields: ["name", "mimetype"],
+          order: "id asc",
+        },
+        connection,
+        200,
+      );
 
-    for (const attachment of attachments) {
-      attachmentMap.set(attachment.id, attachment);
+      for (const attachment of attachments) {
+        attachmentMap.set(attachment.id, attachment);
+      }
+    } catch (error) {
+      console.warn("ir.attachment өгөгдөл уншихад алдаа гарлаа:", error);
     }
   }
 
@@ -1127,7 +1222,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       departmentName: task
         ? resolveTaskDepartmentName(task, projectDepartmentById)
         : "Тодорхойгүй",
-      projectName: task ? relationName(task.project_id) : "Төсөлгүй",
+      projectName: task ? relationName(task.project_id) : "Ажилгүй",
       summary: report.report_summary || "Тайлбар оруулаагүй",
       reportedQuantity: report.reported_quantity ?? 0,
       imageCount: report.image_count ?? 0,
@@ -1140,7 +1235,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
 
   const teamLeaderMap = new Map<string, TeamLeaderCard>();
   for (const task of tasks) {
-    const leaderName = relationName(task.ops_team_leader_id, "Оноогоогүй");
+      const leaderName = relationName(task.ops_team_leader_id ?? false, "Оноогоогүй");
     const entry = teamLeaderMap.get(leaderName) ?? {
       name: leaderName,
       activeTasks: 0,
@@ -1164,7 +1259,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
   const teamLeaders = Array.from(teamLeaderMap.values())
     .map((leader) => {
       const relatedTasks = tasks.filter(
-        (task) => relationName(task.ops_team_leader_id, "Оноогоогүй") === leader.name,
+        (task) => relationName(task.ops_team_leader_id ?? false, "Оноогоогүй") === leader.name,
       );
       const totalProgress = relatedTasks.reduce(
         (sum, task) => sum + (task.ops_progress_percent ?? 0),
@@ -1197,7 +1292,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       name: task.name,
       departmentName: resolveTaskDepartmentName(task, projectDepartmentById),
       projectName: relationName(task.project_id),
-      routeName: relationName(task.mfo_route_id, "Маршрутгүй"),
+      routeName: relationName(task.mfo_route_id ?? false, "Маршрутгүй"),
       operationTypeLabel: operationTypeLabel(task.mfo_operation_type),
       exceptionCount: task.mfo_quality_exception_count ?? 0,
       unresolvedStopCount: task.mfo_unresolved_stop_count ?? 0,
@@ -1205,7 +1300,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       deviationStopCount: task.mfo_route_deviation_stop_count ?? 0,
       skippedWithoutReasonCount: task.mfo_skipped_without_reason_count ?? 0,
       hasWeightWarning: Boolean(task.mfo_weight_sync_warning),
-      href: `/tasks/${task.id}`,
+      href: buildTaskHref(task.id, "/quality"),
     }))
     .sort((left, right) => right.exceptionCount - left.exceptionCount)
     .slice(0, 12);
@@ -1223,13 +1318,13 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     totalTasks,
     metrics: [
       {
-        label: "Идэвхтэй ажил",
+        label: "Идэвхтэй ажилбар",
         value: String(activeTasks.length),
         note: `${overdueTasks.length} нь хугацаа давсан`,
         tone: overdueTasks.length ? "red" : "slate",
       },
       {
-        label: "Шалгалтын дараалал",
+        label: "Хяналтын дараалал",
         value: String(reviewTasks.length),
         note: "Ерөнхий менежер баталгаажуулалт хүлээж байна",
         tone: "amber",
@@ -1237,7 +1332,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       {
         label: "Нийт гүйцэтгэл",
         value: `${completionRate}%`,
-        note: `${doneTasks.length}/${totalTasks} ажил дууссан`,
+        note: `${doneTasks.length}/${totalTasks} ажилбар дууссан`,
         tone: "teal",
       },
       {
@@ -1251,11 +1346,11 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       {
         label: "Чанарын анхааруулга",
         value: String(qualitySourceTasks.length),
-        note: "Талбарын гүйцэтгэл дээр засах шаардлагатай ажил",
+        note: "Талбарын гүйцэтгэл дээр засах шаардлагатай ажилбар",
         tone: qualitySourceTasks.length ? "red" : "teal",
       },
       {
-        label: "Зураг дутсан ажил",
+        label: "Зураг дутсан ажилбар",
         value: String(missingProofTasks.length),
         note: "Өмнө, дараах зураг бүрэн биш",
         tone: missingProofTasks.length ? "amber" : "teal",
@@ -1269,7 +1364,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       {
         label: "Маршрутын зөрүү",
         value: String(deviationTasks.length),
-        note: `${unresolvedQualityTasks.length} ажил нээлттэй цэгтэй`,
+        note: `${unresolvedQualityTasks.length} ажилбар нээлттэй цэгтэй`,
         tone: deviationTasks.length ? "amber" : "slate",
       },
     ],
@@ -1293,13 +1388,13 @@ function fallbackSnapshot(): DashboardSnapshot {
     totalTasks: 28,
     metrics: [
       {
-        label: "Идэвхтэй ажил",
+        label: "Идэвхтэй ажилбар",
         value: "18",
         note: "3 нь хугацаа давсан",
         tone: "red",
       },
       {
-        label: "Шалгалтын дараалал",
+        label: "Хяналтын дараалал",
         value: "4",
         note: "Ерөнхий менежер шалгаж байна",
         tone: "amber",
@@ -1307,7 +1402,7 @@ function fallbackSnapshot(): DashboardSnapshot {
       {
         label: "Нийт гүйцэтгэл",
         value: "64%",
-        note: "18/28 ажил дээр ахиц бүртгэгдсэн",
+        note: "18/28 ажилбар дээр ахиц бүртгэгдсэн",
         tone: "teal",
       },
       {
@@ -1321,11 +1416,11 @@ function fallbackSnapshot(): DashboardSnapshot {
       {
         label: "Чанарын анхааруулга",
         value: "5",
-        note: "Талбарын гүйцэтгэл дээр дахин шалгах ажил",
+        note: "Талбарын гүйцэтгэл дээр дахин хянах ажилбар",
         tone: "red",
       },
       {
-        label: "Зураг дутсан ажил",
+        label: "Зураг дутсан ажилбар",
         value: "2",
         note: "Өмнө эсвэл дараах зураг бүрэн биш",
         tone: "amber",
@@ -1333,7 +1428,7 @@ function fallbackSnapshot(): DashboardSnapshot {
       {
         label: "Синк анхааруулга",
         value: "1",
-        note: "Жингийн синкийг шалгах шаардлагатай",
+        note: "Жингийн синкийг нягтлах шаардлагатай",
         tone: "red",
       },
       {
@@ -1358,7 +1453,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         name: "2026 Мод хэлбэржүүлэлтийн хуваарь",
         manager: "BATAA",
         departmentName: "Ногоон байгууламж",
-        stageLabel: "Шалгагдаж буй ажил",
+      stageLabel: "Хянагдаж буй ажил",
         stageBucket: "review",
         openTasks: 14,
         completion: 71,
@@ -1396,7 +1491,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         name: "5-р хороо - 32 модны тайлан",
         departmentName: "Ногоон байгууламж",
         projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
-        stageLabel: "Шалгагдаж буй ажил",
+      stageLabel: "Хянагдаж буй ажил",
         stageBucket: "review",
         statusKey: "review",
         statusLabel: "Шалгаж байна",
@@ -1410,7 +1505,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         measurementUnit: "мод",
         operationTypeLabel: "Ерөнхий ажил",
         issueFlag: false,
-        href: "/tasks/201",
+        href: buildTaskHref(201, "/tasks"),
       },
       {
         id: 202,
@@ -1431,7 +1526,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         measurementUnit: "ачилт",
         operationTypeLabel: "Хог цуглуулалт",
         issueFlag: true,
-        href: "/tasks/202",
+        href: buildTaskHref(202, "/tasks"),
       },
       {
         id: 102,
@@ -1452,7 +1547,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         measurementUnit: "км²",
         operationTypeLabel: "Гудамж цэвэрлэгээ",
         issueFlag: false,
-        href: "/tasks/102",
+        href: buildTaskHref(102, "/tasks"),
       },
       {
         id: 103,
@@ -1473,7 +1568,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         measurementUnit: "машин",
         operationTypeLabel: "Ерөнхий ажил",
         issueFlag: false,
-        href: "/tasks/103",
+        href: buildTaskHref(103, "/tasks"),
       },
     ],
     liveTasks: [
@@ -1492,7 +1587,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         leaderName: "suldee",
         priorityLabel: "Өндөр",
         progress: 44,
-        href: "/tasks/101",
+        href: buildTaskHref(101, "/tasks"),
       },
       {
         id: 102,
@@ -1509,7 +1604,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         leaderName: "temuulen",
         priorityLabel: "Яаралтай",
         progress: 0,
-        href: "/tasks/102",
+        href: buildTaskHref(102, "/tasks"),
       },
       {
         id: 103,
@@ -1526,7 +1621,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         leaderName: "bold",
         priorityLabel: "Дунд",
         progress: 33,
-        href: "/tasks/103",
+        href: buildTaskHref(103, "/tasks"),
       },
     ],
     reviewQueue: [
@@ -1534,23 +1629,23 @@ function fallbackSnapshot(): DashboardSnapshot {
           id: 201,
           name: "5-р хороо - 32 модны тайлан",
           departmentName: "Ногоон байгууламж",
-          stageLabel: "Шалгагдаж буй ажил",
+      stageLabel: "Хянагдаж буй ажил",
           deadline: "Өнөөдөр 16:30",
           projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
           leaderName: "suldee",
           progress: 100,
-        href: "/tasks/201",
+        href: buildTaskHref(201, "/review"),
       },
         {
           id: 202,
           name: "Хог тээврийн 2-р маршрут",
           departmentName: "Хог тээвэрлэлт",
-          stageLabel: "Шалгагдаж буй ажил",
+      stageLabel: "Хянагдаж буй ажил",
           deadline: "Өнөөдөр 19:00",
           projectName: "Хог тээвэрлэлтийн өглөөний маршрут",
           leaderName: "sarangerel",
           progress: 88,
-        href: "/tasks/202",
+        href: buildTaskHref(202, "/review"),
       },
     ],
     qualityAlerts: [
@@ -1567,7 +1662,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         deviationStopCount: 0,
         skippedWithoutReasonCount: 0,
         hasWeightWarning: true,
-        href: "/tasks/202",
+        href: buildTaskHref(202, "/quality"),
       },
       {
         id: 402,
@@ -1582,7 +1677,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         deviationStopCount: 1,
         skippedWithoutReasonCount: 0,
         hasWeightWarning: false,
-        href: "/tasks/102",
+        href: buildTaskHref(102, "/quality"),
       },
     ],
     reports: [

@@ -153,7 +153,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
           <h1>Өнөөдрийн маршрут</h1>
           <p>
             Жолооч, хянагч нар ээлж эхлүүлж, цэг тус бүрээр ажиллаад, өмнөх ба дараах
-            баталгааны зургаа оруулж, асуудал бүртгээд, дууссан маршрутаа шалгалтад
+            баталгааны зургаа оруулж, асуудал бүртгээд, дууссан маршрутаа хяналтад
             илгээх боломжтой.
           </p>
 
@@ -213,8 +213,8 @@ export default async function FieldPage({ searchParams }: PageProps) {
           <section className={workspaceStyles.emptyState}>
             <h2>Энэ хуудас талбарын хэрэглэгчдэд зориулагдсан</h2>
             <p>
-              Ерөнхий менежер, төслийн хяналтын хэрэглэгчид энэ хэсгийг ашиглахгүй.
-              Хяналтын самбар, төслүүд, тайлан хэсгээс ажлаа үргэлжлүүлнэ үү.
+              Ерөнхий менежер, ажлын хяналтын хэрэглэгчид энэ хэсгийг ашиглахгүй.
+              Хяналтын самбар, ажил, тайлан хэсгээс ажлаа үргэлжлүүлнэ үү.
             </p>
           </section>
         ) : fieldLoadError ? (
@@ -222,7 +222,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
             <h2>Маршрутын мэдээлэл түр уншигдсангүй</h2>
             <p>
               Odoo серверээс талбарын өгөгдөл авах үед алдаа гарлаа. Дахин сэргээж
-              үзээд, алдаа хэвээр байвал Odoo талын эрх болон model field-үүдийг шалгана уу.
+              үзээд, алдаа хэвээр байвал Odoo талын эрх болон model field-үүдийг нягтална уу.
             </p>
           </section>
         ) : !assignment ? (
@@ -344,7 +344,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                       id="summary"
                       name="summary"
                       defaultValue={assignment.endShiftSummary}
-                      placeholder="Шалгалтад илгээхээсээ өмнө ээлжийн товч тайлангаа бичнэ үү."
+                        placeholder="Хяналтад илгээхээсээ өмнө ээлжийн товч тайлангаа бичнэ үү."
                       required
                     />
                   </div>
@@ -353,7 +353,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                     className={workspaceStyles.secondaryButton}
                     disabled={!assignment.canSubmit}
                   >
-                    Шалгалтад илгээх
+                      Хяналтад илгээх
                   </button>
                 </form>
 
@@ -637,7 +637,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
                         </div>
                       ) : (
                         <p className={fieldStyles.helperText}>
-                          Цэг хаагдсан, аюултай эсвэл дахин шалгах шаардлагатай үед асуудлын бүртгэл ашиглана.
+                        Цэг хаагдсан, аюултай эсвэл дахин хянах шаардлагатай үед асуудлын бүртгэл ашиглана.
                         </p>
                       )}
                     </details>

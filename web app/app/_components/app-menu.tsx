@@ -43,6 +43,8 @@ export function AppMenu({
   userName = "Хэрэглэгч",
   roleLabel = "Систем",
 }: AppMenuProps) {
+  void canViewQualityCenter;
+
   const items: MenuItem[] =
     variant === "executive"
       ? [
@@ -57,14 +59,14 @@ export function AppMenu({
             key: "tasks",
             href: "/tasks",
             label: "Өнөөдрийн ажил",
-            note: "Ажлын жагсаалт",
+            note: "Ажилбарын жагсаалт",
             icon: "≣",
           },
           {
             key: "reports",
             href: "/reports",
             label: "Тайлан",
-            note: "Шалгалт ба тайлан",
+            note: "Хяналт ба тайлан",
             icon: "◫",
           },
         ]
@@ -90,34 +92,23 @@ export function AppMenu({
           {
             key: "projects",
             href: "/projects",
-            label: "Төслүүд",
-            note: "Төслийн жагсаалт",
+            label: "Ажил",
+            note: "Ажлын жагсаалт",
             icon: "▣",
           },
           {
             key: "review",
             href: "/review",
-            label: "Шалгалт",
+            label: "Хяналт",
             note: "Баталгаажуулалт",
             icon: "✓",
           },
-          ...(canViewQualityCenter
-            ? [
-                {
-                  key: "quality",
-                  href: "/quality",
-                  label: "Чанар",
-                  note: "Анхааруулга",
-                  icon: "⚑",
-                } satisfies MenuItem,
-              ]
-            : []),
           ...(canCreateProject
             ? [
                 {
                   key: "new-project",
                   href: "/projects/new",
-                  label: "Шинэ төсөл",
+                  label: "Шинэ ажил",
                   note: "Шууд үүсгэх",
                   icon: "+",
                 } satisfies MenuItem,
