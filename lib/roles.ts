@@ -79,7 +79,7 @@ export function getRoleLabel(role: UserRole) {
     case "general_manager":
       return "Ерөнхий менежер";
     case "project_manager":
-      return "Төслийн менежер";
+      return "Ажлын менежер";
     case "team_leader":
       return "Багийн ахлагч";
     case "worker":

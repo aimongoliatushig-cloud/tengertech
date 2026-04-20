@@ -60,11 +60,11 @@ export default async function Home() {
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
 
-  const featuredProjects = snapshot.projects.slice(0, 6);
+  const featuredProjects = snapshot.projects.slice(0, 4);
+  const activeTasks = snapshot.liveTasks.slice(0, 4);
   const reviewQueue = snapshot.reviewQueue.slice(0, 5);
   const qualityAlerts = snapshot.qualityAlerts.slice(0, 5);
-  const recentReports = snapshot.reports.slice(0, 4);
-  const teamLeaders = snapshot.teamLeaders.slice(0, 4);
+  const recentReports = snapshot.reports.slice(0, 5);
 
   return (
     <main className={styles.shell}>
@@ -116,6 +116,18 @@ export default async function Home() {
             </div>
           </header>
 
+          {snapshot.source === "demo" ? (
+            <section className={styles.sourceNotice}>
+              <div>
+                <strong>Odoo-оос бүх өгөгдөл бүрэн ирээгүй байна.</strong>
+                <p>Түр нөөц мэдээлэл харуулж байгаа тул ажилбар, тайлангийн холбоосыг дахин шалгана уу.</p>
+              </div>
+              <Link href="/data-download" className={styles.sectionLink}>
+                Өгөгдөл шалгах
+              </Link>
+            </section>
+          ) : null}
+
           <section className={styles.departmentsSection}>
             <div className={styles.sectionHeader}>
               <div>
@@ -148,7 +160,7 @@ export default async function Home() {
 
                       <div className={styles.departmentMeta}>
                         <div>
-                          <span>Нээлттэй</span>
+                          <span>Нээлттэй ажилбар</span>
                           <strong>{department.openTasks}</strong>
                         </div>
                         <div>
@@ -191,14 +203,70 @@ export default async function Home() {
             ))}
           </section>
 
+          <section className={styles.projectsSection}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <span className={styles.kicker}>Өнөөдрийн урсгал</span>
+                <h2>Идэвхтэй ажилбар</h2>
+              </div>
+              <Link href="/tasks" className={styles.sectionLink}>
+                Бүгдийг харах
+              </Link>
+            </div>
+
+            {activeTasks.length ? (
+              <div className={styles.taskList}>
+                {activeTasks.map((task) => (
+                  <Link key={task.id} href={task.href} className={styles.taskCard}>
+                    <div className={styles.taskCardTop}>
+                      <span>{task.deadline}</span>
+                      <StagePill label={task.stageLabel} bucket={task.stageBucket} />
+                    </div>
+
+                    <h3>{task.name}</h3>
+                    <p>{task.projectName}</p>
+
+                    <div className={styles.taskStats}>
+                      <span>Ахлагч: {task.leaderName}</span>
+                      <span>Төлөв: {task.priorityLabel}</span>
+                      <span>
+                        Үлдэгдэл: {task.remainingQuantity} {task.measurementUnit}
+                      </span>
+                    </div>
+
+                    <div className={styles.taskQuantities}>
+                      <b>
+                        {task.completedQuantity} / {task.plannedQuantity} {task.measurementUnit}
+                      </b>
+                      <strong>{task.progress}%</strong>
+                    </div>
+
+                    <div className={styles.progressTrack}>
+                      <span style={{ width: `${task.progress}%` }} />
+                    </div>
+
+                    <div className={styles.cardFooter}>
+                      <span className={styles.cardLinkLabel}>Ажилбарыг нээх</span>
+                      <strong aria-hidden>→</strong>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyColumnState}>Одоогоор идэвхтэй ажилбар олдсонгүй.</div>
+            )}
+          </section>
+
           <section className={styles.dualGrid}>
             <section className={styles.panel}>
               <div className={styles.sectionHeader}>
                 <div>
-                  <span className={styles.kicker}>Шалгалт</span>
-                  <h2>Шалгалтын мөр</h2>
+                  <span className={styles.kicker}>Хяналт</span>
+                  <h2>Хяналтын мөр</h2>
                 </div>
-                <p>Баталгаажуулалт хүлээж буй ажлуудыг priority дарааллаар харуулна.</p>
+                <Link href="/review" className={styles.sectionLink}>
+                  Мөрийг нээх
+                </Link>
               </div>
 
               {reviewQueue.length ? (
@@ -221,9 +289,7 @@ export default async function Home() {
                   ))}
                 </div>
               ) : (
-                <div className={styles.emptyColumnState}>
-                  Одоогоор шалгалт хүлээж буй ажил алга.
-                </div>
+                <div className={styles.emptyColumnState}>Одоогоор хяналт хүлээж буй ажилбар алга.</div>
               )}
             </section>
 
@@ -233,7 +299,9 @@ export default async function Home() {
                   <span className={styles.kicker}>Анхаарах зүйлс</span>
                   <h2>Чанарын анхааруулга</h2>
                 </div>
-                <p>Зураг, маршрут, синк, нээлттэй цэгтэй холбоотой асуудлууд.</p>
+                <Link href="/quality" className={styles.sectionLink}>
+                  Чанар руу орох
+                </Link>
               </div>
 
               {qualityAlerts.length ? (
@@ -250,67 +318,15 @@ export default async function Home() {
                       <div className={styles.reviewMeta}>
                         <strong>{alert.exceptionCount}</strong>
                         <span>{alert.operationTypeLabel}</span>
-                        <span>
-                          {alert.hasWeightWarning
-                            ? "Жингийн синк шалгана"
-                            : "Чанарын мөр"}
-                        </span>
+                        <span>{alert.hasWeightWarning ? "Жингийн синк шалгана" : "Чанарын мөр"}</span>
                       </div>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className={styles.emptyColumnState}>
-                  Одоогоор чанарын анхааруулга алга.
-                </div>
+                <div className={styles.emptyColumnState}>Одоогоор чанарын анхааруулга алга.</div>
               )}
             </section>
-          </section>
-
-          <section className={styles.projectsSection}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <span className={styles.kicker}>Төслүүд</span>
-                <h2>Сүүлийн төслүүд</h2>
-              </div>
-              <p>Бүх алба нэгжийн хамгийн идэвхтэй төслүүдийг эндээс нээнэ.</p>
-            </div>
-
-            <div className={styles.projectRail}>
-              {featuredProjects.map((project) => (
-                <Link key={project.id} href={project.href} className={styles.projectCard}>
-                  <div className={styles.projectCardTop}>
-                    <span>{project.deadline}</span>
-                    <StagePill label={project.stageLabel} bucket={project.stageBucket} />
-                  </div>
-
-                  <h3>{project.name}</h3>
-                  <p>
-                    {project.departmentName} / Менежер: {project.manager}
-                  </p>
-
-                  <div className={styles.projectMeta}>
-                    <div>
-                      <span>Нээлттэй ажил</span>
-                      <strong>{project.openTasks}</strong>
-                    </div>
-                    <div>
-                      <span>Гүйцэтгэл</span>
-                      <strong>{project.completion}%</strong>
-                    </div>
-                  </div>
-
-                  <div className={styles.progressTrack}>
-                    <span style={{ width: `${project.completion}%` }} />
-                  </div>
-
-                  <div className={styles.cardFooter}>
-                    <span className={styles.cardLinkLabel}>Төслийг нээх</span>
-                    <strong aria-hidden>→</strong>
-                  </div>
-                </Link>
-              ))}
-            </div>
           </section>
 
           <section className={styles.dualGrid}>
@@ -320,7 +336,9 @@ export default async function Home() {
                   <span className={styles.kicker}>Тайлан</span>
                   <h2>Сүүлийн тайлангууд</h2>
                 </div>
-                <p>Талбараас ирсэн хамгийн сүүлийн тайлангийн урсгалыг харуулна.</p>
+                <Link href="/reports" className={styles.sectionLink}>
+                  Тайлан руу орох
+                </Link>
               </div>
 
               {recentReports.length ? (
@@ -336,15 +354,20 @@ export default async function Home() {
                       </div>
 
                       <p>{report.departmentName}</p>
-                      <p className={styles.reportSummary}>
-                        {report.summary}
-                      </p>
+
+                      <div className={styles.reportMeta}>
+                        <span>Тоо хэмжээ: {report.reportedQuantity}</span>
+                        <span>Зураг: {report.imageCount}</span>
+                        <span>Аудио: {report.audioCount}</span>
+                      </div>
+
+                      <p className={styles.reportSummary}>{report.summary}</p>
                     </article>
                   ))}
                 </div>
               ) : (
                 <div className={styles.emptyColumnState}>
-                  Одоогоор сүүлийн тайлангийн бүртгэл алга.
+                  Одоогоор сүүлийн тайлангийн бүртгэл харагдахгүй байна.
                 </div>
               )}
             </section>
@@ -352,40 +375,78 @@ export default async function Home() {
             <section className={styles.panel}>
               <div className={styles.sectionHeader}>
                 <div>
-                  <span className={styles.kicker}>Ахлагчид</span>
-                  <h2>Багийн ахлагчдын зураглал</h2>
+                  <span className={styles.kicker}>Ажил</span>
+                  <h2>Сүүлийн ажлууд</h2>
                 </div>
-                <p>Хэн дээр ачаалал төвлөрснийг хурдан харахад зориулав.</p>
+                <Link href="/projects" className={styles.sectionLink}>
+                  Ажил руу орох
+                </Link>
               </div>
 
-              {teamLeaders.length ? (
-                <div className={styles.leaderGrid}>
-                  {teamLeaders.map((leader) => (
-                    <article key={leader.name} className={styles.leaderCard}>
-                      <div className={styles.leaderBadge} aria-hidden>
-                        {leader.name.charAt(0)}
-                      </div>
+              <div className={styles.projectRail}>
+                {featuredProjects.map((project) => (
+                  <Link key={project.id} href={project.href} className={styles.projectCard}>
+                    <div className={styles.projectCardTop}>
+                      <span>{project.deadline}</span>
+                      <StagePill label={project.stageLabel} bucket={project.stageBucket} />
+                    </div>
 
-                      <div className={styles.leaderContent}>
-                        <h3>{leader.name}</h3>
-                        <p>
-                          {leader.activeTasks} идэвхтэй ажил, {leader.reviewTasks} шалгалтын
-                          мөр
-                        </p>
-                        <div className={styles.leaderMeta}>
-                          <strong>{leader.averageCompletion}%</strong>
-                          <span>{leader.squadSize} хүний бүрэлдэхүүн</span>
-                        </div>
+                    <h3>{project.name}</h3>
+                    <p>
+                      {project.departmentName} / Менежер: {project.manager}
+                    </p>
+
+                    <div className={styles.projectMeta}>
+                      <div>
+                        <span>Нээлттэй ажилбар</span>
+                        <strong>{project.openTasks}</strong>
                       </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.emptyColumnState}>
-                  Одоогоор ахлагчийн нэгтгэсэн зураглал алга.
-                </div>
-              )}
+                      <div>
+                        <span>Гүйцэтгэл</span>
+                        <strong>{project.completion}%</strong>
+                      </div>
+                    </div>
+
+                    <div className={styles.progressTrack}>
+                      <span style={{ width: `${project.completion}%` }} />
+                    </div>
+
+                    <div className={styles.cardFooter}>
+                      <span className={styles.cardLinkLabel}>Ажлыг нээх</span>
+                      <strong aria-hidden>→</strong>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </section>
+          </section>
+
+          <section className={styles.projectsSection}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <span className={styles.kicker}>Шуурхай гарц</span>
+                <h2>Ерөнхий менежерийн гол урсгал</h2>
+              </div>
+              <p>Өдөр тутмын шийдвэр гаргалтад хамгийн хэрэгтэй хуудсууд.</p>
+            </div>
+
+            <div className={styles.quickActions}>
+              <Link href="/tasks?filter=problem" className={styles.quickAction}>
+                <span>Асуудалтай ажилбар</span>
+                <strong>{qualityAlerts.length}</strong>
+                <small>Шуурхай анхаарах шаардлагатай ажилбарууд</small>
+              </Link>
+              <Link href="/review" className={styles.quickAction}>
+                <span>Шалгалтын мөр</span>
+                <strong>{reviewQueue.length}</strong>
+                <small>Хяналт хүлээж буй ажилбарууд</small>
+              </Link>
+              <Link href="/reports" className={styles.quickAction}>
+                <span>Тайлангийн урсгал</span>
+                <strong>{recentReports.length}</strong>
+                <small>Өдөр тутмын тайлан, зураг, дууны бүртгэл</small>
+              </Link>
+            </div>
           </section>
         </div>
       </div>

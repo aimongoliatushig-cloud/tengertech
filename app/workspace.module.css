@@ -273,6 +273,184 @@
   font-size: 0.88rem;
 }
 
+.taskFilterRail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(150px, max-content);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 18px;
+}
+
+.taskFilterChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 50px;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line-soft);
+  background: rgba(74, 154, 93, 0.08);
+  color: var(--ink-900);
+  white-space: nowrap;
+}
+
+.taskFilterChip span {
+  font-weight: 700;
+}
+
+.taskFilterChip strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--brand-900);
+  font-size: 0.84rem;
+}
+
+.taskFilterChipActive {
+  background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+  border-color: rgba(31, 95, 49, 0.22);
+  color: #f7fcf6;
+}
+
+.taskFilterChipActive strong {
+  background: rgba(247, 252, 246, 0.18);
+  color: #f7fcf6;
+}
+
+.summaryShowcaseGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.summaryShowcaseCard {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-height: 156px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid var(--line-soft);
+  background: var(--surface-panel);
+  overflow: hidden;
+  box-shadow: 0 14px 30px var(--shadow-soft);
+}
+
+.summaryShowcaseCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 5px;
+  background: rgba(74, 154, 93, 0.18);
+}
+
+.summaryShowcaseTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.summaryShowcaseIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(31, 95, 49, 0.08);
+  font-size: 1.05rem;
+}
+
+.summaryShowcaseLabel {
+  color: var(--ink-700);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.summaryShowcaseValue {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 2.8vw, 2.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.summaryShowcaseNote {
+  color: var(--ink-600);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.summaryShowcaseTrack {
+  align-self: end;
+  width: 100%;
+  height: 10px;
+  margin-top: auto;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.summaryShowcaseFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f7fcf6, rgba(247, 252, 246, 0.78));
+}
+
+.summaryCardSoft::before {
+  background: rgba(74, 154, 93, 0.24);
+}
+
+.summaryCardSoft .summaryShowcaseIcon {
+  background: rgba(74, 154, 93, 0.1);
+}
+
+.summaryCardActive::before {
+  background: rgba(44, 119, 64, 0.34);
+}
+
+.summaryCardActive .summaryShowcaseIcon {
+  background: rgba(44, 119, 64, 0.12);
+}
+
+.summaryCardReview::before {
+  background: rgba(199, 138, 44, 0.38);
+}
+
+.summaryCardReview .summaryShowcaseIcon {
+  background: rgba(199, 138, 44, 0.12);
+}
+
+.summaryCardPrimary {
+  background: linear-gradient(160deg, rgba(31, 95, 49, 0.96), rgba(74, 154, 93, 0.92));
+  color: #f7fcf6;
+}
+
+.summaryCardPrimary::before {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.summaryCardPrimary .summaryShowcaseIcon {
+  background: rgba(247, 252, 246, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(247, 252, 246, 0.12);
+}
+
+.summaryCardPrimary .summaryShowcaseLabel,
+.summaryCardPrimary .summaryShowcaseNote {
+  color: rgba(247, 252, 246, 0.84);
+}
+
 .progressTrack {
   width: 100%;
   height: 10px;
@@ -551,6 +729,10 @@
     grid-template-columns: 1fr;
   }
 
+  .summaryShowcaseGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .sectionHeader {
     align-items: start;
     flex-direction: column;
@@ -630,6 +812,27 @@
   .jumpLink {
     scroll-snap-align: start;
     white-space: nowrap;
+  }
+
+  .taskFilterRail {
+    grid-auto-columns: max-content;
+    margin-bottom: 16px;
+  }
+
+  .summaryShowcaseGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .summaryShowcaseCard {
+    min-height: 0;
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .summaryShowcaseValue {
+    font-size: 2rem;
   }
 
   .navBar,

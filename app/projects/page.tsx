@@ -9,8 +9,41 @@ import { loadMunicipalSnapshot } from "@/lib/odoo";
 type PageProps = {
   searchParams?: Promise<{
     department?: string | string[];
+    category?: string | string[];
+    unit?: string | string[];
   }>;
 };
+
+type ProjectFilterKey = "all" | "progress" | "planned";
+type DepartmentGroup = {
+  name: string;
+  units: string[];
+  icon: string;
+};
+
+const PROJECT_FILTERS: Array<{ key: ProjectFilterKey; label: string }> = [
+  { key: "all", label: "Бүгд" },
+  { key: "progress", label: "Явагдаж буй ажил" },
+  { key: "planned", label: "Төлөвлөж буй ажил" },
+];
+
+const DEPARTMENT_GROUPS: DepartmentGroup[] = [
+  {
+    name: "Авто бааз, хог тээвэрлэлтийн хэлтэс",
+    units: ["Авто бааз", "Хог тээвэрлэлт"],
+    icon: "🚚",
+  },
+  {
+    name: "Ногоон байгууламж, цэвэрлэгээ үйлчилгээний хэлтэс",
+    units: ["Ногоон байгууламж", "Зам талбайн цэвэрлэгээ"],
+    icon: "🌿",
+  },
+  {
+    name: "Тохижилтын хэлтэс",
+    units: ["Тохижилт үйлчилгээ"],
+    icon: "🏙️",
+  },
+];
 
 function getDepartmentParam(value?: string | string[]) {
   if (Array.isArray(value)) {
@@ -19,38 +52,16 @@ function getDepartmentParam(value?: string | string[]) {
   return value ?? "";
 }
 
-function matchesDepartment(departmentName: string, ...values: string[]) {
-  const haystack = values.join(" ").toLowerCase();
+function normalizeProjectFilter(value: string): ProjectFilterKey {
+  return PROJECT_FILTERS.some((item) => item.key === value) ? (value as ProjectFilterKey) : "all";
+}
 
-  if (haystack.includes(departmentName.toLowerCase())) {
-    return true;
-  }
+function findDepartmentGroupByUnit(unitName: string) {
+  return DEPARTMENT_GROUPS.find((group) => group.units.includes(unitName)) ?? null;
+}
 
-  if (departmentName === "Авто бааз") {
-    return haystack.includes("авто") || haystack.includes("техник") || haystack.includes("машин");
-  }
-
-  if (departmentName === "Хог тээвэрлэлт") {
-    return haystack.includes("хог") || haystack.includes("ачилт") || haystack.includes("маршрут");
-  }
-
-  if (departmentName === "Ногоон байгууламж") {
-    return haystack.includes("ногоон") || haystack.includes("мод") || haystack.includes("зүлэг");
-  }
-
-  if (departmentName === "Зам талбайн цэвэрлэгээ") {
-    return haystack.includes("зам") || haystack.includes("цэвэрлэгээ") || haystack.includes("гудамж");
-  }
-
-  if (departmentName === "Тохижилт үйлчилгээ") {
-    return (
-      haystack.includes("тохижилт") ||
-      haystack.includes("үйлчилгээ") ||
-      haystack.includes("засвар")
-    );
-  }
-
-  return false;
+function findDepartmentGroupByName(groupName: string) {
+  return DEPARTMENT_GROUPS.find((group) => group.name === groupName) ?? null;
 }
 
 function StagePill({
@@ -87,81 +98,129 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
 
   const params = (await searchParams) ?? {};
   const requestedDepartment = getDepartmentParam(params.department);
+  const requestedUnit = getDepartmentParam(params.unit);
+  const activeFilter = normalizeProjectFilter(getDepartmentParam(params.category));
 
-  const selectedDepartment =
+  const detectedGroup =
     requestedDepartment && requestedDepartment !== "all"
-      ? snapshot.departments.find((department) => department.name === requestedDepartment) ?? null
+      ? findDepartmentGroupByName(requestedDepartment) ??
+        findDepartmentGroupByUnit(requestedDepartment)
       : null;
 
-  const displayDepartment = selectedDepartment ?? {
-    name: "Бүх алба нэгж",
-    label: "Odoo ERP дээрх бүх алба нэгжийн төсөл, ажил, тайланг нэг дор харуулна.",
-    icon: "🏢",
-    accent: "var(--tone-slate)",
-    openTasks: snapshot.taskDirectory.filter((task) => task.statusKey !== "verified").length,
-    reviewTasks: snapshot.taskDirectory.filter((task) => task.statusKey === "review").length,
-    completion: snapshot.totalTasks
-      ? Math.round(
-          (snapshot.taskDirectory.filter((task) => task.statusKey === "verified").length /
-            snapshot.totalTasks) *
-            100,
-        )
-      : 0,
-  };
+  const selectedGroup = detectedGroup;
+  const availableUnits = selectedGroup
+    ? selectedGroup.units.filter((unit) =>
+        snapshot.projects.some((project) => project.departmentName === unit),
+      )
+    : [];
 
-  const selectedDepartmentName = displayDepartment.name;
+  const selectedUnit =
+    requestedUnit && availableUnits.includes(requestedUnit)
+      ? requestedUnit
+      : requestedDepartment && availableUnits.includes(requestedDepartment)
+        ? requestedDepartment
+        : selectedGroup && availableUnits.length > 1
+          ? (availableUnits[0] ?? "")
+          : "";
 
-  const visibleProjects = snapshot.projects
-    .filter((project) => !selectedDepartment || project.departmentName === selectedDepartment.name)
+  const scopedProjects = snapshot.projects
+    .filter((project) => {
+      if (selectedUnit) {
+        return project.departmentName === selectedUnit;
+      }
+      if (selectedGroup) {
+        return selectedGroup.units.includes(project.departmentName);
+      }
+      return true;
+    })
     .sort((left, right) => right.completion - left.completion);
 
-  const visibleProjectNames = new Set(visibleProjects.map((project) => project.name));
+  const activeProjects = scopedProjects.filter((project) => {
+    if (activeFilter === "all") {
+      return true;
+    }
 
-  const visibleLiveTasks = snapshot.liveTasks
-    .filter(
-      (task) =>
-        (!selectedDepartment ||
-          matchesDepartment(selectedDepartment.name, task.departmentName, task.projectName, task.name)) ||
-        visibleProjectNames.has(task.projectName),
-    )
-    .sort((left, right) => right.progress - left.progress);
+    if (activeFilter === "progress") {
+      return project.stageBucket === "progress" || project.stageBucket === "review";
+    }
 
-  const visibleReviewQueue = snapshot.reviewQueue
-    .filter(
-      (task) =>
-        !selectedDepartment ||
-        matchesDepartment(selectedDepartment.name, task.departmentName, task.projectName, task.name),
-    )
-    .sort((left, right) => right.progress - left.progress);
+    return project.stageBucket === "todo" || project.stageBucket === "unknown";
+  });
 
-  const visibleQualityAlerts = snapshot.qualityAlerts
-    .filter(
-      (alert) =>
-        !selectedDepartment ||
-        matchesDepartment(selectedDepartment.name, alert.departmentName, alert.projectName, alert.name),
-    )
-    .sort((left, right) => right.exceptionCount - left.exceptionCount);
+  const selectedDepartmentName = selectedUnit || selectedGroup?.name || "Бүх хэлтэс";
 
-  const visibleReports = snapshot.reports
-    .filter(
-      (report) =>
-        (!selectedDepartment ||
-          matchesDepartment(
-            selectedDepartment.name,
-            report.departmentName,
-            report.projectName,
-            report.taskName,
-          )) ||
-        visibleProjectNames.has(report.projectName),
-    )
-    .slice(0, 6);
+  const projectCounts = {
+    all: scopedProjects.length,
+    progress: scopedProjects.filter(
+      (project) => project.stageBucket === "progress" || project.stageBucket === "review",
+    ).length,
+    planned: scopedProjects.filter(
+      (project) => project.stageBucket === "todo" || project.stageBucket === "unknown",
+    ).length,
+  } satisfies Record<ProjectFilterKey, number>;
 
-  const activeProjectCount = visibleProjects.filter((project) => project.stageBucket !== "done").length;
-  const averageTaskProgress = visibleLiveTasks.length
+  const reviewProjectsCount = scopedProjects.filter(
+    (project) => project.stageBucket === "review",
+  ).length;
+  const totalOpenTaskCount = scopedProjects.reduce(
+    (sum, project) => sum + project.openTasks,
+    0,
+  );
+  const weightedCompletion = scopedProjects.length
     ? Math.round(
-        visibleLiveTasks.reduce((sum, task) => sum + task.progress, 0) / visibleLiveTasks.length,
+        totalOpenTaskCount > 0
+          ? scopedProjects.reduce(
+              (sum, project) => sum + project.completion * project.openTasks,
+              0,
+            ) / totalOpenTaskCount
+          : scopedProjects.reduce((sum, project) => sum + project.completion, 0) /
+              scopedProjects.length,
       )
-    : displayDepartment.completion;
+    : 0;
+  const summaryCards = [
+    {
+      label: "Нийт ажил",
+      value: String(scopedProjects.length),
+      note: "Энэ нэгж дээр бүртгэлтэй бүх ажил",
+      icon: "📦",
+      tone: styles.summaryCardSoft,
+    },
+    {
+      label: "Идэвхтэй ажил",
+      value: String(projectCounts.progress),
+      note: "Яг одоо явж байгаа болон хяналтын шаттай ажил",
+      icon: "🟢",
+      tone: styles.summaryCardActive,
+    },
+    {
+      label: "Хяналтад буй ажил",
+      value: String(reviewProjectsCount),
+      note: "Баталгаажуулалт хүлээж буй ажил",
+      icon: "🛡️",
+      tone: styles.summaryCardReview,
+    },
+    {
+      label: "Нийт гүйцэтгэл",
+      value: `${weightedCompletion}%`,
+      note: `${totalOpenTaskCount} нээлттэй ажилбарт тулгуурлан тооцсон`,
+      icon: "📈",
+      tone: styles.summaryCardPrimary,
+    },
+  ] as const;
+
+  const filterTitle =
+    activeFilter === "progress"
+      ? "Явагдаж буй ажил"
+      : activeFilter === "planned"
+        ? "Төлөвлөж буй ажил"
+        : "Бүх ажил";
+
+  const filterNote =
+    activeFilter === "progress"
+      ? "Одоо хэрэгжиж байгаа болон хяналтын шатанд явж буй ажлуудыг харуулна"
+      : activeFilter === "planned"
+        ? "Одоогоор эхлээгүй, төлөвлөсөн шатанд байгаа ажлуудыг харуулна"
+        : "Сонгосон алба нэгжийн бүх ажлыг нэг дор харуулна";
 
   return (
     <main className={styles.shell}>
@@ -182,22 +241,25 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             <section className={dashboardStyles.projectsSection}>
               <div className={dashboardStyles.sectionHeader}>
                 <div>
-                  <span className={dashboardStyles.kicker}>Алба нэгжийн цэс</span>
-                  <h2>Алба нэгж сонгох</h2>
+                  <span className={dashboardStyles.kicker}>Хэлтсийн цэс</span>
+                  <h2>Хэлтэс сонгох</h2>
                   <small className={dashboardStyles.sectionNote}>
-                    Сонголт бүр тухайн албаны самбарыг нээнэ
+                    Эхлээд хэлтэс сонгоно. Дараа нь тухайн хэлтэс доторх ажлыг тусад нь шүүж харуулна.
                   </small>
                 </div>
               </div>
 
-              <nav className={dashboardStyles.departmentSelector} aria-label="Алба нэгж сонгох цэс">
+              <nav
+                className={dashboardStyles.departmentSelector}
+                aria-label="Хэлтэс сонгох цэс"
+              >
                 <div className={dashboardStyles.departmentTabBar}>
                   <Link
-                    href="/projects"
+                    href={activeFilter === "all" ? "/projects" : `/projects?category=${activeFilter}`}
                     className={`${dashboardStyles.departmentTab} ${
-                      !selectedDepartment ? dashboardStyles.departmentTabActive : ""
+                      !selectedGroup ? dashboardStyles.departmentTabActive : ""
                     }`}
-                    aria-current={!selectedDepartment ? "page" : undefined}
+                    aria-current={!selectedGroup ? "page" : undefined}
                   >
                     <span className={dashboardStyles.departmentTabLabel}>
                       <span className={dashboardStyles.departmentTabIcon} aria-hidden>
@@ -205,15 +267,36 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                       </span>
                       <span>Бүгд</span>
                     </span>
-                    <strong>{snapshot.totalTasks}</strong>
+                    <strong>{snapshot.projects.length}</strong>
                   </Link>
-                  {snapshot.departments.map((department) => {
-                    const isActive = department.name === selectedDepartmentName;
+
+                  {DEPARTMENT_GROUPS.map((group) => {
+                    const isActive = group.name === selectedGroup?.name;
+                    const departmentProjects = snapshot.projects.filter(
+                      (project) => group.units.includes(project.departmentName),
+                    );
+                    const hrefParams = new URLSearchParams();
+                    hrefParams.set("department", group.name);
+                    if (activeFilter !== "all") {
+                      hrefParams.set("category", activeFilter);
+                    }
 
                     return (
                       <Link
-                        key={department.name}
-                        href={`/projects?department=${encodeURIComponent(department.name)}`}
+                        key={group.name}
+                        href={`/projects?${
+                          (() => {
+                            const params = new URLSearchParams(hrefParams);
+                            const defaultUnit =
+                              group.units.filter((unit) =>
+                                snapshot.projects.some((project) => project.departmentName === unit),
+                              )[0] ?? "";
+                            if (defaultUnit) {
+                              params.set("unit", defaultUnit);
+                            }
+                            return params.toString();
+                          })()
+                        }`}
                         className={`${dashboardStyles.departmentTab} ${
                           isActive ? dashboardStyles.departmentTabActive : ""
                         }`}
@@ -221,11 +304,11 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                       >
                         <span className={dashboardStyles.departmentTabLabel}>
                           <span className={dashboardStyles.departmentTabIcon} aria-hidden>
-                            {department.icon}
+                            {group.icon}
                           </span>
-                          <span>{department.name}</span>
+                          <span>{group.name}</span>
                         </span>
-                        <strong>{department.openTasks}</strong>
+                        <strong>{departmentProjects.length}</strong>
                       </Link>
                     );
                   })}
@@ -233,78 +316,126 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
               </nav>
             </section>
 
-            <section className={styles.heroCard}>
-              <span className={styles.eyebrow}>Алба нэгжийн самбар</span>
-              <h1>Албаны нэгдсэн самбар</h1>
-              <p>Сонгосон албаны төсөл, ажил, шалгалт, тайланг нэг дороос харуулна.</p>
+            {selectedGroup && availableUnits.length > 1 ? (
+              <section className={dashboardStyles.projectsSection}>
+                <div className={dashboardStyles.sectionHeader}>
+                  <div>
+                    <span className={dashboardStyles.kicker}>Доторх нэгж</span>
+                    <h2>{selectedGroup.name}</h2>
+                    <small className={dashboardStyles.sectionNote}>
+                      Энэ хэлтэс доторх ажлыг нэгжээр нь салгаж харуулна.
+                    </small>
+                  </div>
+                </div>
 
-              <div className={styles.statsGrid}>
-                <article className={styles.statCard}>
-                  <span>Сонгосон алба</span>
-                  <strong>{selectedDepartmentName}</strong>
-                </article>
-                <article className={styles.statCard}>
-                  <span>Нийт төсөл</span>
-                  <strong>{visibleProjects.length}</strong>
-                </article>
-                <article className={styles.statCard}>
-                  <span>Идэвхтэй ажил</span>
-                  <strong>{visibleLiveTasks.length}</strong>
-                </article>
-                <article className={styles.statCard}>
-                  <span>Анхаарах ажил</span>
-                  <strong>{visibleQualityAlerts.length}</strong>
-                </article>
-              </div>
-            </section>
+                <div className={styles.taskFilterRail}>
+                  {availableUnits.map((unit) => {
+                    const hrefParams = new URLSearchParams();
+                    hrefParams.set("department", selectedGroup.name);
+                    hrefParams.set("unit", unit);
+                    if (activeFilter !== "all") {
+                      hrefParams.set("category", activeFilter);
+                    }
 
-          <>
+                    return (
+                      <Link
+                        key={unit}
+                        href={`/projects?${hrefParams.toString()}`}
+                        className={`${styles.taskFilterChip} ${
+                          selectedUnit === unit
+                            ? styles.taskFilterChipActive
+                            : ""
+                        }`}
+                      >
+                        <span>{unit}</span>
+                        <strong>
+                          {
+                            snapshot.projects.filter((project) => project.departmentName === unit)
+                              .length
+                          }
+                        </strong>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
             <section className={dashboardStyles.projectsSection}>
-              <div className={dashboardStyles.selectedDepartmentHeader}>
+              <div className={dashboardStyles.sectionHeader}>
                 <div>
-                  <span
-                    className={dashboardStyles.departmentAccentBadge}
-                    style={{ background: displayDepartment.accent }}
-                  />
-                  <div className={dashboardStyles.selectedDepartmentTitle}>
-                    <span className={dashboardStyles.departmentHeroIcon} aria-hidden>
-                      {displayDepartment.icon}
-                    </span>
-                    <h2>{displayDepartment.name}</h2>
-                  </div>
-                  <p className={dashboardStyles.selectedDepartmentNote}>
-                    {displayDepartment.label}
-                  </p>
-                </div>
-
-                <div className={dashboardStyles.projectMetaSummary}>
-                  <div>
-                    <span>Төсөл</span>
-                    <strong>{visibleProjects.length}</strong>
-                  </div>
-                  <div>
-                    <span>Идэвхтэй төсөл</span>
-                    <strong>{activeProjectCount}</strong>
-                  </div>
-                  <div>
-                    <span>Шалгалт</span>
-                    <strong>{visibleReviewQueue.length}</strong>
-                  </div>
-                  <div>
-                    <span>Дундаж явц</span>
-                    <strong>{averageTaskProgress}%</strong>
-                  </div>
+                  <span className={dashboardStyles.kicker}>Хэлтсийн ангилал</span>
+                  <h2>{selectedDepartmentName}</h2>
+                  <small className={dashboardStyles.sectionNote}>
+                    Ажил дээр дарахад тухайн ажлын ажилбарууд нээгдэнэ
+                  </small>
                 </div>
               </div>
 
-              {visibleProjects.length ? (
-                <div className={dashboardStyles.projectRail}>
-                  {visibleProjects.map((project) => (
+              <div className={styles.summaryShowcaseGrid}>
+                {summaryCards.map((card) => (
+                  <article key={card.label} className={`${styles.summaryShowcaseCard} ${card.tone}`}>
+                    <div className={styles.summaryShowcaseTop}>
+                      <span className={styles.summaryShowcaseIcon} aria-hidden>
+                        {card.icon}
+                      </span>
+                      <span className={styles.summaryShowcaseLabel}>{card.label}</span>
+                    </div>
+                    <strong className={styles.summaryShowcaseValue}>{card.value}</strong>
+                    <small className={styles.summaryShowcaseNote}>{card.note}</small>
+                    {card.label === "Нийт гүйцэтгэл" ? (
+                      <div className={styles.summaryShowcaseTrack} aria-hidden>
+                        <span
+                          className={styles.summaryShowcaseFill}
+                          style={{ width: `${Math.max(weightedCompletion, 6)}%` }}
+                        />
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+
+              <div className={styles.taskFilterRail}>
+                {PROJECT_FILTERS.map((filter) => {
+                  const hrefParams = new URLSearchParams();
+                  if (selectedGroup?.name) {
+                    hrefParams.set("department", selectedGroup.name);
+                  }
+                  if (selectedUnit) {
+                    hrefParams.set("unit", selectedUnit);
+                  }
+                  if (filter.key !== "all") {
+                    hrefParams.set("category", filter.key);
+                  }
+
+                  return (
                     <Link
-                      key={project.id}
-                      href={project.href}
-                      className={dashboardStyles.projectCard}
+                      key={filter.key}
+                      href={`/projects${hrefParams.toString() ? `?${hrefParams.toString()}` : ""}`}
+                      className={`${styles.taskFilterChip} ${
+                        activeFilter === filter.key ? styles.taskFilterChipActive : ""
+                      }`}
                     >
+                      <span>{filter.label}</span>
+                      <strong>{projectCounts[filter.key]}</strong>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {activeProjects.length ? (
+                <>
+                  <div className={dashboardStyles.sectionHeader}>
+                    <div>
+                      <span className={dashboardStyles.kicker}>{filterTitle}</span>
+                      <h2>{selectedDepartmentName}</h2>
+                      <small className={dashboardStyles.sectionNote}>{filterNote}</small>
+                    </div>
+                  </div>
+
+                  <div className={dashboardStyles.projectRail}>
+                  {activeProjects.map((project) => (
+                    <Link key={project.id} href={project.href} className={dashboardStyles.projectCard}>
                       <div className={dashboardStyles.projectCardTop}>
                         <span>{project.deadline}</span>
                         <StagePill label={project.stageLabel} bucket={project.stageBucket} />
@@ -329,230 +460,19 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                       </div>
 
                       <div className={dashboardStyles.cardFooter}>
-                        <span className={dashboardStyles.cardLinkLabel}>Төслийг нээх</span>
+                        <span className={dashboardStyles.cardLinkLabel}>Ажлын ажилбар харах</span>
                         <strong aria-hidden>→</strong>
                       </div>
                     </Link>
                   ))}
-                </div>
+                  </div>
+                </>
               ) : (
                 <div className={dashboardStyles.emptyColumnState}>
-                  Одоогоор {displayDepartment.name} дээр бүртгэгдсэн төсөл алга.
+                  Одоогоор {selectedDepartmentName} дээр энэ ангиллын ажил алга байна.
                 </div>
               )}
             </section>
-
-            <section className={styles.panelGrid}>
-              <section className={styles.panel}>
-                <div className={styles.sectionHeader}>
-                  <div>
-                    <h2>Идэвхтэй ажил</h2>
-                    <p>Одоогоор явж буй ажлуудыг товч зураглалаар харуулна.</p>
-                  </div>
-                </div>
-
-                {visibleLiveTasks.length ? (
-                  <div className={dashboardStyles.taskList}>
-                    {visibleLiveTasks.map((task) => (
-                      <Link key={task.id} href={task.href} className={dashboardStyles.taskCard}>
-                        <div className={dashboardStyles.taskCardTop}>
-                          <span>{task.deadline}</span>
-                          <StagePill label={task.stageLabel} bucket={task.stageBucket} />
-                        </div>
-
-                        <h3>{task.name}</h3>
-                        <p>{task.projectName}</p>
-
-                        <div className={dashboardStyles.taskStats}>
-                          <span>Ахлагч: {task.leaderName}</span>
-                          <span>Төлөв: {task.priorityLabel}</span>
-                          <span>Үлдэгдэл: {task.remainingQuantity} {task.measurementUnit}</span>
-                        </div>
-
-                        <div className={dashboardStyles.taskQuantities}>
-                          <span>
-                            {task.completedQuantity} / {task.plannedQuantity} {task.measurementUnit}
-                          </span>
-                          <b>{task.progress}%</b>
-                        </div>
-
-                        <div className={dashboardStyles.progressTrack}>
-                          <span style={{ width: `${task.progress}%` }} />
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={dashboardStyles.emptyColumnState}>
-                    Энэ алба нэгж дээр одоогоор идэвхтэй ажил алга.
-                  </div>
-                )}
-              </section>
-
-              <section className={styles.panel}>
-                <div className={styles.sectionHeader}>
-                  <div>
-                    <h2>Товч төлөв</h2>
-                    <p>Алба нэгжийн гол үзүүлэлтүүдийг executive түвшинд харуулна.</p>
-                  </div>
-                </div>
-
-                <div className={dashboardStyles.statusList}>
-                  <div className={dashboardStyles.statusItem}>
-                    <span>Нээлттэй ажил</span>
-                    <strong>{displayDepartment.openTasks}</strong>
-                    <small>Тухайн алба нэгжийн одоо хаагдаагүй ажил</small>
-                  </div>
-                  <div className={dashboardStyles.statusItem}>
-                    <span>Шалгалтын мөр</span>
-                    <strong>{visibleReviewQueue.length}</strong>
-                    <small>Баталгаажуулалт хүлээж буй ажил</small>
-                  </div>
-                  <div className={dashboardStyles.statusItem}>
-                    <span>Анхаарах зүйл</span>
-                    <strong>{visibleQualityAlerts.length}</strong>
-                    <small>Чанар эсвэл синкийн зөрүүтэй ажил</small>
-                  </div>
-                  <div className={dashboardStyles.statusItem}>
-                    <span>Сүүлийн тайлан</span>
-                    <strong>{visibleReports.length}</strong>
-                    <small>Хамгийн сүүлийн тайлангийн бүртгэл</small>
-                  </div>
-                </div>
-              </section>
-            </section>
-
-            <section className={styles.panelGrid}>
-              <section className={styles.panel}>
-                <div className={styles.sectionHeader}>
-                  <div>
-                    <h2>Шалгалтын мөр</h2>
-                    <p>Шалгалт хүлээж буй ажлуудыг priority дагуу харуулна.</p>
-                  </div>
-                </div>
-
-                {visibleReviewQueue.length ? (
-                  <div className={dashboardStyles.reviewList}>
-                    {visibleReviewQueue.map((task) => (
-                      <Link key={task.id} href={task.href} className={dashboardStyles.reviewItem}>
-                        <div>
-                          <h3>{task.name}</h3>
-                          <p>
-                            {task.projectName} / {task.leaderName}
-                          </p>
-                        </div>
-
-                        <div className={dashboardStyles.reviewMeta}>
-                          <strong>{task.progress}%</strong>
-                          <span>{task.stageLabel}</span>
-                          <span>{task.deadline}</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={dashboardStyles.emptyColumnState}>
-                    Энэ алба нэгж дээр одоогоор шалгалтын мөр алга.
-                  </div>
-                )}
-              </section>
-
-              <section className={styles.panel}>
-                <div className={styles.sectionHeader}>
-                  <div>
-                    <h2>Анхаарах зүйлс</h2>
-                    <p>Чанар, зураг, маршрут, жингийн синктэй холбоотой ажлууд.</p>
-                  </div>
-                </div>
-
-                {visibleQualityAlerts.length ? (
-                  <div className={dashboardStyles.reviewList}>
-                    {visibleQualityAlerts.map((alert) => (
-                      <Link key={alert.id} href={alert.href} className={dashboardStyles.reviewItem}>
-                        <div>
-                          <h3>{alert.name}</h3>
-                          <p>
-                            {alert.projectName} / {alert.routeName}
-                          </p>
-                        </div>
-
-                        <div className={dashboardStyles.reviewMeta}>
-                          <strong>{alert.exceptionCount} анхааруулга</strong>
-                          <span>{alert.operationTypeLabel}</span>
-                          <span>{alert.hasWeightWarning ? "Жингийн синк шалгах" : "Чанарын мөр"}</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={dashboardStyles.emptyColumnState}>
-                    Одоогоор энэ алба нэгж дээр чанарын анхааруулга алга.
-                  </div>
-                )}
-              </section>
-            </section>
-
-            <section className={dashboardStyles.projectsSection}>
-              <div className={dashboardStyles.sectionHeader}>
-                <div>
-                  <span className={dashboardStyles.kicker}>Сүүлийн урсгал</span>
-                  <h2>Тайлангийн самбар</h2>
-                  <small className={dashboardStyles.sectionNote}>
-                    Тухайн алба нэгжийн хамгийн сүүлийн тайлангуудыг харуулна
-                  </small>
-                </div>
-                <Link href="/reports" className={styles.smallLink}>
-                  Бүх тайлан харах
-                </Link>
-              </div>
-
-              {visibleReports.length ? (
-                <div className={dashboardStyles.reportFeed}>
-                  {visibleReports.map((report) => (
-                    <article key={report.id} className={dashboardStyles.reportCard}>
-                      <div className={dashboardStyles.reportTop}>
-                        <strong>{report.submittedAt}</strong>
-                        <StagePill label="Тайлан орсон" bucket="review" />
-                      </div>
-
-                      <h3>{report.taskName}</h3>
-                      <p>{report.projectName}</p>
-
-                      <div className={dashboardStyles.reportMeta}>
-                        <span>Илгээсэн: {report.reporter}</span>
-                        <span>Зураг: {report.imageCount}</span>
-                        <span>Аудио: {report.audioCount}</span>
-                      </div>
-
-                      <div className={dashboardStyles.reportSummary}>{report.summary}</div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className={dashboardStyles.emptyColumnState}>
-                  Энэ алба нэгж дээр харагдах тайлан одоогоор алга.
-                </div>
-              )}
-            </section>
-        </>
-
-        <nav className={styles.mobileDock} aria-label="Алба нэгжийн самбарын гар утасны цэс">
-          <Link href="/" className={styles.jumpLink}>
-            Нүүр
-          </Link>
-          <a href="#projects-top" className={styles.jumpLink}>
-            Дээш
-          </a>
-          {canCreateProject ? (
-            <Link href="/projects/new" className={styles.jumpLink}>
-              Шинэ
-            </Link>
-          ) : (
-            <Link href="/reports" className={styles.jumpLink}>
-              Тайлан
-            </Link>
-          )}
-        </nav>
           </div>
         </div>
       </div>

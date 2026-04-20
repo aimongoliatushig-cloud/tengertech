@@ -40,14 +40,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <span className={styles.eyebrow}>Хотын ажиллагааны нэгдсэн платформ</span>
         <h1>Хот тохижилтын веб апп</h1>
         <p>
-          Odoo ERP дээрх төслийн урсгал, талбарын тайлан, шалгалтын мөр, багийн бүтэц,
+          Odoo ERP дээрх ажлын урсгал, талбарын тайлан, хяналтын мөр, багийн бүтэц,
           хэмжээг нэг дэлгэц дээр нэгтгэсэн гар утсанд эвтэйхэн веб апп.
         </p>
 
         <div className={styles.featureGrid}>
           <article className={styles.featureCard}>
             <strong>Ерөнхий менежер</strong>
-            <span>Шалгалтын мөр, KPI, явц, гүйцэтгэлийн баталгааны урсгал</span>
+            <span>Хяналтын мөр, KPI, явц, гүйцэтгэлийн баталгааны урсгал</span>
           </article>
           <article className={styles.featureCard}>
             <strong>Багийн ахлагч</strong>
