@@ -3,3 +3,9 @@ __pycache__/
 *.pyo
 *.log
 .DS_Store
+base_territory/
+fieldservice/
+fieldservice_calendar/
+fieldservice_kanban_info/
+fieldservice_project/
+fieldservice_recurring/
