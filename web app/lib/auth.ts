@@ -14,6 +14,7 @@ import { authenticateOdooUser } from "@/lib/odoo";
 import {
   getRoleLabel,
   hasCapability,
+  isWorkerOnly,
   type RoleGroupFlags,
   type UserRole,
 } from "@/lib/roles";
@@ -119,4 +120,4 @@ export async function signInWithOdooCredentials(login: string, password: string)
   } satisfies AppSession;
 }
 
-export { getRoleLabel, hasCapability };
+export { getRoleLabel, hasCapability, isWorkerOnly };

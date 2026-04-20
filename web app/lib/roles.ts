@@ -126,3 +126,13 @@ export function hasCapability(context: RoleContext, capability: Capability) {
       return false;
   }
 }
+
+export function isWorkerOnly(context: RoleContext) {
+  const groupFlags = normalizeGroupFlags(context.groupFlags);
+  return (
+    context.role === "worker" &&
+    !groupFlags.mfoManager &&
+    !groupFlags.mfoDispatcher &&
+    !groupFlags.mfoInspector
+  );
+}

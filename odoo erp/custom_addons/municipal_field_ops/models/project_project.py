@@ -115,17 +115,14 @@ class ProjectProject(models.Model):
     mfo_planning_template_count = fields.Integer(
         string="Загварын тоо",
         compute="_compute_mfo_counts",
-        groups=MFO_SHARED_FIELD_GROUPS,
     )
     mfo_stop_task_count = fields.Integer(
         string="Цэгийн ажилбарын тоо",
         compute="_compute_mfo_execution_summary",
-        groups=MFO_SHARED_FIELD_GROUPS,
     )
     mfo_overall_progress = fields.Float(
         string="Нийт гүйцэтгэл",
         compute="_compute_mfo_execution_summary",
-        groups=MFO_SHARED_FIELD_GROUPS,
     )
 
     @api.depends("mfo_district_ids.name")

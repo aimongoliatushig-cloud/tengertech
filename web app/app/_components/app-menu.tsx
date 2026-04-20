@@ -24,6 +24,7 @@ type AppMenuProps = {
   variant?: "default" | "executive";
   userName?: string;
   roleLabel?: string;
+  workerMode?: boolean;
 };
 
 type MenuItem = {
