@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getDateKeyFromValue } from "@/lib/dashboard-scope";
+import { getDateKeyFromValue, getTodayDateKey } from "@/lib/dashboard-scope";
 import type { RoleGroupFlags } from "@/lib/roles";
 
 type OdooRelation = [number, string] | false;
@@ -318,6 +318,9 @@ const KNOWN_STAGE_MATCHERS: Array<[StageBucket, string[]]> = [
   ["progress", ["явагдаж", "progress", "hiihdej", "in progress"]],
   ["review", ["шалгагдаж", "хянагдаж", "review", "changes requested", "shalgagdaj", "shalgah", "hyanagdaj"]],
   ["done", ["дууссан", "done", "completed", "duussan"]],
+  ["todo", ["төлөвлөгдсөн", "хуваарилсан"]],
+  ["progress", ["гүйцэтгэж"]],
+  ["review", ["шалгаж"]],
 ];
 
 function getStageBucket(stageName?: string | null): StageBucket {
@@ -452,6 +455,98 @@ function formatQuantity(value: number, unit: string) {
   return `${Math.round(value * 10) / 10} ${unit}`.trim();
 }
 
+function inferDepartmentUnitFromText(text: string) {
+  const haystack = text.toLowerCase();
+  if (haystack.includes("мод") || haystack.includes("ногоон") || haystack.includes("зүлэг")) {
+    return "Ногоон байгууламж";
+  }
+  if (haystack.includes("хог") || haystack.includes("маршрут") || haystack.includes("ачилт")) {
+    return "Хог тээвэрлэлт";
+  }
+  if (haystack.includes("авто") || haystack.includes("машин") || haystack.includes("техник")) {
+    return "Авто бааз";
+  }
+  if (
+    haystack.includes("зам") ||
+    haystack.includes("талбай") ||
+    haystack.includes("цэвэрлэгээ") ||
+    haystack.includes("гудамж")
+  ) {
+    return "Зам талбайн цэвэрлэгээ";
+  }
+  if (haystack.includes("тохижилт") || haystack.includes("засвар")) {
+    return "Тохижилт үйлчилгээ";
+  }
+  return UNKNOWN_DEPARTMENT;
+}
+
+function departmentUnitFromOperationType(operationType?: string | false) {
+  if (operationType === "garbage") {
+    return "Хог тээвэрлэлт";
+  }
+  if (operationType === "street_cleaning") {
+    return "Зам талбайн цэвэрлэгээ";
+  }
+  if (operationType === "green_maintenance") {
+    return "Ногоон байгууламж";
+  }
+  return null;
+}
+
+function normalizeDepartmentUnitName(
+  departmentName?: string | null,
+  options: {
+    operationType?: string | false;
+    labelText?: string | null;
+  } = {},
+) {
+  const normalizedDepartment = (departmentName ?? "").trim();
+  const inferredFromOperation = departmentUnitFromOperationType(options.operationType);
+  const inferredFromText = inferDepartmentUnitFromText(
+    `${normalizedDepartment} ${options.labelText ?? ""}`,
+  );
+
+  if (!normalizedDepartment) {
+    return inferredFromOperation || inferredFromText;
+  }
+
+  if (
+    normalizedDepartment.includes("Авто бааз") &&
+    normalizedDepartment.includes("хог тээвэрлэлтийн")
+  ) {
+    return inferredFromOperation || inferredFromText || "Авто бааз";
+  }
+
+  if (
+    normalizedDepartment.includes("Ногоон байгууламж") &&
+    normalizedDepartment.includes("цэвэрлэгээ")
+  ) {
+    return inferredFromOperation || inferredFromText || "Ногоон байгууламж";
+  }
+
+  if (normalizedDepartment.includes("Тохижилт")) {
+    return "Тохижилт үйлчилгээ";
+  }
+
+  if (normalizedDepartment.includes("Авто бааз")) {
+    return "Авто бааз";
+  }
+
+  if (normalizedDepartment.includes("Хог тээвэрлэлт")) {
+    return "Хог тээвэрлэлт";
+  }
+
+  if (normalizedDepartment.includes("Ногоон байгууламж")) {
+    return "Ногоон байгууламж";
+  }
+
+  if (normalizedDepartment.includes("Зам талбай")) {
+    return "Зам талбайн цэвэрлэгээ";
+  }
+
+  return inferredFromOperation || inferredFromText || normalizedDepartment;
+}
+
 function priorityLabel(priority: string) {
   switch (priority) {
     case "3":
@@ -465,38 +560,14 @@ function priorityLabel(priority: string) {
   }
 }
 
-function mapTaskToDepartment(task: Pick<OdooTaskRecord, "name" | "project_id">) {
-  const haystack = `${task.name} ${relationName(task.project_id, "")}`.toLowerCase();
-  if (haystack.includes("мод") || haystack.includes("ногоон")) {
-    return "Ногоон байгууламж";
-  }
-  if (haystack.includes("хог")) {
-    return "Хог тээвэрлэлт";
-  }
-  if (haystack.includes("авто") || haystack.includes("машин") || haystack.includes("техник")) {
-    return "Авто бааз";
-  }
-  if (haystack.includes("зам") || haystack.includes("талбай") || haystack.includes("цэвэрлэгээ")) {
-    return "Зам талбайн цэвэрлэгээ";
-  }
-  return UNKNOWN_DEPARTMENT;
-}
-
 function resolveTaskDepartmentName(
   task: Pick<OdooTaskRecord, "name" | "project_id" | "ops_department_id">,
   projectDepartmentById: Map<number, string>,
 ) {
-  const directDepartmentName = relationName(task.ops_department_id ?? false, "").trim();
-  if (directDepartmentName) {
-    return directDepartmentName;
-  }
-
-  const projectId = Array.isArray(task.project_id) ? task.project_id[0] : null;
-  if (projectId && projectDepartmentById.get(projectId)) {
-    return projectDepartmentById.get(projectId) as string;
-  }
-
-  return mapTaskToDepartment(task);
+  return resolveNormalizedTaskDepartmentName(
+    task as Pick<OdooTaskRecord, "name" | "project_id" | "ops_department_id" | "mfo_operation_type">,
+    projectDepartmentById,
+  );
 }
 
 function operationTypeLabel(operationType?: string | false) {
@@ -506,11 +577,48 @@ function operationTypeLabel(operationType?: string | false) {
   return OPERATION_TYPE_LABELS[operationType] ?? operationType;
 }
 
-function resolveProjectDepartmentName(
-  project: Pick<OdooProjectRecord, "ops_department_id">,
+function resolveNormalizedProjectDepartmentName(
+  project: Pick<OdooProjectRecord, "name" | "ops_department_id">,
   fallback = UNKNOWN_DEPARTMENT,
 ) {
-  return relationName(project.ops_department_id, fallback);
+  return normalizeDepartmentUnitName(relationName(project.ops_department_id, fallback), {
+    labelText: project.name,
+  });
+}
+
+function resolveNormalizedTaskDepartmentName(
+  task: Pick<OdooTaskRecord, "name" | "project_id" | "ops_department_id" | "mfo_operation_type">,
+  projectDepartmentById: Map<number, string>,
+) {
+  const directDepartmentName = relationName(task.ops_department_id ?? false, "").trim();
+  if (directDepartmentName) {
+    return normalizeDepartmentUnitName(directDepartmentName, {
+      operationType: task.mfo_operation_type,
+      labelText: `${task.name} ${relationName(task.project_id, "")}`,
+    });
+  }
+
+  const inferredFromOperation = departmentUnitFromOperationType(task.mfo_operation_type);
+  if (inferredFromOperation) {
+    return inferredFromOperation;
+  }
+
+  const inferredFromText = inferDepartmentUnitFromText(
+    `${task.name} ${relationName(task.project_id, "")}`,
+  );
+  if (inferredFromText !== UNKNOWN_DEPARTMENT) {
+    return inferredFromText;
+  }
+
+  const projectId = Array.isArray(task.project_id) ? task.project_id[0] : null;
+  if (projectId && projectDepartmentById.get(projectId)) {
+    return normalizeDepartmentUnitName(projectDepartmentById.get(projectId) as string, {
+      operationType: task.mfo_operation_type,
+      labelText: `${task.name} ${relationName(task.project_id, "")}`,
+    });
+  }
+
+  return UNKNOWN_DEPARTMENT;
 }
 
 function getTaskStatusKey(task: Pick<OdooTaskRecord, "stage_id" | "mfo_quality_exception_count" | "mfo_weight_sync_warning">): TaskStatusKey {
@@ -999,13 +1107,13 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     projects.map((project) => [
       project.id,
       Array.isArray(project.ops_department_id)
-        ? project.ops_department_id[1]
-        : mapTaskToDepartment({ name: project.name, project_id: false }),
+        ? resolveNormalizedProjectDepartmentName(project)
+        : inferDepartmentUnitFromText(project.name),
     ]),
   );
 
   const taskDepartmentNames = tasks.map((task) =>
-    resolveTaskDepartmentName(task, projectDepartmentById),
+    resolveNormalizedTaskDepartmentName(task, projectDepartmentById),
   );
 
   const derivedDepartmentNames = Array.from(
@@ -1039,7 +1147,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
 
   const departments = departmentSourceNames.map((department) => {
     const departmentTasks = tasks.filter((task) => {
-      const departmentName = resolveTaskDepartmentName(task, projectDepartmentById);
+      const departmentName = resolveNormalizedTaskDepartmentName(task, projectDepartmentById);
       return departmentName === department;
     });
     const departmentDone = departmentTasks.filter(
@@ -1066,6 +1174,9 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     const projectTasks = tasks.filter(
       (task) => Array.isArray(task.project_id) && task.project_id[0] === project.id,
     );
+    const projectTaskDepartments = projectTasks
+      .map((task) => resolveNormalizedTaskDepartmentName(task, projectDepartmentById))
+      .filter((departmentName) => departmentName !== UNKNOWN_DEPARTMENT);
     const completed = projectTasks.filter(
       (task) => getStageBucket(relationName(task.stage_id, "")) === "done",
     ).length;
@@ -1086,7 +1197,9 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       name: project.name,
       manager: relationName(project.user_id),
       departmentName:
-        projectDepartmentById.get(project.id) ?? resolveProjectDepartmentName(project),
+        projectTaskDepartments[0] ??
+        projectDepartmentById.get(project.id) ??
+        resolveNormalizedProjectDepartmentName(project),
       stageLabel: STAGE_LABELS[stageBucket],
       stageBucket,
       openTasks: projectTasks.length - completed,
@@ -1392,6 +1505,11 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
 
 // Preserved temporarily while the clean fallback snapshot replaces the old demo payload.
 function fallbackSnapshot(): DashboardSnapshot {
+  const todayDateKey = getTodayDateKey();
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDateKey = getTodayDateKey(tomorrow);
+
   return {
     source: "demo",
     generatedAt: formatSyncDate(new Date()),
@@ -1507,6 +1625,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         statusKey: "review",
         statusLabel: "Шалгаж байна",
         deadline: "Өнөөдөр 16:30",
+        scheduledDate: todayDateKey,
         leaderName: "suldee",
         priorityLabel: "Өндөр",
         progress: 100,
@@ -1528,6 +1647,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         statusKey: "problem",
         statusLabel: "Асуудалтай",
         deadline: "Өнөөдөр 19:00",
+        scheduledDate: todayDateKey,
         leaderName: "sarangerel",
         priorityLabel: "Яаралтай",
         progress: 88,
@@ -1549,6 +1669,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         statusKey: "planned",
         statusLabel: "Төлөвлөгдсөн",
         deadline: "Маргааш 06:00",
+        scheduledDate: tomorrowDateKey,
         leaderName: "temuulen",
         priorityLabel: "Яаралтай",
         progress: 0,
@@ -1570,6 +1691,7 @@ function fallbackSnapshot(): DashboardSnapshot {
         statusKey: "working",
         statusLabel: "Ажиллаж байна",
         deadline: "Өнөөдөр 17:30",
+        scheduledDate: todayDateKey,
         leaderName: "bold",
         priorityLabel: "Дунд",
         progress: 33,
@@ -1585,12 +1707,13 @@ function fallbackSnapshot(): DashboardSnapshot {
     liveTasks: [
       {
         id: 101,
-        departmentName: "ÐÐ¾Ð³Ð¾Ð¾Ð½ Ð±Ð°Ð¹Ð³ÑƒÑƒÐ»Ð°Ð¼Ð¶",
+        departmentName: "Ногоон байгууламж",
         name: "1-р хороо - 20-р байрны ар тал",
         projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
         stageLabel: "Явагдаж буй ажил",
         stageBucket: "progress",
         deadline: "Өнөөдөр 18:00",
+        scheduledDate: todayDateKey,
         plannedQuantity: 48,
         completedQuantity: 21,
         remainingQuantity: 27,
@@ -1602,12 +1725,13 @@ function fallbackSnapshot(): DashboardSnapshot {
       },
       {
         id: 102,
-        departmentName: "Ð—Ð°Ð¼ Ñ‚Ð°Ð»Ð±Ð°Ð¹Ð½ Ñ†ÑÐ²ÑÑ€Ð»ÑÐ³ÑÑ",
+        departmentName: "Зам талбайн цэвэрлэгээ",
         name: "7-р хороо - Төв замын захын цэвэрлэгээ",
         projectName: "Зам талбайн шөнийн цэвэрлэгээ",
         stageLabel: "Хийгдэх ажил",
         stageBucket: "todo",
         deadline: "Маргааш 06:00",
+        scheduledDate: tomorrowDateKey,
         plannedQuantity: 12,
         completedQuantity: 0,
         remainingQuantity: 12,
@@ -1619,12 +1743,13 @@ function fallbackSnapshot(): DashboardSnapshot {
       },
       {
         id: 103,
-        departmentName: "ÐÐ²Ñ‚Ð¾ Ð±Ð°Ð°Ð·",
+        departmentName: "Авто бааз",
         name: "Авто бааз - 3 машинд урсгал үйлчилгээ",
         projectName: "Техникийн өдөр тутмын бэлэн байдал",
         stageLabel: "Явагдаж буй ажил",
         stageBucket: "progress",
         deadline: "Өнөөдөр 17:30",
+        scheduledDate: todayDateKey,
         plannedQuantity: 3,
         completedQuantity: 1,
         remainingQuantity: 2,
@@ -1694,7 +1819,7 @@ function fallbackSnapshot(): DashboardSnapshot {
     reports: [
       {
         id: 301,
-        departmentName: "ÐÐ¾Ð³Ð¾Ð¾Ð½ Ð±Ð°Ð¹Ð³ÑƒÑƒÐ»Ð°Ð¼Ð¶",
+        departmentName: "Ногоон байгууламж",
         reporter: "suldee",
         taskName: "1-р хороо - 20-р байрны ар тал",
         projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
@@ -1708,7 +1833,7 @@ function fallbackSnapshot(): DashboardSnapshot {
       },
       {
         id: 302,
-        departmentName: "Ð¥Ð¾Ð³ Ñ‚ÑÑÐ²ÑÑ€Ð»ÑÐ»Ñ‚",
+        departmentName: "Хог тээвэрлэлт",
         reporter: "sarangerel",
         taskName: "Хог тээврийн 2-р маршрут",
         projectName: "Хог тээвэрлэлтийн өглөөний маршрут",

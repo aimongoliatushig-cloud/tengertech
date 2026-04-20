@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import {
   createSession,
   destroySession,
+  hasCapability,
+  isMasterRole,
   requireSession,
   signInWithOdooCredentials,
 } from "@/lib/auth";
@@ -71,6 +73,47 @@ function redirectWithMessage(
 
 function getNumberValue(formData: FormData, key: string) {
   return Number(String(formData.get(key) ?? ""));
+}
+
+function getUploadedFiles(formData: FormData, key: string) {
+  return formData
+    .getAll(key)
+    .filter((value): value is File => value instanceof File && value.size > 0);
+}
+
+function getFallbackMimeType(fileName: string, family: "image" | "audio") {
+  const normalizedName = fileName.trim().toLowerCase();
+  const extension = normalizedName.includes(".")
+    ? normalizedName.slice(normalizedName.lastIndexOf("."))
+    : "";
+
+  if (family === "image") {
+    switch (extension) {
+      case ".png":
+        return "image/png";
+      case ".webp":
+        return "image/webp";
+      case ".gif":
+        return "image/gif";
+      default:
+        return "image/jpeg";
+    }
+  }
+
+  switch (extension) {
+    case ".wav":
+      return "audio/wav";
+    case ".m4a":
+      return "audio/mp4";
+    case ".aac":
+      return "audio/aac";
+    case ".ogg":
+      return "audio/ogg";
+    case ".webm":
+      return "audio/webm";
+    default:
+      return "audio/mpeg";
+  }
 }
 
 function revalidateFieldPaths(taskId?: number) {
@@ -240,16 +283,31 @@ export async function createTaskAction(formData: FormData) {
       `/projects/${projectId || ""}`,
       "error",
       "Ажил үүсгэхэд шаардлагатай талбар дутуу байна.",
+      "#task-create-form",
     );
   }
 
   try {
-    const connectionOverrides = await getConnectionOverrides();
+    const session = await requireSession();
+    if (!hasCapability(session, "create_tasks")) {
+      redirectWithMessage(
+        `/projects/${projectId}`,
+        "error",
+        "Танд энэ ажил дээр ажилбар нэмэх эрх нээгдээгүй байна.",
+        "#task-create-form",
+      );
+    }
+
+    const connectionOverrides = {
+      login: session.login,
+      password: session.password,
+    };
+    const defaultTeamLeaderId = isMasterRole(session.role) ? session.uid : null;
     const taskId = await createWorkspaceTask(
       {
         projectId,
         name,
-        teamLeaderId: teamLeaderIdRaw ? Number(teamLeaderIdRaw) : null,
+        teamLeaderId: teamLeaderIdRaw ? Number(teamLeaderIdRaw) : defaultTeamLeaderId,
         deadline: deadline || undefined,
         measurementUnit: measurementUnit || undefined,
         plannedQuantity: plannedQuantityRaw ? Number(plannedQuantityRaw) : null,
@@ -260,13 +318,14 @@ export async function createTaskAction(formData: FormData) {
 
     revalidatePath("/");
     revalidatePath("/projects");
+    revalidatePath("/tasks");
     revalidatePath("/review");
     revalidatePath("/reports");
     revalidatePath(`/projects/${projectId}`);
     redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Шинэ ажил амжилттай үүслээ.")}`);
   } catch (error) {
     rethrowIfRedirectError(error);
-    redirectWithMessage(`/projects/${projectId}`, "error", getErrorMessage(error));
+    redirectWithMessage(`/projects/${projectId}`, "error", getErrorMessage(error), "#task-create-form");
   }
 }
 
@@ -275,23 +334,63 @@ export async function createTaskReportAction(formData: FormData) {
   const reportText = String(formData.get("report_text") ?? "").trim();
   const quantityRaw = String(formData.get("reported_quantity") ?? "").trim();
   const reportedQuantity = quantityRaw ? Number(quantityRaw) : 0;
+  const imageFiles = getUploadedFiles(formData, "report_images");
+  const audioFiles = getUploadedFiles(formData, "report_audios");
+  const reportPath = taskId ? `/tasks/${taskId}` : "/tasks";
 
   if (!taskId || !reportText) {
-    redirectWithMessage(
-      `/tasks/${taskId || ""}`,
-      "error",
-      "Тайлангийн текстээ оруулна уу.",
-      "#report-form",
+    redirect(`${reportPath}?error=${encodeURIComponent("Тайлангийн текстээ оруулна уу.")}&composer=report`);
+  }
+
+  if (imageFiles.some((file) => file.type && !file.type.startsWith("image/"))) {
+    redirect(
+      `${reportPath}?error=${encodeURIComponent("Зураг хэсэгт зөвхөн зургийн файл сонгоно уу.")}&composer=report`,
+    );
+  }
+
+  if (audioFiles.some((file) => file.type && !file.type.startsWith("audio/"))) {
+    redirect(
+      `${reportPath}?error=${encodeURIComponent("Аудио хэсэгт зөвхөн аудио файл сонгоно уу.")}&composer=report`,
     );
   }
 
   try {
-    const connectionOverrides = await getConnectionOverrides();
+    const session = await requireSession();
+    if (!hasCapability(session, "write_workspace_reports")) {
+      redirect(
+        `${reportPath}?error=${encodeURIComponent("Танд гүйцэтгэлийн тайлан илгээх эрх нээгдээгүй байна.")}&composer=report`,
+      );
+    }
+
+    const connectionOverrides = {
+      login: session.login,
+      password: session.password,
+    };
+
+    const [imageAttachments, audioAttachments] = await Promise.all([
+      Promise.all(
+        imageFiles.map(async (file) => ({
+          name: file.name,
+          mimeType: file.type || getFallbackMimeType(file.name, "image"),
+          base64: Buffer.from(await file.arrayBuffer()).toString("base64"),
+        })),
+      ),
+      Promise.all(
+        audioFiles.map(async (file) => ({
+          name: file.name,
+          mimeType: file.type || getFallbackMimeType(file.name, "audio"),
+          base64: Buffer.from(await file.arrayBuffer()).toString("base64"),
+        })),
+      ),
+    ]);
+
     await createWorkspaceTaskReport(
       {
         taskId,
         reportText,
         reportedQuantity,
+        imageAttachments,
+        audioAttachments,
       },
       connectionOverrides,
     );
@@ -304,7 +403,7 @@ export async function createTaskReportAction(formData: FormData) {
     redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Тайлан амжилттай хадгалагдлаа.")}`);
   } catch (error) {
     rethrowIfRedirectError(error);
-    redirectWithMessage(`/tasks/${taskId}`, "error", getErrorMessage(error), "#report-form");
+    redirect(`${reportPath}?error=${encodeURIComponent(getErrorMessage(error))}&composer=report`);
   }
 }
 
@@ -312,14 +411,23 @@ export async function submitTaskForReviewAction(formData: FormData) {
   const taskId = Number(String(formData.get("task_id") ?? ""));
 
   try {
-    const connectionOverrides = await getConnectionOverrides();
+    const session = await requireSession();
+    const connectionOverrides = {
+      login: session.login,
+      password: session.password,
+    };
     await submitWorkspaceTaskForReview(taskId, connectionOverrides);
     revalidatePath("/");
+    revalidatePath("/tasks");
     revalidatePath("/projects");
     revalidatePath("/review");
     revalidatePath("/reports");
     revalidatePath(`/tasks/${taskId}`);
-    redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Ажлыг шалгалтад илгээлээ.")}`);
+    redirect(
+      `/tasks/${taskId}?notice=${encodeURIComponent(
+        isMasterRole(session.role) ? "Тайланг илгээлээ." : "Ажлыг шалгалтад илгээлээ.",
+      )}`,
+    );
   } catch (error) {
     rethrowIfRedirectError(error);
     redirectWithMessage(`/tasks/${taskId}`, "error", getErrorMessage(error));

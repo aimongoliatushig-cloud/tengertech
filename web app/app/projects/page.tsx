@@ -4,7 +4,21 @@ import { redirect } from "next/navigation";
 import { AppMenu } from "@/app/_components/app-menu";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
+import {
+  getRoleLabel,
+  hasCapability,
+  isMasterRole,
+  isWorkerOnly,
+  requireSession,
+} from "@/lib/auth";
+import { filterByDepartment, pickPrimaryDepartmentName } from "@/lib/dashboard-scope";
+import {
+  DEPARTMENT_GROUPS,
+  findDepartmentGroupByName,
+  findDepartmentGroupByUnit,
+  getAvailableUnits,
+  matchesDepartmentGroup,
+} from "@/lib/department-groups";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 type PageProps = {
@@ -16,19 +30,13 @@ type PageProps = {
 };
 
 type ProjectFilterKey = "all" | "progress" | "planned";
-type DepartmentGroup = {
-  name: string;
-  units: string[];
-  icon: string;
-};
-
 const PROJECT_FILTERS: Array<{ key: ProjectFilterKey; label: string }> = [
   { key: "all", label: "Бүгд" },
   { key: "progress", label: "Явагдаж буй ажил" },
   { key: "planned", label: "Төлөвлөж буй ажил" },
 ];
 
-const DEPARTMENT_GROUPS: DepartmentGroup[] = [
+/* legacy department groups kept commented during shared helper migration
   {
     name: "Авто бааз, хог тээвэрлэлтийн хэлтэс",
     units: ["Авто бааз", "Хог тээвэрлэлт"],
@@ -44,7 +52,7 @@ const DEPARTMENT_GROUPS: DepartmentGroup[] = [
     units: ["Тохижилт үйлчилгээ"],
     icon: "🏙️",
   },
-];
+*/
 
 function getDepartmentParam(value?: string | string[]) {
   if (Array.isArray(value)) {
@@ -57,13 +65,7 @@ function normalizeProjectFilter(value: string): ProjectFilterKey {
   return PROJECT_FILTERS.some((item) => item.key === value) ? (value as ProjectFilterKey) : "all";
 }
 
-function findDepartmentGroupByUnit(unitName: string) {
-  return DEPARTMENT_GROUPS.find((group) => group.units.includes(unitName)) ?? null;
-}
-
-function findDepartmentGroupByName(groupName: string) {
-  return DEPARTMENT_GROUPS.find((group) => group.name === groupName) ?? null;
-}
+/* local group helpers removed in favor of shared lib helpers */
 
 function StagePill({
   label,
@@ -99,23 +101,33 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const canCreateProject = hasCapability(session, "create_projects");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
+  const masterMode = isMasterRole(session.role);
 
   const params = (await searchParams) ?? {};
   const requestedDepartment = getDepartmentParam(params.department);
   const requestedUnit = getDepartmentParam(params.unit);
   const activeFilter = normalizeProjectFilter(getDepartmentParam(params.category));
+  const masterDepartmentName = masterMode
+    ? pickPrimaryDepartmentName({
+        taskDirectory: snapshot.taskDirectory,
+        reports: snapshot.reports,
+        projects: snapshot.projects,
+        departments: snapshot.departments,
+      })
+    : null;
 
   const detectedGroup =
-    requestedDepartment && requestedDepartment !== "all"
+    !masterMode && requestedDepartment && requestedDepartment !== "all"
       ? findDepartmentGroupByName(requestedDepartment) ??
         findDepartmentGroupByUnit(requestedDepartment)
       : null;
 
   const selectedGroup = detectedGroup;
+  const allProjectUnits = Array.from(
+    new Set(snapshot.projects.map((project) => project.departmentName)),
+  );
   const availableUnits = selectedGroup
-    ? selectedGroup.units.filter((unit) =>
-        snapshot.projects.some((project) => project.departmentName === unit),
-      )
+    ? getAvailableUnits(selectedGroup, allProjectUnits)
     : [];
 
   const selectedUnit =
@@ -127,17 +139,18 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
           ? (availableUnits[0] ?? "")
           : "";
 
-  const scopedProjects = snapshot.projects
-    .filter((project) => {
-      if (selectedUnit) {
-        return project.departmentName === selectedUnit;
-      }
-      if (selectedGroup) {
-        return selectedGroup.units.includes(project.departmentName);
-      }
-      return true;
-    })
-    .sort((left, right) => right.completion - left.completion);
+  const scopedProjects = (masterMode
+    ? filterByDepartment(snapshot.projects, masterDepartmentName)
+    : snapshot.projects.filter((project) => {
+        if (selectedUnit) {
+          return project.departmentName === selectedUnit;
+        }
+        if (selectedGroup) {
+          return matchesDepartmentGroup(selectedGroup, project.departmentName);
+        }
+        return true;
+      })
+  ).sort((left, right) => right.completion - left.completion);
 
   const activeProjects = scopedProjects.filter((project) => {
     if (activeFilter === "all") {
@@ -151,7 +164,9 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
     return project.stageBucket === "todo" || project.stageBucket === "unknown";
   });
 
-  const selectedDepartmentName = selectedUnit || selectedGroup?.name || "Бүх хэлтэс";
+  const selectedDepartmentName = masterMode
+    ? masterDepartmentName ?? "Миний алба нэгж"
+    : selectedUnit || selectedGroup?.name || "Бүх хэлтэс";
 
   const projectCounts = {
     all: scopedProjects.length,
@@ -211,6 +226,9 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
       tone: styles.summaryCardPrimary,
     },
   ] as const;
+  const visibleSummaryCards = masterMode
+    ? [summaryCards[0], summaryCards[1], summaryCards[3]]
+    : summaryCards;
 
   const filterTitle =
     activeFilter === "progress"
@@ -238,87 +256,88 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
               roleLabel={getRoleLabel(session.role)}
+              masterMode={masterMode}
             />
           </aside>
 
           <div className={styles.pageContent}>
-            <section className={dashboardStyles.projectsSection}>
-              <div className={dashboardStyles.sectionHeader}>
-                <div>
-                  <span className={dashboardStyles.kicker}>Хэлтсийн цэс</span>
-                  <h2>Хэлтэс сонгох</h2>
-                  <small className={dashboardStyles.sectionNote}>
-                    Эхлээд хэлтэс сонгоно. Дараа нь тухайн хэлтэс доторх ажлыг тусад нь шүүж харуулна.
-                  </small>
+            {!masterMode ? (
+              <section className={dashboardStyles.projectsSection}>
+                <div className={dashboardStyles.sectionHeader}>
+                  <div>
+                    <span className={dashboardStyles.kicker}>Хэлтсийн цэс</span>
+                    <h2>Хэлтэс сонгох</h2>
+                    <small className={dashboardStyles.sectionNote}>
+                      Эхлээд хэлтэс сонгоно. Дараа нь тухайн хэлтэс доторх ажлыг тусад нь шүүж харуулна.
+                    </small>
+                  </div>
                 </div>
-              </div>
 
-              <nav
-                className={dashboardStyles.departmentSelector}
-                aria-label="Хэлтэс сонгох цэс"
-              >
-                <div className={dashboardStyles.departmentTabBar}>
-                  <Link
-                    href={activeFilter === "all" ? "/projects" : `/projects?category=${activeFilter}`}
-                    className={`${dashboardStyles.departmentTab} ${
-                      !selectedGroup ? dashboardStyles.departmentTabActive : ""
-                    }`}
-                    aria-current={!selectedGroup ? "page" : undefined}
-                  >
-                    <span className={dashboardStyles.departmentTabLabel}>
-                      <span className={dashboardStyles.departmentTabIcon} aria-hidden>
-                        🏢
-                      </span>
-                      <span>Бүгд</span>
-                    </span>
-                    <strong>{snapshot.projects.length}</strong>
-                  </Link>
-
-                  {DEPARTMENT_GROUPS.map((group) => {
-                    const isActive = group.name === selectedGroup?.name;
-                    const departmentProjects = snapshot.projects.filter(
-                      (project) => group.units.includes(project.departmentName),
-                    );
-                    const hrefParams = new URLSearchParams();
-                    hrefParams.set("department", group.name);
-                    if (activeFilter !== "all") {
-                      hrefParams.set("category", activeFilter);
-                    }
-
-                    return (
-                      <Link
-                        key={group.name}
-                        href={`/projects?${
-                          (() => {
-                            const params = new URLSearchParams(hrefParams);
-                            const defaultUnit =
-                              group.units.filter((unit) =>
-                                snapshot.projects.some((project) => project.departmentName === unit),
-                              )[0] ?? "";
-                            if (defaultUnit) {
-                              params.set("unit", defaultUnit);
-                            }
-                            return params.toString();
-                          })()
-                        }`}
-                        className={`${dashboardStyles.departmentTab} ${
-                          isActive ? dashboardStyles.departmentTabActive : ""
-                        }`}
-                        aria-current={isActive ? "page" : undefined}
-                      >
-                        <span className={dashboardStyles.departmentTabLabel}>
-                          <span className={dashboardStyles.departmentTabIcon} aria-hidden>
-                            {group.icon}
-                          </span>
-                          <span>{group.name}</span>
+                <nav
+                  className={dashboardStyles.departmentSelector}
+                  aria-label="Хэлтэс сонгох цэс"
+                >
+                  <div className={dashboardStyles.departmentTabBar}>
+                    <Link
+                      href={activeFilter === "all" ? "/projects" : `/projects?category=${activeFilter}`}
+                      className={`${dashboardStyles.departmentTab} ${
+                        !selectedGroup ? dashboardStyles.departmentTabActive : ""
+                      }`}
+                      aria-current={!selectedGroup ? "page" : undefined}
+                    >
+                      <span className={dashboardStyles.departmentTabLabel}>
+                        <span className={dashboardStyles.departmentTabIcon} aria-hidden>
+                          🏢
                         </span>
-                        <strong>{departmentProjects.length}</strong>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </nav>
-            </section>
+                        <span>Бүгд</span>
+                      </span>
+                      <strong>{snapshot.projects.length}</strong>
+                    </Link>
+
+                    {DEPARTMENT_GROUPS.map((group) => {
+                      const isActive = group.name === selectedGroup?.name;
+                      const departmentProjects = snapshot.projects.filter(
+                        (project) => matchesDepartmentGroup(group, project.departmentName),
+                      );
+                      const groupUnits = getAvailableUnits(group, allProjectUnits);
+                      const hrefParams = new URLSearchParams();
+                      hrefParams.set("department", group.name);
+                      if (activeFilter !== "all") {
+                        hrefParams.set("category", activeFilter);
+                      }
+
+                      return (
+                        <Link
+                          key={group.name}
+                          href={`/projects?${
+                            (() => {
+                              const params = new URLSearchParams(hrefParams);
+                              const defaultUnit = groupUnits[0] ?? "";
+                              if (defaultUnit) {
+                                params.set("unit", defaultUnit);
+                              }
+                              return params.toString();
+                            })()
+                          }`}
+                          className={`${dashboardStyles.departmentTab} ${
+                            isActive ? dashboardStyles.departmentTabActive : ""
+                          }`}
+                          aria-current={isActive ? "page" : undefined}
+                        >
+                          <span className={dashboardStyles.departmentTabLabel}>
+                            <span className={dashboardStyles.departmentTabIcon} aria-hidden>
+                              {group.icon}
+                            </span>
+                            <span>{group.name}</span>
+                          </span>
+                          <strong>{departmentProjects.length}</strong>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </nav>
+              </section>
+            ) : null}
 
             {selectedGroup && availableUnits.length > 1 ? (
               <section className={dashboardStyles.projectsSection}>
@@ -368,16 +387,20 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             <section className={dashboardStyles.projectsSection}>
               <div className={dashboardStyles.sectionHeader}>
                 <div>
-                  <span className={dashboardStyles.kicker}>Хэлтсийн ангилал</span>
+                  <span className={dashboardStyles.kicker}>
+                    {masterMode ? "Нэгжийн ажил" : "Хэлтсийн ангилал"}
+                  </span>
                   <h2>{selectedDepartmentName}</h2>
                   <small className={dashboardStyles.sectionNote}>
-                    Ажил дээр дарахад тухайн ажлын ажилбарууд нээгдэнэ
+                    {masterMode
+                      ? "Ажил дээр дарахад тухайн ажлаас шинэ ажилбар нээх болон өнөөдрийн урсгал руу орно."
+                      : "Ажил дээр дарахад тухайн ажлын ажилбарууд нээгдэнэ"}
                   </small>
                 </div>
               </div>
 
               <div className={styles.summaryShowcaseGrid}>
-                {summaryCards.map((card) => (
+                {visibleSummaryCards.map((card) => (
                   <article key={card.label} className={`${styles.summaryShowcaseCard} ${card.tone}`}>
                     <div className={styles.summaryShowcaseTop}>
                       <span className={styles.summaryShowcaseIcon} aria-hidden>

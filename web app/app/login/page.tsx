@@ -50,7 +50,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <span>Хяналтын мөр, KPI, явц, гүйцэтгэлийн баталгааны урсгал</span>
           </article>
           <article className={styles.featureCard}>
-            <strong>Багийн ахлагч</strong>
+            <strong>Мастер / Ахлах мастер</strong>
             <span>Ажил, тайлан, зураг, аудио, хэмжээг нэг урсгалаар удирдана</span>
           </article>
           <article className={styles.featureCard}>

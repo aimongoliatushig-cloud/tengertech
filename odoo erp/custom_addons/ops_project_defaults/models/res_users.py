@@ -18,7 +18,7 @@ class ResUsers(models.Model):
         "department_id",
         string="Хариуцах алба нэгж",
         domain="[('active', '=', True)]",
-        help="Төслийн удирдагч эдгээр алба нэгжийн төслүүдийг хариуцна.",
+        help="Хэлтсийн дарга эдгээр алба нэгжийн төслүүдийг хариуцна.",
     )
 
     @api.depends("ops_project_department_ids")

@@ -13,6 +13,6 @@ class ProjectTask(models.Model):
             disallowed_fields = set(vals) - {"stage_id"}
             if disallowed_fields:
                 raise AccessError(
-                    _("Ажилтан зөвхөн даалгаврын төлөв шинэчилж болно. Бусад өөрчлөлтийг багийн ахлагчаас хүснэ үү.")
+                    _("Ажилтан зөвхөн даалгаврын төлөв шинэчилж болно. Бусад өөрчлөлтийг мастерээс хүснэ үү.")
                 )
         return super().write(vals)

@@ -30,8 +30,18 @@ class ResUsers(models.Model):
     def _get_mfo_managed_role_groups(self):
         role_groups = {}
         for role, xmlids in MFO_GROUP_XMLIDS.items():
-            role_groups[role] = [self.env.ref(xmlid) for xmlid in xmlids]
+            role_groups[role] = [
+                group
+                for xmlid in xmlids
+                for group in [self.env.ref(xmlid, raise_if_not_found=False)]
+                if group
+            ]
         return role_groups
+
+    @api.model
+    def action_ops_sync_role_groups(self):
+        self.sudo().search([])._sync_ops_role_group()
+        return True
 
     def _sync_ops_role_group(self):
         role_groups = self._get_ops_managed_role_groups()
@@ -84,10 +94,11 @@ class ResUsers(models.Model):
         return users
 
     def write(self, vals):
+        needs_role_resync = any(key in vals for key in ("ops_user_type", "group_ids", "groups_id"))
         if "groups_id" in vals and "group_ids" not in vals:
             vals = dict(vals)
             vals["group_ids"] = vals.pop("groups_id")
         result = super().write(vals)
-        if "ops_user_type" in vals:
+        if needs_role_resync:
             self._sync_ops_role_group()
         return result

@@ -18,7 +18,7 @@
     </record>
 
     <record id="rule_ops_task_field_report_project_leader" model="ir.rule">
-        <field name="name">Гүйцэтгэлийн тайлан: төслийн удирдагч өөрийн төслийн тайлангуудыг харах</field>
+        <field name="name">Гүйцэтгэлийн тайлан: хэлтсийн дарга өөрийн хариуцсан ажлын тайлангуудыг харах</field>
         <field name="model_id" ref="model_ops_task_report"/>
         <field name="perm_create" eval="False"/>
         <field name="perm_write" eval="False"/>
@@ -27,10 +27,48 @@
         <field name="groups" eval="[(4, ref('ops_role_security.group_ops_project_leader'))]"/>
     </record>
 
-    <record id="rule_ops_task_field_report_team_leader" model="ir.rule">
-        <field name="name">Гүйцэтгэлийн тайлан: багийн ахлагч оноогдсон даалгаврын тайлангуудыг харах</field>
+    <record id="rule_ops_task_field_report_project_leader_self_manage" model="ir.rule">
+        <field name="name">Гүйцэтгэлийн тайлан: хэлтсийн дарга өөрийн илгээсэн тайланг удирдах</field>
         <field name="model_id" ref="model_ops_task_report"/>
-        <field name="domain_force">[('task_id.user_ids', 'in', user.id)]</field>
+        <field name="domain_force">['&amp;', ('task_id.project_id.user_id', '=', user.id), ('reporter_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_project_leader'))]"/>
+    </record>
+
+    <record id="rule_ops_task_field_report_team_leader" model="ir.rule">
+        <field name="name">Гүйцэтгэлийн тайлан: мастер хариуцсан даалгаврын тайлангуудыг харах</field>
+        <field name="model_id" ref="model_ops_task_report"/>
+        <field name="domain_force">['|', ('task_id.ops_team_leader_id', '=', user.id), ('task_id.user_ids', 'in', user.id)]</field>
         <field name="groups" eval="[(4, ref('ops_role_security.group_ops_team_leader'))]"/>
+    </record>
+
+    <record id="rule_ops_task_field_report_reporter_self_manage" model="ir.rule">
+        <field name="name">Илгээсэн хэрэглэгч өөрийн тайланг харах</field>
+        <field name="model_id" ref="model_ops_task_report"/>
+        <field name="domain_force">[('reporter_id', '=', user.id)]</field>
+        <field
+            name="groups"
+            eval="[
+                (4, ref('ops_role_security.group_ops_project_leader')),
+                (4, ref('ops_role_security.group_ops_team_leader')),
+                (4, ref('ops_role_security.group_ops_worker'))
+            ]"
+        />
+    </record>
+
+    <record id="rule_ops_task_field_report_worker_read" model="ir.rule">
+        <field name="name">Гүйцэтгэлийн тайлан: ажилтан оноогдсон даалгаврын тайлангуудыг харах</field>
+        <field name="model_id" ref="model_ops_task_report"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('task_id.user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_worker'))]"/>
+    </record>
+
+    <record id="rule_ops_task_field_report_worker_self_manage" model="ir.rule">
+        <field name="name">Гүйцэтгэлийн тайлан: ажилтан өөрийн илгээсэн тайланг удирдах</field>
+        <field name="model_id" ref="model_ops_task_report"/>
+        <field name="domain_force">['&amp;', ('task_id.user_ids', 'in', user.id), ('reporter_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_worker'))]"/>
     </record>
 </odoo>

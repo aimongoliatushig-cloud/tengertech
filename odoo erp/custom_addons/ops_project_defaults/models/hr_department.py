@@ -6,7 +6,7 @@ class HrDepartment(models.Model):
 
     ops_project_manager_user_id = fields.Many2one(
         "res.users",
-        string="Төслийн удирдагч",
+        string="Хэлтсийн дарга",
         domain="[('share', '=', False), ('ops_user_type', '=', 'project_manager')]",
         help="Энэ алба нэгж дээр шинэ төсөл үүсгэх үед project manager-ийг автоматаар сонгоно.",
     )

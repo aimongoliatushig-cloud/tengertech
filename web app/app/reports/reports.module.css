@@ -72,6 +72,9 @@
 .pageAside,
 .dateMeta,
 .summaryStrip,
+.workflowSummaryGrid,
+.workflowColumns,
+.workflowList,
 .projectStack,
 .reportList,
 .projectMeta,
@@ -200,6 +203,164 @@
   margin: 18px 0;
 }
 
+.workflowHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.8fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.workflowHeader h2,
+.workflowColumnHeader h3 {
+  margin: 8px 0 0;
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
+}
+
+.workflowHeader p {
+  margin: 0;
+  color: var(--ink-700);
+  line-height: 1.7;
+}
+
+.workflowMetaCard,
+.workflowSummaryCard,
+.workflowColumn,
+.workflowItem,
+.workflowEmpty {
+  border: 1px solid var(--line-soft);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.workflowMetaCard,
+.workflowSummaryCard,
+.workflowColumn,
+.workflowItem,
+.workflowEmpty {
+  display: grid;
+  gap: 12px;
+}
+
+.workflowMetaCard,
+.workflowSummaryCard,
+.workflowColumn,
+.workflowEmpty {
+  padding: 18px;
+}
+
+.workflowMetaCard {
+  background: rgba(74, 154, 93, 0.08);
+}
+
+.workflowMetaCard span,
+.workflowSummaryCard span,
+.workflowItemMeta span {
+  color: var(--ink-600);
+  font-size: 0.88rem;
+}
+
+.workflowMetaCard strong,
+.workflowSummaryCard strong,
+.workflowColumnHeader strong {
+  font-family: var(--font-display);
+  line-height: 1;
+}
+
+.workflowMetaCard strong {
+  font-size: 2.2rem;
+}
+
+.workflowSummaryGrid,
+.workflowColumns {
+  margin-top: 18px;
+}
+
+.workflowSummaryGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.workflowSummaryCard strong {
+  font-size: 1.75rem;
+}
+
+.workflowColumns {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workflowColumn {
+  align-content: start;
+}
+
+.workflowColumnHeader,
+.workflowItemTop,
+.workflowItemMeta {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workflowColumnHeader strong {
+  font-size: 1.8rem;
+}
+
+.workflowColumnHeader h3 {
+  font-size: 1.3rem;
+  line-height: 1.05;
+}
+
+.workflowItem {
+  padding: 14px 16px;
+}
+
+.workflowItemTop strong {
+  color: var(--ink-900);
+}
+
+.workflowItemTop p {
+  margin: 6px 0 0;
+  color: var(--ink-600);
+  font-size: 0.92rem;
+}
+
+.workflowItemBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.12);
+  color: var(--brand-800);
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.workflowTrack {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.1);
+  overflow: hidden;
+}
+
+.workflowTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(31, 95, 49, 0.94), rgba(74, 154, 93, 0.88));
+}
+
+.workflowEmpty {
+  min-height: 160px;
+  place-items: center;
+  text-align: center;
+  color: var(--ink-600);
+  line-height: 1.7;
+}
+
 .summaryCard {
   padding: 18px;
 }
@@ -310,12 +471,18 @@
 @media (max-width: 1080px) {
   .pageHeader,
   .summaryStrip,
-  .departmentFilterInner {
+  .departmentFilterInner,
+  .workflowHeader,
+  .workflowSummaryGrid,
+  .workflowColumns {
     grid-template-columns: 1fr;
   }
 
   .projectHeader,
-  .reportTop {
+  .reportTop,
+  .workflowColumnHeader,
+  .workflowItemTop,
+  .workflowItemMeta {
     flex-direction: column;
   }
 
@@ -343,6 +510,13 @@
 
   .reportStamp {
     align-self: flex-start;
+  }
+
+  .workflowMetaCard,
+  .workflowSummaryCard,
+  .workflowColumn,
+  .workflowEmpty {
+    padding: 16px;
   }
 
   .departmentFilterCard {

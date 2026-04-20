@@ -3,7 +3,19 @@ import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
-import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
+import {
+  getRoleLabel,
+  hasCapability,
+  isMasterRole,
+  isWorkerOnly,
+  requireSession,
+} from "@/lib/auth";
+import {
+  filterByDepartment,
+  filterTasksToDate,
+  getTodayDateKey,
+  pickPrimaryDepartmentName,
+} from "@/lib/dashboard-scope";
 import { DEPARTMENT_GROUPS, getAvailableUnits } from "@/lib/department-groups";
 import { loadAssignedGarbageTasks } from "@/lib/field-ops";
 import { loadMunicipalSnapshot, type TaskDirectoryItem } from "@/lib/odoo";
@@ -110,8 +122,29 @@ export default async function Home() {
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
   const workerMode = isWorkerOnly(session);
+  const masterMode = isMasterRole(session.role);
   const assignedTasks = workerMode ? getAssignedTasks(snapshot.taskDirectory, session.uid) : [];
   const workerProjects = workerMode ? buildWorkerProjects(assignedTasks) : [];
+  const masterDepartmentName = masterMode
+    ? pickPrimaryDepartmentName({
+        taskDirectory: snapshot.taskDirectory,
+        reports: snapshot.reports,
+        projects: snapshot.projects,
+        departments: snapshot.departments,
+      })
+    : null;
+  const masterDepartmentProjects = masterMode
+    ? filterByDepartment(snapshot.projects, masterDepartmentName).slice(0, 4)
+    : [];
+  const masterDepartmentReports = masterMode
+    ? filterByDepartment(snapshot.reports, masterDepartmentName).slice(0, 4)
+    : [];
+  const masterTodayTasks = masterMode
+    ? filterTasksToDate(
+        filterByDepartment(snapshot.taskDirectory, masterDepartmentName),
+        getTodayDateKey(),
+      )
+    : [];
 
   let todayAssignments: Awaited<ReturnType<typeof loadAssignedGarbageTasks>>["assignments"] = [];
   if (workerMode && canUseFieldConsole) {
@@ -205,6 +238,250 @@ export default async function Home() {
       href: string;
     } => Boolean(card),
   );
+
+  if (masterMode) {
+    const masterActiveTaskCount = masterTodayTasks.filter(
+      (task) => task.statusKey !== "verified",
+    ).length;
+
+    return (
+      <main className={styles.shell}>
+        <div className={styles.layoutGrid}>
+          <aside className={styles.sideRail}>
+            <AppMenu
+              active="dashboard"
+              canCreateProject={canCreateProject}
+              canViewQualityCenter={canViewQualityCenter}
+              canUseFieldConsole={canUseFieldConsole}
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+              masterMode={masterMode}
+            />
+          </aside>
+
+          <div className={styles.mainColumn}>
+            <header className={styles.topbar}>
+              <div className={styles.brandBlock}>
+                <div className={styles.brandMark}>
+                  <Image
+                    src="/logo.png"
+                    alt="Хот тохижилтын удирдлагын төв"
+                    width={180}
+                    height={56}
+                    className={styles.brandLogo}
+                    priority
+                    unoptimized
+                  />
+                </div>
+
+                <div>
+                  <span className={styles.kicker}>Мастерын урсгал</span>
+                  <h1>Өнөөдрийн нэгжийн самбар</h1>
+                </div>
+              </div>
+
+              <div className={styles.topbarActions}>
+                <div className={styles.userPanel}>
+                  <span>{getRoleLabel(session.role)}</span>
+                  <strong>{session.name}</strong>
+                  <small>
+                    {masterDepartmentName
+                      ? `${masterDepartmentName} · ${snapshot.generatedAt}`
+                      : `Сүүлд шинэчлэгдсэн: ${snapshot.generatedAt}`}
+                  </small>
+                </div>
+
+                <form action={logoutAction}>
+                  <button type="submit" className={styles.logoutButton}>
+                    Гарах
+                  </button>
+                </form>
+              </div>
+            </header>
+
+            {snapshot.source === "demo" ? (
+              <section className={styles.sourceNotice}>
+                <div>
+                  <strong>Odoo-оос бүх өгөгдөл бүрэн ирээгүй байна.</strong>
+                  <p>Түр нөөц мэдээлэл ашиглаж байгаа тул өнөөдрийн ажилбарын жагсаалтыг давхар шалгана уу.</p>
+                </div>
+              </section>
+            ) : null}
+
+            <section className={styles.commandStrip}>
+              <MetricCard
+                label="Алба нэгж"
+                value={masterDepartmentName ?? "Тодорхойгүй"}
+                note="Зөвхөн энэ нэгжийн урсгал харагдана"
+                tone="slate"
+              />
+              <MetricCard
+                label="Өнөөдрийн ажилбар"
+                value={String(masterTodayTasks.length)}
+                note="Өнөөдөрт хуваарилагдсан ажилбар"
+                tone={masterTodayTasks.length ? "teal" : "slate"}
+              />
+              <MetricCard
+                label="Идэвхтэй ажил"
+                value={String(masterActiveTaskCount)}
+                note="Дуусаагүй болон тайлантай ажилбар"
+                tone={masterActiveTaskCount ? "amber" : "slate"}
+              />
+              <MetricCard
+                label="Илгээсэн тайлан"
+                value={String(masterDepartmentReports.length)}
+                note="Сүүлд бүртгэгдсэн тайлан"
+                tone={masterDepartmentReports.length ? "teal" : "slate"}
+              />
+            </section>
+
+            <section className={styles.projectsSection}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Өнөөдрийн ажил</span>
+                  <h2>Өнөөдөр харагдах ажилбар</h2>
+                </div>
+                <Link href="/tasks" className={styles.sectionLink}>
+                  Бүгдийг харах
+                </Link>
+              </div>
+
+              {masterTodayTasks.length ? (
+                <div className={styles.taskList}>
+                  {masterTodayTasks.slice(0, 6).map((task) => (
+                    <Link key={task.id} href={task.href} className={styles.taskCard}>
+                      <div className={styles.taskCardTop}>
+                        <span>{task.deadline}</span>
+                        <StagePill label={task.stageLabel} bucket={task.stageBucket} />
+                      </div>
+
+                      <h3>{task.name}</h3>
+                      <p>{task.projectName}</p>
+
+                      <div className={styles.taskStats}>
+                        <span>Алба нэгж: {task.departmentName}</span>
+                        <span>Хариуцсан мастер: {task.leaderName}</span>
+                        <span>Төлөв: {task.priorityLabel}</span>
+                      </div>
+
+                      <div className={styles.taskQuantities}>
+                        <b>
+                          {task.completedQuantity} / {task.plannedQuantity} {task.measurementUnit}
+                        </b>
+                        <strong>{task.progress}%</strong>
+                      </div>
+
+                      <div className={styles.progressTrack}>
+                        <span style={{ width: `${task.progress}%` }} />
+                      </div>
+
+                      <div className={styles.cardFooter}>
+                        <span className={styles.cardLinkLabel}>Тайлангийн урсгал руу орох</span>
+                        <strong aria-hidden>→</strong>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyColumnState}>
+                  Өнөөдөрт харагдах ажилбар одоогоор алга байна.
+                </div>
+              )}
+            </section>
+
+            <section className={styles.dualGrid}>
+              <section className={styles.panel}>
+                <div className={styles.sectionHeader}>
+                  <div>
+                    <span className={styles.kicker}>Ажил нэмэх</span>
+                    <h2>Нэгжийн ажил</h2>
+                  </div>
+                  <Link href="/projects" className={styles.sectionLink}>
+                    Ажил руу орох
+                  </Link>
+                </div>
+
+                {masterDepartmentProjects.length ? (
+                  <div className={styles.projectRail}>
+                    {masterDepartmentProjects.map((project) => (
+                      <Link key={project.id} href={project.href} className={styles.projectCard}>
+                        <div className={styles.projectCardTop}>
+                          <span>{project.deadline}</span>
+                          <StagePill label={project.stageLabel} bucket={project.stageBucket} />
+                        </div>
+
+                        <h3>{project.name}</h3>
+                        <p>
+                          {project.departmentName} / Менежер: {project.manager}
+                        </p>
+
+                        <div className={styles.projectMeta}>
+                          <div>
+                            <span>Нээлттэй ажилбар</span>
+                            <strong>{project.openTasks}</strong>
+                          </div>
+                          <div>
+                            <span>Гүйцэтгэл</span>
+                            <strong>{project.completion}%</strong>
+                          </div>
+                        </div>
+
+                        <div className={styles.progressTrack}>
+                          <span style={{ width: `${project.completion}%` }} />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.emptyColumnState}>Энэ нэгж дээр харагдах ажил одоогоор алга.</div>
+                )}
+              </section>
+
+              <section className={styles.panel}>
+                <div className={styles.sectionHeader}>
+                  <div>
+                    <span className={styles.kicker}>Тайлан</span>
+                    <h2>Сүүлийн тайлангууд</h2>
+                  </div>
+                  <Link href="/reports" className={styles.sectionLink}>
+                    Тайлан руу орох
+                  </Link>
+                </div>
+
+                {masterDepartmentReports.length ? (
+                  <div className={styles.reportFeed}>
+                    {masterDepartmentReports.map((report) => (
+                      <article key={report.id} className={styles.reportCard}>
+                        <div className={styles.reportTop}>
+                          <div>
+                            <strong>{report.reporter}</strong>
+                            <h3>{report.taskName}</h3>
+                          </div>
+                          <span>{report.submittedAt}</span>
+                        </div>
+
+                        <p>{report.projectName}</p>
+
+                        <div className={styles.reportMeta}>
+                          <span>Тоо хэмжээ: {report.reportedQuantity}</span>
+                          <span>Зураг: {report.imageCount}</span>
+                          <span>Аудио: {report.audioCount}</span>
+                        </div>
+
+                        <p className={styles.reportSummary}>{report.summary}</p>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.emptyColumnState}>Энэ нэгжийн тайлан одоогоор харагдахгүй байна.</div>
+                )}
+              </section>
+            </section>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (workerMode) {
     return (

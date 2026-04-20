@@ -1,6 +1,6 @@
 import "server-only";
 
-import { executeOdooKw, type OdooConnection } from "@/lib/odoo";
+import { createOdooConnection, executeOdooKw, type OdooConnection } from "@/lib/odoo";
 
 type Relation = [number, string] | false;
 
@@ -21,6 +21,7 @@ type TaskRecord = {
   stage_id: Relation;
   ops_team_leader_id: Relation;
   user_ids: number[];
+  mfo_operation_type?: string | false;
   ops_planned_quantity: number;
   ops_completed_quantity: number;
   ops_remaining_quantity: number;
@@ -166,11 +167,19 @@ export type TaskReportFeedItem = {
   }[];
 };
 
+type WorkspaceReportAttachmentInput = {
+  name: string;
+  mimeType?: string;
+  base64: string;
+};
+
 export type TaskDetail = {
   id: number;
   name: string;
   projectId: number | null;
   projectName: string;
+  operationType: string;
+  quantityOptional: boolean;
   stageLabel: string;
   stageBucket: StageBucket;
   state: string;
@@ -198,6 +207,10 @@ const STAGE_ALIASES: Array<[StageBucket, string[]]> = [
   ["progress", ["явагдаж буй ажил", "yovagdaj bui ajil", "progress", "in progress"]],
   ["review", ["шалгагдаж буй ажил", "хянагдаж буй ажил", "shalgagdaj bui ajil", "hyanagdaj bui ajil", "review", "changes requested"]],
   ["done", ["дууссан ажил", "duussan ajil", "done", "completed"]],
+  ["todo", ["төлөвлөгдсөн", "хуваарилсан"]],
+  ["progress", ["гүйцэтгэж байна"]],
+  ["review", ["шалгаж байна"]],
+  ["done", ["дууссан"]],
 ];
 
 function displayStageLabel(name: string) {
@@ -318,7 +331,7 @@ export async function loadProjectManagerOptions(
 export async function loadTeamLeaderOptions(
   connectionOverrides: Partial<OdooConnection> = {},
 ) {
-  return loadUserOptions(["team_leader"], connectionOverrides);
+  return loadUserOptions(["team_leader", "senior_master"], connectionOverrides);
 }
 
 export async function loadDepartmentOptions(
@@ -533,36 +546,38 @@ export async function loadTaskDetail(
   taskId: number,
   connectionOverrides: Partial<OdooConnection> = {},
 ): Promise<TaskDetail> {
-  const [tasks, reports] = await Promise.all([
-    executeOdooKw<TaskRecord[]>(
-      "project.task",
-      "search_read",
-      [[["id", "=", taskId]]],
-      {
-        fields: [
-          "name",
-          "project_id",
-          "stage_id",
-          "ops_team_leader_id",
-          "user_ids",
-          "ops_planned_quantity",
-          "ops_completed_quantity",
-          "ops_remaining_quantity",
-          "ops_progress_percent",
-          "ops_measurement_unit",
-          "priority",
-          "date_deadline",
-          "state",
-          "description",
-          "ops_can_submit_for_review",
-          "ops_can_mark_done",
-          "ops_can_return_for_changes",
-          "ops_reports_locked",
-        ],
-        limit: 1,
-      },
-      connectionOverrides,
-    ),
+  const taskPromise = executeOdooKw<TaskRecord[]>(
+    "project.task",
+    "search_read",
+    [[["id", "=", taskId]]],
+    {
+      fields: [
+        "name",
+        "project_id",
+        "stage_id",
+        "ops_team_leader_id",
+        "user_ids",
+        "mfo_operation_type",
+        "ops_planned_quantity",
+        "ops_completed_quantity",
+        "ops_remaining_quantity",
+        "ops_progress_percent",
+        "ops_measurement_unit",
+        "priority",
+        "date_deadline",
+        "state",
+        "description",
+        "ops_can_submit_for_review",
+        "ops_can_mark_done",
+        "ops_can_return_for_changes",
+        "ops_reports_locked",
+      ],
+      limit: 1,
+    },
+    connectionOverrides,
+  );
+
+  const reportQuery = (overrides: Partial<OdooConnection>) =>
     executeOdooKw<ReportRecord[]>(
       "ops.task.report",
       "search_read",
@@ -582,13 +597,32 @@ export async function loadTaskDetail(
         order: "report_datetime desc",
         limit: 60,
       },
-      connectionOverrides,
-    ),
+      overrides,
+    );
+
+  const [tasks, primaryReports] = await Promise.all([
+    taskPromise,
+    reportQuery(connectionOverrides).catch(() => [] as ReportRecord[]),
   ]);
 
   const task = tasks[0];
   if (!task) {
     throw new Error("Даалгавар олдсонгүй.");
+  }
+
+  let reports = primaryReports;
+  if (!reports.length) {
+    const primaryConnection = createOdooConnection(connectionOverrides);
+    const fallbackConnection = createOdooConnection();
+    const sameConnection =
+      primaryConnection.url === fallbackConnection.url &&
+      primaryConnection.db === fallbackConnection.db &&
+      primaryConnection.login === fallbackConnection.login &&
+      primaryConnection.password === fallbackConnection.password;
+
+    if (!sameConnection) {
+      reports = await reportQuery({}).catch(() => [] as ReportRecord[]);
+    }
   }
 
   let assigneeNames: string[] = [];
@@ -616,6 +650,8 @@ export async function loadTaskDetail(
     name: task.name,
     projectId: relationId(task.project_id),
     projectName: relationName(task.project_id),
+    operationType: task.mfo_operation_type || "",
+    quantityOptional: task.mfo_operation_type === "garbage",
     stageLabel: displayStageLabel(relationName(task.stage_id, "")),
     stageBucket: normalizeStageBucket(relationName(task.stage_id, "")),
     state: task.state,
@@ -777,17 +813,21 @@ export async function createWorkspaceTaskReport(
     taskId: number;
     reportText: string;
     reportedQuantity: number;
+    imageAttachments?: WorkspaceReportAttachmentInput[];
+    audioAttachments?: WorkspaceReportAttachmentInput[];
   },
   connectionOverrides: Partial<OdooConnection> = {},
 ) {
   return executeOdooKw<number>(
-    "ops.task.report",
-    "create",
+    "project.task",
+    "action_ops_create_mobile_report",
     [
+      [input.taskId],
       {
-        task_id: input.taskId,
         report_text: input.reportText.trim(),
         reported_quantity: input.reportedQuantity,
+        image_attachments: input.imageAttachments ?? [],
+        audio_attachments: input.audioAttachments ?? [],
       },
     ],
     {},

@@ -3,7 +3,19 @@ import Link from "next/link";
 import { AppMenu } from "@/app/_components/app-menu";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
+import {
+  getRoleLabel,
+  hasCapability,
+  isMasterRole,
+  isWorkerOnly,
+  requireSession,
+} from "@/lib/auth";
+import {
+  filterByDepartment,
+  filterTasksToDate,
+  getTodayDateKey,
+  pickPrimaryDepartmentName,
+} from "@/lib/dashboard-scope";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 import styles from "./tasks.module.css";
@@ -67,22 +79,41 @@ export default async function TasksPage({ searchParams }: PageProps) {
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
   const workerMode = isWorkerOnly(session);
+  const masterMode = isMasterRole(session.role);
   const workerTasks = workerMode
     ? snapshot.taskDirectory.filter((task) => task.assigneeIds?.includes(session.uid))
     : [];
+  const masterDepartmentName = masterMode
+    ? pickPrimaryDepartmentName({
+        taskDirectory: snapshot.taskDirectory,
+        reports: snapshot.reports,
+        projects: snapshot.projects,
+        departments: snapshot.departments,
+      })
+    : null;
+  const masterDepartmentTasks = masterMode
+    ? filterByDepartment(snapshot.taskDirectory, masterDepartmentName)
+    : [];
+  const masterTodayTasks = masterMode
+    ? filterTasksToDate(masterDepartmentTasks, getTodayDateKey())
+    : [];
 
   const selectedDepartment =
-    !workerMode && requestedDepartment && requestedDepartment !== "all"
+    !workerMode && !masterMode && requestedDepartment && requestedDepartment !== "all"
       ? snapshot.departments.find((department) => department.name === requestedDepartment) ?? null
       : null;
 
   const scopedProjects = workerMode
     ? Array.from(new Set(workerTasks.map((task) => task.projectName)))
+    : masterMode
+      ? filterByDepartment(snapshot.projects, masterDepartmentName)
     : snapshot.projects.filter(
         (project) => !selectedDepartment || project.departmentName === selectedDepartment.name,
       );
   const scopedTasks = workerMode
     ? workerTasks
+    : masterMode
+      ? masterTodayTasks
     : snapshot.taskDirectory.filter(
         (task) => !selectedDepartment || task.departmentName === selectedDepartment.name,
       );
@@ -104,7 +135,9 @@ export default async function TasksPage({ searchParams }: PageProps) {
 
   const selectedDepartmentLabel = workerMode
     ? "Надад оноогдсон ажилбар"
-    : selectedDepartment?.name ?? "Бүх алба нэгж";
+    : masterMode
+      ? masterDepartmentName ?? "Миний алба нэгж"
+      : selectedDepartment?.name ?? "Бүх алба нэгж";
 
   return (
     <main className={shellStyles.shell}>
@@ -113,12 +146,13 @@ export default async function TasksPage({ searchParams }: PageProps) {
           <aside className={shellStyles.menuColumn}>
             <AppMenu
               active="tasks"
-              variant={session.role === "general_manager" ? "executive" : "default"}
+              variant={!masterMode && session.role === "general_manager" ? "executive" : "default"}
               canCreateProject={canCreateProject}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
               roleLabel={getRoleLabel(session.role)}
+              masterMode={masterMode}
               workerMode={workerMode}
             />
           </aside>
@@ -128,13 +162,21 @@ export default async function TasksPage({ searchParams }: PageProps) {
               <div className={styles.pageHeaderMain}>
                 <div className={styles.titleBlock}>
                   <span className={styles.pageKicker}>
-                    {workerMode ? "Миний урсгал" : "Бүх урсгал"}
+                    {workerMode ? "Миний урсгал" : masterMode ? "Мастерын урсгал" : "Бүх урсгал"}
                   </span>
-                  <h1>{workerMode ? "Надад оноогдсон ажилбар" : "Бүх ажилбар"}</h1>
+                  <h1>
+                    {workerMode
+                      ? "Надад оноогдсон ажилбар"
+                      : masterMode
+                        ? "Өнөөдрийн ажилбар"
+                        : "Бүх ажилбар"}
+                  </h1>
                   <p>
                     {workerMode
                       ? "Зөвхөн танд хамаарах ажилбаруудыг эндээс харна. Төлөвөөр нь хурдан шүүж, дэлгэрэнгүй рүү шууд орж ажлаа үргэлжлүүлнэ."
-                      : "Odoo ERP дээр бүртгэгдсэн бүх ажилбарыг алба нэгж, ажил, төлөвөөр нь нэг дороос харуулна. Асуудалтай болон хяналт хүлээж буй ажилбаруудыг эхэнд нь ялгаж, дэлгэрэнгүй рүү шууд нээнэ."}
+                      : masterMode
+                        ? "Мастер хэрэглэгчид зөвхөн өөрийн алба нэгжийн өнөөдрийн ажилбар харагдана. Эндээс тайлангаа оруулж, шаардлагатай бол ажлаас шинэ ажилбар нээх урсгал руу орно."
+                        : "Odoo ERP дээр бүртгэгдсэн бүх ажилбарыг алба нэгж, ажил, төлөвөөр нь нэг дороос харуулна. Асуудалтай болон хяналт хүлээж буй ажилбаруудыг эхэнд нь ялгаж, дэлгэрэнгүй рүү шууд нээнэ."}
                   </p>
                 </div>
 
@@ -160,6 +202,15 @@ export default async function TasksPage({ searchParams }: PageProps) {
                         Өнөөдрийн ажил
                       </Link>
                     ) : null}
+                  </div>
+                ) : masterMode ? (
+                  <div className={styles.userBlock}>
+                    <span>Харагдах хүрээ</span>
+                    <strong>{selectedDepartmentLabel}</strong>
+                    <small>Зөвхөн өнөөдрийн ажилбар энэ жагсаалтад харагдана.</small>
+                    <Link href="/projects" className={styles.dateButton}>
+                      Ажил нэмэх
+                    </Link>
                   </div>
                 ) : (
                   <form className={styles.dateFilterForm} method="get">
@@ -190,20 +241,36 @@ export default async function TasksPage({ searchParams }: PageProps) {
 
             <section className={styles.summaryStrip}>
               <article className={styles.summaryCard}>
-                <span>{workerMode ? "Харагдах хүрээ" : "Сонгосон алба нэгж"}</span>
+                <span>
+                  {workerMode
+                    ? "Харагдах хүрээ"
+                    : masterMode
+                      ? "Алба нэгж"
+                      : "Сонгосон алба нэгж"}
+                </span>
                 <strong>{selectedDepartmentLabel}</strong>
                 <small>
                   {workerMode
                     ? "Зөвхөн танд оноогдсон ажилбаруудыг харуулж байна"
+                    : masterMode
+                      ? "Мастер хэрэглэгчид зөвхөн өөрийн нэгжийн өнөөдрийн урсгал харагдана"
                     : `${snapshot.departments.length} алба нэгжээс шүүж байна`}
                 </small>
               </article>
               <article className={styles.summaryCard}>
-                <span>{workerMode ? "Надад оноогдсон ажилбар" : "Нийт ажилбар"}</span>
+                <span>
+                  {workerMode
+                    ? "Надад оноогдсон ажилбар"
+                    : masterMode
+                      ? "Өнөөдрийн ажилбар"
+                      : "Нийт ажилбар"}
+                </span>
                 <strong>{counts.all}</strong>
                 <small>
                   {workerMode
                     ? "Тухайн хэрэглэгчид оноогдсон нийт ажилбар"
+                    : masterMode
+                      ? "Өнөөдөрт харагдаж буй ажилбарын тоо"
                     : "Odoo ERP-ээс орж ирсэн бүх ажилбар"}
                 </small>
               </article>
@@ -213,6 +280,8 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 <small>
                   {workerMode
                     ? "Эдгээр ажилд таны ажилбарууд багтаж байна"
+                    : masterMode
+                      ? "Энэ нэгж дээр ажилбар нээж болох ажлууд"
                     : "Энэ шүүлтэд хамаарах ажлууд"}
                 </small>
               </article>
@@ -222,11 +291,19 @@ export default async function TasksPage({ searchParams }: PageProps) {
               <div className={styles.filterHeader}>
                 <div>
                   <span className={styles.filterKicker}>Төлөвийн шүүлт</span>
-                  <h2>{workerMode ? "Миний ажилбарын төлөв" : "Ажлыг хурдан ангилж харах"}</h2>
+                  <h2>
+                    {workerMode
+                      ? "Миний ажилбарын төлөв"
+                      : masterMode
+                        ? "Өнөөдрийн ажилбарыг төлөвөөр нь шүүх"
+                        : "Ажлыг хурдан ангилж харах"}
+                  </h2>
                 </div>
                 <p>
                   {workerMode
                     ? "Асуудалтай, хяналт хүлээж буй, баталгаажсан ажилбараа нэг товшилтоор ялгаж харна."
+                    : masterMode
+                      ? "Өнөөдөрт харагдах ажилбараа төлөвөөр нь ялгаж хараад тайлан илгээхэд бэлэн ажилбараа нээнэ."
                     : "Эхлээд асуудалтай, дараа нь хяналт хүлээж буй ажилбаруудыг ялгаж харахад тохиромжтой."}
                 </p>
               </div>
@@ -261,13 +338,25 @@ export default async function TasksPage({ searchParams }: PageProps) {
               <div className={styles.sectionHeader}>
                 <div>
                   <span className={styles.filterKicker}>
-                    {workerMode ? "Миний жагсаалт" : "Ажлын жагсаалт"}
+                    {workerMode
+                      ? "Миний жагсаалт"
+                      : masterMode
+                        ? "Өнөөдрийн жагсаалт"
+                        : "Ажлын жагсаалт"}
                   </span>
-                  <h2>{workerMode ? "Надад хамаарах ажилбар" : "Odoo-оос татсан бүх ажилбар"}</h2>
+                  <h2>
+                    {workerMode
+                      ? "Надад хамаарах ажилбар"
+                      : masterMode
+                        ? "Өнөөдөр харагдах ажилбар"
+                        : "Odoo-оос татсан бүх ажилбар"}
+                  </h2>
                 </div>
                 <p>
                   {workerMode
                     ? `${visibleTasks.length} ажилбар танд одоогоор харагдаж байна`
+                    : masterMode
+                      ? `${visibleTasks.length} ажилбар өнөөдөрт энэ дэлгэц дээр харагдаж байна`
                     : `${visibleTasks.length} ажилбар одоогоор дэлгэц дээр харагдаж байна`}
                 </p>
               </div>
@@ -377,12 +466,16 @@ export default async function TasksPage({ searchParams }: PageProps) {
                   <h3>
                     {workerMode
                       ? "Танд тохирох ажилбар энэ шүүлтээр олдсонгүй"
-                      : "Энэ шүүлтээр ажил олдсонгүй"}
+                      : masterMode
+                        ? "Өнөөдөрт харагдах ажилбар олдсонгүй"
+                        : "Энэ шүүлтээр ажил олдсонгүй"}
                   </h3>
                   <p>
                     {workerMode
                       ? "Өөр төлөв сонгоод дахин шүүж үзнэ үү."
-                      : "Өөр алба нэгж эсвэл өөр төлөв сонгоод дахин шүүж үзнэ үү."}
+                      : masterMode
+                        ? "Өөр төлөв сонгох эсвэл шинэ ажилбар нэмэхийн тулд ажлын жагсаалт руу орно уу."
+                        : "Өөр алба нэгж эсвэл өөр төлөв сонгоод дахин шүүж үзнэ үү."}
                   </p>
                 </div>
               )}

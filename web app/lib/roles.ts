@@ -87,7 +87,7 @@ export function getRoleLabel(role: UserRole) {
     case "general_manager":
       return "Ерөнхий менежер";
     case "project_manager":
-      return "Ажлын менежер";
+      return "Хэлтсийн дарга";
     case "senior_master":
       return "Ахлах мастер";
     case "team_leader":
@@ -121,8 +121,10 @@ export function hasCapability(context: RoleContext, capability: Capability) {
     case "write_workspace_reports":
       return (
         context.role === "system_admin" ||
+        context.role === "project_manager" ||
         context.role === "senior_master" ||
-        context.role === "team_leader"
+        context.role === "team_leader" ||
+        context.role === "worker"
       );
     case "view_quality_center":
       return (
@@ -135,6 +137,9 @@ export function hasCapability(context: RoleContext, capability: Capability) {
         groupFlags.mfoInspector
       );
     case "use_field_console":
+      if (context.role === "general_manager") {
+        return false;
+      }
       return (
         context.role === "system_admin" ||
         context.role === "senior_master" ||

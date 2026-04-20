@@ -10,10 +10,17 @@ import {
 } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
+import {
+  getRoleLabel,
+  hasCapability,
+  isMasterRole,
+  isWorkerOnly,
+  requireSession,
+} from "@/lib/auth";
 import { loadTaskDetail } from "@/lib/workspace";
 
 import styles from "./task-detail.module.css";
+import { TaskReportModal } from "./task-report-modal";
 
 type PageProps = {
   params: Promise<{
@@ -23,6 +30,7 @@ type PageProps = {
     error?: string | string[];
     notice?: string | string[];
     returnTo?: string | string[];
+    composer?: string | string[];
   }>;
 };
 
@@ -46,6 +54,13 @@ function StagePill({ label, bucket }: { label: string; bucket: string }) {
   return <span className={`${dashboardStyles.stagePill} ${tone}`}>{label}</span>;
 }
 
+function formatQuantityLabel(value: number, unit: string, quantityOptional: boolean) {
+  if (quantityOptional && value <= 0) {
+    return "Бүртгээгүй";
+  }
+  return `${value} ${unit}`.trim();
+}
+
 export default async function TaskDetailPage({ params, searchParams }: PageProps) {
   const session = await requireSession();
   const resolvedParams = await params;
@@ -54,12 +69,20 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
   const errorMessage = getMessage(query.error);
   const noticeMessage = getMessage(query.notice);
   const returnTo = getMessage(query.returnTo);
+  const composer = getMessage(query.composer);
   const safeReturnTo = returnTo.startsWith("/") ? returnTo : "";
+  const openReportComposer = composer === "report";
   const workerMode = isWorkerOnly(session);
-  const useExecutiveLayout = safeReturnTo.startsWith("/tasks");
-  const backHref = safeReturnTo || (workerMode ? "/tasks" : "/projects");
+  const masterMode = isMasterRole(session.role);
+  const useExecutiveLayout = !masterMode && safeReturnTo.startsWith("/tasks");
+  const activeMenuKey = safeReturnTo.startsWith("/tasks") ? "tasks" : "projects";
+  const backHref = safeReturnTo || (workerMode || masterMode ? "/tasks" : "/projects");
   const backLabel =
-    useExecutiveLayout || workerMode ? "Ажилбар руу буцах" : "Ажил руу буцах";
+    masterMode
+      ? "Өнөөдрийн ажил руу буцах"
+      : useExecutiveLayout || workerMode
+        ? "Ажилбар руу буцах"
+        : "Ажил руу буцах";
 
   const canCreateProject = hasCapability(session, "create_projects");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
@@ -81,13 +104,14 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <div className={shellStyles.contentWithMenu}>
             <aside className={shellStyles.menuColumn}>
               <AppMenu
-                active={workerMode || useExecutiveLayout ? "tasks" : "projects"}
+                active={activeMenuKey}
                 variant={useExecutiveLayout ? "executive" : "default"}
                 canCreateProject={canCreateProject}
                 canViewQualityCenter={canViewQualityCenter}
                 canUseFieldConsole={canUseFieldConsole}
                 userName={session.name}
                 roleLabel={getRoleLabel(session.role)}
+                masterMode={masterMode}
                 workerMode={workerMode}
               />
             </aside>
@@ -110,20 +134,29 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
   }
 
   const canWriteReport = !task.reportsLocked && hasCapability(session, "write_workspace_reports");
+  const quantitySummary = task.quantityOptional
+    ? task.plannedQuantity > 0
+      ? `${task.completedQuantity}/${task.plannedQuantity} ${task.measurementUnit}`
+      : "Бүртгэхгүй"
+    : `${task.completedQuantity}/${task.plannedQuantity} ${task.measurementUnit}`;
   const primaryActionLabel = task.canMarkDone
     ? "Ажилбарыг дуусгах"
     : task.canSubmitForReview
-      ? "Шалгалтад илгээх"
+      ? masterMode
+        ? "Тайлан илгээх"
+        : "Шалгалтад илгээх"
       : canWriteReport
-        ? "Тайлан оруулах"
+        ? "Гүйцэтгэлийн тайлан оруулах"
         : "Мэдээлэл харах";
 
   const helperText = task.canMarkDone
     ? "Ажилбар бүрэн дууссан бол дуусгах товчоор дараагийн шат руу шилжүүлнэ."
     : task.canSubmitForReview
-      ? "Тайлангаа шалгаад баталгаажуулалт руу илгээж болно."
+      ? masterMode
+        ? "Өдрийн тайлангаа багцлаад илгээхэд энэ ажилбарын тайлангийн урсгал дараагийн шат руу орно."
+        : "Тайлангаа шалгаад баталгаажуулалт руу илгээж болно."
       : canWriteReport
-        ? "Эхлээд товч тайлангаа оруулаад дараагийн алхам руу шилжүүлнэ."
+        ? "Odoo ERP дээрхтэй адил гүйцэтгэлийн тайлангийн маягтаар тайлбар, зураг, аудиогоо нэг дороос оруулна."
         : "Одоогоор энэ ажилбарын мэдээллийг харах горим нээлттэй байна.";
 
   return (
@@ -132,13 +165,14 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
         <div className={shellStyles.contentWithMenu}>
           <aside className={shellStyles.menuColumn}>
             <AppMenu
-              active={workerMode || useExecutiveLayout ? "tasks" : "projects"}
+              active={activeMenuKey}
               variant={useExecutiveLayout ? "executive" : "default"}
               canCreateProject={canCreateProject}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
               roleLabel={getRoleLabel(session.role)}
+              masterMode={masterMode}
               workerMode={workerMode}
             />
           </aside>
@@ -213,25 +247,37 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                       <strong>{task.projectName}</strong>
                     </article>
                     <article className={styles.infoCard}>
-                      <span>Багийн ахлагч</span>
+                      <span>Мастер</span>
                       <strong>{task.teamLeaderName}</strong>
                     </article>
                     <article className={styles.infoCard}>
                       <span>Төлөвлөсөн хэмжээ</span>
                       <strong>
-                        {task.plannedQuantity} {task.measurementUnit}
+                        {formatQuantityLabel(
+                          task.plannedQuantity,
+                          task.measurementUnit,
+                          task.quantityOptional,
+                        )}
                       </strong>
                     </article>
                     <article className={styles.infoCard}>
                       <span>Гүйцэтгэсэн хэмжээ</span>
                       <strong>
-                        {task.completedQuantity} {task.measurementUnit}
+                        {formatQuantityLabel(
+                          task.completedQuantity,
+                          task.measurementUnit,
+                          task.quantityOptional,
+                        )}
                       </strong>
                     </article>
                     <article className={styles.infoCard}>
                       <span>Үлдэгдэл</span>
                       <strong>
-                        {task.remainingQuantity} {task.measurementUnit}
+                        {formatQuantityLabel(
+                          task.remainingQuantity,
+                          task.measurementUnit,
+                          task.quantityOptional,
+                        )}
                       </strong>
                     </article>
                     <article className={styles.infoCard}>
@@ -278,10 +324,10 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                 <section className={styles.sectionCard} id="task-reports">
                   <div className={styles.sectionHead}>
                     <div>
-                      <span className={styles.kicker}>Тайлангийн урсгал</span>
-                      <h2>Оруулсан тайлангууд</h2>
+                      <span className={styles.kicker}>Гүйцэтгэлийн тайлан</span>
+                      <h2>Гүйцэтгэлийн тайлангууд</h2>
                     </div>
-                    <p>Сүүлийн тайлангууд, зураг, аудиог доороос харна.</p>
+                    <p>Илгээсэн тайлан, зураг, аудиог доороос харна.</p>
                   </div>
 
                   {task.reports.length ? (
@@ -294,16 +340,23 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                               <small>{report.submittedAt}</small>
                             </div>
                             <StagePill
-                              label={`${report.quantity} ${task.measurementUnit}`}
+                              label={formatQuantityLabel(
+                                report.quantity,
+                                task.measurementUnit,
+                                task.quantityOptional,
+                              )}
                               bucket="progress"
                             />
                           </div>
 
-                          <p>{report.summary}</p>
-
                           <div className={styles.reportMediaMeta}>
                             <span className={styles.chip}>{report.imageCount} зураг</span>
                             <span className={styles.chip}>{report.audioCount} аудио</span>
+                          </div>
+
+                          <div className={styles.reportBody}>
+                            <strong className={styles.reportBodyLabel}>Тайлбар</strong>
+                            <p>{report.text || report.summary}</p>
                           </div>
 
                           {report.images.length ? (
@@ -349,7 +402,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                     </div>
                   ) : (
                     <div className={styles.emptyState}>
-                      <h2>Тайлан алга</h2>
+                      <h2>Гүйцэтгэлийн тайлан алга</h2>
                       <p>Одоогоор энэ ажилбар дээр тайлан бүртгэгдээгүй байна.</p>
                     </div>
                   )}
@@ -379,24 +432,26 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                           type="submit"
                           className={task.canMarkDone ? styles.secondaryButton : styles.actionButton}
                         >
-                          Шалгалтад илгээх
+                          {masterMode ? "Тайлан илгээх" : "Шалгалтад илгээх"}
                         </button>
                       </form>
                     ) : null}
 
                     {!task.canMarkDone && !task.canSubmitForReview && canWriteReport ? (
-                      <a href="#report-form" className={styles.actionButton}>
-                        Тайлан оруулах
-                      </a>
+                      <TaskReportModal
+                        action={createTaskReportAction}
+                        taskId={task.id}
+                        defaultOpen={openReportComposer}
+                        quantityOptional={task.quantityOptional}
+                        measurementUnit={task.measurementUnit}
+                      />
                     ) : null}
                   </div>
 
                   <div className={styles.helperPanel}>
                     <small>Төлөв: {task.stageLabel}</small>
                     <small>Явц: {task.progress}%</small>
-                    <small>
-                      Хэмжээ: {task.completedQuantity}/{task.plannedQuantity} {task.measurementUnit}
-                    </small>
+                    <small>Хэмжээ: {quantitySummary}</small>
                   </div>
 
                   {task.canReturnForChanges ? (
@@ -414,60 +469,6 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                       </button>
                     </form>
                   ) : null}
-                </aside>
-
-                <aside className={styles.reportComposer} id="report-form">
-                  <div className={styles.reportComposerHeader}>
-                    <span className={styles.kicker}>Тайлан оруулах</span>
-                    <strong className={styles.actionTitle}>Хурдан тайлан</strong>
-                    <p className={styles.actionLead}>
-                      Хамгийн хэрэгтэй хоёр мэдээлэл болох хэмжээ ба тайлбарыг түрүүлж авна.
-                    </p>
-                  </div>
-
-                  {!canWriteReport ? (
-                    <div className={styles.helperPanel}>
-                      <small>Одоогоор тайлан оруулах эрх нээлттэй биш байна.</small>
-                    </div>
-                  ) : (
-                    <form action={createTaskReportAction} className={styles.composerFields}>
-                      <input type="hidden" name="task_id" value={task.id} />
-
-                      <div className={styles.composerHighlight}>
-                        <strong>Товч тайлан</strong>
-                        <p className={styles.composerHint}>
-                          Хийсэн хэмжээгээ оруулаад 2-3 өгүүлбэрээр өнөөдрийн ажилбараа товч бичнэ.
-                        </p>
-                      </div>
-
-                      <label htmlFor="reported_quantity">
-                        Хийсэн хэмжээ
-                        <input
-                          id="reported_quantity"
-                          name="reported_quantity"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="12"
-                          required
-                        />
-                      </label>
-
-                      <label htmlFor="report_text">
-                        Тайлангийн тайлбар
-                        <textarea
-                          id="report_text"
-                          name="report_text"
-                          placeholder="Юу хийсэн, ямар саад гарсан, дараагийн алхам юу болохыг товч бичнэ үү"
-                          required
-                        />
-                      </label>
-
-                      <button type="submit" className={styles.actionButton}>
-                        Тайлан хадгалах
-                      </button>
-                    </form>
-                  )}
                 </aside>
               </div>
             </section>

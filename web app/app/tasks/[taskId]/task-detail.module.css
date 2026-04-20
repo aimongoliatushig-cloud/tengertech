@@ -2,6 +2,7 @@
 .sectionCard,
 .actionCard,
 .reportComposer,
+.modalDialog,
 .reportCard,
 .emptyState {
   border: 1px solid var(--line-soft);
@@ -15,6 +16,7 @@
 .sectionCard,
 .actionCard,
 .reportComposer,
+.modalDialog,
 .emptyState {
   padding: 22px;
 }
@@ -39,6 +41,7 @@
 .infoCard,
 .actionCard,
 .reportComposer,
+.modalDialog,
 .reportCard,
 .emptyState {
   display: grid;
@@ -90,6 +93,11 @@
   gap: 10px;
 }
 
+.reportBody {
+  display: grid;
+  gap: 8px;
+}
+
 .anchorLink {
   display: inline-flex;
   align-items: center;
@@ -121,9 +129,15 @@
 .reportCard small,
 .actionCard small,
 .composerHint,
-.reportHint {
+.reportHint,
+.inputHint,
+.reportBodyLabel {
   color: var(--ink-600);
   font-size: 0.88rem;
+}
+
+.reportBodyLabel {
+  font-weight: 700;
 }
 
 .heroStatCard strong {
@@ -280,7 +294,9 @@
 
 .returnBox textarea,
 .reportComposer input,
-.reportComposer textarea {
+.reportComposer textarea,
+.modalField input,
+.modalField textarea {
   width: 100%;
   border: 1px solid var(--line-soft);
   border-radius: 18px;
@@ -297,13 +313,15 @@
 }
 
 .returnBox textarea,
-.reportComposer textarea {
+.reportComposer textarea,
+.modalField textarea {
   min-height: 120px;
   padding: 14px;
   resize: vertical;
 }
 
-.reportComposer input {
+.reportComposer input,
+.modalField input {
   min-height: 50px;
   padding: 0 14px;
 }
@@ -320,6 +338,122 @@
   color: var(--ink-900);
 }
 
+.fileFieldGroup {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px dashed rgba(74, 154, 93, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.hiddenFileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.filePickerHeader,
+.filePickerActions,
+.fileList,
+.filePickerTitleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filePickerHeader {
+  align-items: start;
+  justify-content: space-between;
+}
+
+.filePickerTitleGroup {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filePickerStatus {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.1);
+  color: var(--brand-800);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.filePickerBox {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(74, 154, 93, 0.14);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(240, 248, 239, 0.85), rgba(255, 255, 255, 0.96));
+}
+
+.filePickerActions {
+  align-items: center;
+}
+
+.filePickerButton,
+.filePickerSecondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filePickerButton {
+  border: 0;
+  background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+  color: #f7fcf6;
+}
+
+.filePickerSecondaryButton {
+  border: 1px solid rgba(74, 154, 93, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand-900);
+}
+
+.fileList {
+  gap: 8px;
+}
+
+.fileTag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.08);
+  color: var(--ink-900);
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileEmptyState {
+  margin: 0;
+  color: var(--ink-600);
+  line-height: 1.6;
+}
+
 .reportComposer {
   position: sticky;
   top: 20px;
@@ -328,6 +462,112 @@
 .reportComposerHeader {
   display: grid;
   gap: 8px;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: rgba(17, 24, 24, 0.48);
+  backdrop-filter: blur(8px);
+}
+
+.modalDialog {
+  width: min(920px, calc(100vw - 32px));
+  max-height: min(88vh, 860px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalForm {
+  display: grid;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+}
+
+.modalBodyGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+  gap: 18px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+
+.modalSectionCard,
+.modalField,
+.modalSectionHeading {
+  display: grid;
+  gap: 12px;
+}
+
+.modalSectionCard {
+  align-content: start;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(74, 154, 93, 0.12);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.modalTitleGroup,
+.modalForm {
+  display: grid;
+  gap: 14px;
+}
+
+.modalField > span,
+.modalSectionHeading strong {
+  color: var(--ink-900);
+  font-weight: 700;
+}
+
+.modalCloseButton,
+.modalSecondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modalCloseButton {
+  border: 1px solid rgba(74, 154, 93, 0.16);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--brand-900);
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.modalActions .actionButton,
+.modalSecondaryButton {
+  flex: 1;
+}
+
+.modalSecondaryButton {
+  border: 1px solid rgba(74, 154, 93, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--brand-900);
 }
 
 .composerHighlight {
@@ -372,7 +612,8 @@
 
   .summaryTop,
   .sectionHead,
-  .reportCardTop {
+  .reportCardTop,
+  .modalHeader {
     flex-direction: column;
   }
 
@@ -385,6 +626,10 @@
   .reportComposer {
     position: static;
   }
+
+  .modalBodyGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -392,6 +637,7 @@
   .sectionCard,
   .actionCard,
   .reportComposer,
+  .modalDialog,
   .reportCard,
   .emptyState {
     padding: 18px;
@@ -410,6 +656,29 @@
   .secondaryActions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .filePickerHeader,
+  .filePickerActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modalActions {
+    flex-direction: column;
+  }
+
+  .modalOverlay {
+    padding: 12px;
+  }
+
+  .modalDialog {
+    width: min(100vw - 24px, 100%);
+    max-height: calc(100vh - 24px);
+  }
+
+  .modalSectionCard {
+    padding: 16px;
   }
 
   .anchorLink {

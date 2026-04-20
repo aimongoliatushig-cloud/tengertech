@@ -38,6 +38,18 @@ export function getAvailableUnits(group: DepartmentGroupDefinition, availableNam
   return group.units.filter((unit) => availableNames.includes(unit));
 }
 
+export function matchesDepartmentGroup(
+  group: DepartmentGroupDefinition,
+  departmentName?: string | null,
+) {
+  const normalized = (departmentName ?? "").trim();
+  if (!normalized) {
+    return false;
+  }
+
+  return normalized === group.name || group.units.includes(normalized);
+}
+
 export function getDepartmentGroupLabel(group: DepartmentGroupDefinition) {
   return group.units.join(" • ");
 }

@@ -23,6 +23,31 @@ OPS_STAGE_NAME_ALIASES = {
         "shalgalt",
     ],
     "done": ["Дууссан ажил", "duussan ajil", "duussan"],
+    "todo": [
+        "Хийгдэх ажил",
+        "Төлөвлөгдсөн",
+        "Хуваарилсан",
+        "hiigdeh ajil",
+        "daalgavar",
+        "task",
+    ],
+    "progress": [
+        "Явагдаж буй ажил",
+        "Гүйцэтгэж байна",
+        "yovagdaj bui ajil",
+        "yavagdaj bui ajil",
+        "yavagdajh bui",
+        "hiihdej baina",
+    ],
+    "review": [
+        "Шалгагдаж буй ажил",
+        "Шалгаж байна",
+        "shalgagdaj bui ajil",
+        "shlagah",
+        "shalgah",
+        "shalgalt",
+    ],
+    "done": ["Дууссан ажил", "Дууссан", "duussan ajil", "duussan"],
 }
 OPS_LOCKED_STAGE_BUCKETS = {"review", "done"}
 OPS_LOCKED_STATES = {"02_changes_requested", "1_done"}
@@ -200,9 +225,11 @@ class ProjectTask(models.Model):
         for task in self:
             total_reported = sum(task.ops_report_ids.mapped("reported_quantity"))
             planned = task.ops_planned_quantity or 0.0
+            quantity_optional = task._ops_is_quantity_optional()
 
             if (
-                float_compare(total_reported, 0.0, precision_digits=2) > 0
+                not quantity_optional
+                and float_compare(total_reported, 0.0, precision_digits=2) > 0
                 and float_compare(planned, 0.0, precision_digits=2) <= 0
             ):
                 raise ValidationError(
@@ -210,6 +237,13 @@ class ProjectTask(models.Model):
                         "Гүйцэтгэсэн тоо хэмжээ оруулахын өмнө `Төлөвлөсөн хэмжээ`-г бөглөнө үү."
                     )
                 )
+
+            if (
+                float_compare(total_reported, 0.0, precision_digits=2) > 0
+                and float_compare(planned, 0.0, precision_digits=2) <= 0
+                and quantity_optional
+            ):
+                continue
 
             if (
                 float_compare(planned, 0.0, precision_digits=2) > 0
@@ -220,6 +254,11 @@ class ProjectTask(models.Model):
                         "Нийт гүйцэтгэсэн хэмжээ нь төлөвлөсөн хэмжээнээс их байж болохгүй."
                     )
                 )
+
+    def _ops_is_quantity_optional(self):
+        self.ensure_one()
+        operation_type_field = self._fields.get("mfo_operation_type")
+        return bool(operation_type_field and self.mfo_operation_type == "garbage")
 
     @api.depends(
         "ops_report_ids",
@@ -251,7 +290,7 @@ class ProjectTask(models.Model):
     def action_ops_submit_for_review(self):
         for task in self:
             if not task._ops_is_current_user_team_leader():
-                raise AccessError(_("Зөвхөн энэ ажилд оноогдсон багийн ахлагч шалгалтад илгээх боломжтой."))
+                raise AccessError(_("Зөвхөн энэ ажилд оноогдсон мастер шалгалтад илгээх боломжтой."))
             if not task.ops_report_ids:
                 raise UserError(_("Эхлээд энэ ажил дээр гүйцэтгэлийн тайлан оруулна уу."))
 
@@ -265,7 +304,7 @@ class ProjectTask(models.Model):
                     "state": "02_changes_requested",
                 }
             )
-            task.message_post(body=_("Ажлыг багийн ахлагч шалгалтад илгээлээ."))
+            task.message_post(body=_("Ажлыг мастер шалгалтад илгээлээ."))
         return True
 
     def action_ops_mark_done(self):
@@ -304,6 +343,123 @@ class ProjectTask(models.Model):
                 "default_task_id": self.id,
             },
         }
+
+    def _ops_check_mobile_report_read_access(self):
+        self.ensure_one()
+        self.check_access("read")
+        return True
+
+    def _ops_check_mobile_report_create_access(self):
+        self.ensure_one()
+        self._ops_check_mobile_report_read_access()
+        user = self.env.user
+        if self.env.su or user.has_group("ops_role_security.group_ops_system_admin"):
+            return True
+        if any(
+            user.has_group(group_xmlid)
+            for group_xmlid in (
+                "ops_role_security.group_ops_team_leader",
+                "ops_role_security.group_ops_project_leader",
+                "ops_role_security.group_ops_worker",
+            )
+        ):
+            return True
+        raise AccessError(
+            _(
+                "Гүйцэтгэлийн тайланг ажилтан, мастер, ахлах мастер, хэлтсийн дарга хэрэглэгч илгээх боломжтой."
+            )
+        )
+
+    @staticmethod
+    def _ops_prepare_mobile_report_attachments(attachments):
+        prepared = []
+        for index, attachment in enumerate(attachments or [], start=1):
+            if not isinstance(attachment, dict):
+                continue
+            datas = (attachment.get("base64") or "").strip()
+            if not datas:
+                continue
+            name = (attachment.get("name") or "").strip() or f"report-file-{index}"
+            mimetype = (attachment.get("mimeType") or "").strip() or "application/octet-stream"
+            prepared.append(
+                {
+                    "name": name,
+                    "datas": datas,
+                    "mimetype": mimetype,
+                    "type": "binary",
+                }
+            )
+        return prepared
+
+    def action_ops_create_mobile_report(self, payload=None):
+        self.ensure_one()
+        self._ops_check_mobile_report_create_access()
+        self.env["ops.task.report"]._ops_check_report_lock(self, "create")
+
+        payload = payload or {}
+        report_text = str(payload.get("report_text") or "").strip()
+        if not report_text:
+            raise UserError(_("Тайлангийн текстээ оруулна уу."))
+
+        try:
+            reported_quantity = float(payload.get("reported_quantity") or 0.0)
+        except (TypeError, ValueError) as error:
+            raise UserError(_("Хийсэн хэмжээ зөв тоо байх ёстой.")) from error
+
+        image_attachment_vals = self._ops_prepare_mobile_report_attachments(
+            payload.get("image_attachments")
+        )
+        audio_attachment_vals = self._ops_prepare_mobile_report_attachments(
+            payload.get("audio_attachments")
+        )
+
+        Attachment = self.env["ir.attachment"].sudo()
+        image_attachment_ids = Attachment.create(image_attachment_vals).ids if image_attachment_vals else []
+        audio_attachment_ids = Attachment.create(audio_attachment_vals).ids if audio_attachment_vals else []
+
+        values = {
+            "task_id": self.id,
+            "reporter_id": self.env.user.id,
+            "report_text": report_text,
+            "reported_quantity": reported_quantity,
+        }
+        if image_attachment_ids:
+            values["image_attachment_ids"] = [(6, 0, image_attachment_ids)]
+        if audio_attachment_ids:
+            values["audio_attachment_ids"] = [(6, 0, audio_attachment_ids)]
+
+        report = self.env["ops.task.report"].sudo().create(values)
+        return report.id
+
+    def action_ops_get_mobile_reports(self):
+        self.ensure_one()
+        self._ops_check_mobile_report_read_access()
+        reports = self.env["ops.task.report"].sudo().search(
+            [("task_id", "=", self.id)],
+            order="report_datetime desc, id desc",
+        )
+
+        result = []
+        for report in reports:
+            result.append(
+                {
+                    "id": report.id,
+                    "reporter_id": [report.reporter_id.id, report.reporter_id.display_name]
+                    if report.reporter_id
+                    else False,
+                    "report_datetime": fields.Datetime.to_string(report.report_datetime)
+                    if report.report_datetime
+                    else False,
+                    "report_text": report.report_text or "",
+                    "report_summary": report.report_summary or False,
+                    "reported_quantity": report.reported_quantity or 0.0,
+                    "image_count": report.image_count,
+                    "audio_count": report.audio_count,
+                    "image_attachment_ids": report.image_attachment_ids.ids,
+                    "audio_attachment_ids": report.audio_attachment_ids.ids,
+                }
+            )
+        return result
 
     @staticmethod
     def _extract_ops_quantity_defaults(description):

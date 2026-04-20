@@ -4,7 +4,13 @@ import { redirect } from "next/navigation";
 import { AppMenu } from "@/app/_components/app-menu";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
+import {
+  getRoleLabel,
+  hasCapability,
+  isMasterRole,
+  isWorkerOnly,
+  requireSession,
+} from "@/lib/auth";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +37,7 @@ function MetricCard({
 
 export default async function QualityPage() {
   const session = await requireSession();
-  if (isWorkerOnly(session)) {
+  if (isWorkerOnly(session) || isMasterRole(session.role)) {
     redirect("/");
   }
   const canCreateProject = hasCapability(session, "create_projects");

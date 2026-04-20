@@ -3,13 +3,19 @@ import { redirect } from "next/navigation";
 import { AppMenu } from "@/app/_components/app-menu";
 import { DataDownloadClient } from "@/app/data-download/data-download-client";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
+import {
+  getRoleLabel,
+  hasCapability,
+  isMasterRole,
+  isWorkerOnly,
+  requireSession,
+} from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function DataDownloadPage() {
   const session = await requireSession();
-  if (isWorkerOnly(session)) {
+  if (isWorkerOnly(session) || isMasterRole(session.role)) {
     redirect("/");
   }
   const canCreateProject = hasCapability(session, "create_projects");

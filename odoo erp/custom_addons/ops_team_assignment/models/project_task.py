@@ -2,6 +2,7 @@ from odoo import api, fields, models
 
 
 OPS_TEAM_SYNC_LOCKED_STATES = {"02_changes_requested", "1_done"}
+OPS_MASTER_USER_TYPES = {"team_leader", "senior_master"}
 
 
 class ProjectTask(models.Model):
@@ -9,8 +10,8 @@ class ProjectTask(models.Model):
 
     ops_team_leader_id = fields.Many2one(
         "res.users",
-        string="Багийн ахлагч",
-        domain="[('share', '=', False), ('ops_user_type', '=', 'team_leader')]",
+        string="Мастер",
+        domain="[('share', '=', False), ('ops_user_type', 'in', ['team_leader', 'senior_master'])]",
     )
 
     @api.model
@@ -58,7 +59,7 @@ class ProjectTask(models.Model):
         if len(users) != 1:
             return False
         user = users[0]
-        return user.id if user.ops_user_type == "team_leader" else False
+        return user.id if user.ops_user_type in OPS_MASTER_USER_TYPES else False
 
     @api.model
     def _prepare_ops_team_assignment_values(self, vals, current_user_ids=None):
@@ -128,7 +129,7 @@ class ProjectTask(models.Model):
         if self.ops_team_leader_id or len(self.user_ids) != 1:
             return
         user = self.user_ids[0]
-        if user.ops_user_type == "team_leader":
+        if user.ops_user_type in OPS_MASTER_USER_TYPES:
             self.ops_team_leader_id = user
             self.user_ids = [(6, 0, self._get_ops_team_member_user_ids(user))]
 
