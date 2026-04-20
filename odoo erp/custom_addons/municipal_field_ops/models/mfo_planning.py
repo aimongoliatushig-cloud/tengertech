@@ -134,7 +134,6 @@ class MfoPlanningTemplateLine(models.Model):
     route_id = fields.Many2one(
         "mfo.route",
         string="Маршрут",
-        domain="[('project_id', '=', template_id.project_id)]",
         ondelete="restrict",
     )
     district_id = fields.Many2one(
@@ -142,6 +141,10 @@ class MfoPlanningTemplateLine(models.Model):
         string="Дүүрэг",
         compute="_compute_district_id",
         store=True,
+    )
+    subdistrict_names = fields.Char(
+        string="Хороодууд",
+        compute="_compute_subdistrict_names",
     )
     shift_type = fields.Selection(
         selection=SHIFT_TYPE_SELECTION,
@@ -198,6 +201,11 @@ class MfoPlanningTemplateLine(models.Model):
         for line in self:
             line.district_id = line.route_id.district_id
 
+    @api.depends("route_id.subdistrict_names")
+    def _compute_subdistrict_names(self):
+        for line in self:
+            line.subdistrict_names = line.route_id.subdistrict_names
+
     @api.depends("route_id.line_ids")
     def _compute_expected_stop_count(self):
         for line in self:
@@ -212,6 +220,18 @@ class MfoPlanningTemplateLine(models.Model):
             line.driver_employee_id = line.crew_team_id.driver_employee_id
             line.collector_employee_ids = line.crew_team_id.collector_employee_ids
             line.inspector_employee_id = line.crew_team_id.inspector_employee_id
+
+    @api.onchange("template_id")
+    def _onchange_template_id_route_domain(self):
+        for line in self:
+            project = line.template_id.project_id
+            if line.route_id and line.route_id.project_id != project:
+                line.route_id = False
+            return {
+                "domain": {
+                    "route_id": [("project_id", "=", project.id)] if project else []
+                }
+            }
 
     @api.constrains("template_id", "route_id")
     def _check_route_project_match(self):
@@ -264,6 +284,7 @@ class MfoPlanningTemplateLine(models.Model):
             "mfo_shift_type": shift_type,
             "mfo_route_id": route.id,
             "mfo_district_id": route.district_id.id,
+            "mfo_subdistrict_id": route.subdistrict_ids[:1].id if len(route.subdistrict_ids) == 1 else False,
             "mfo_planned_start": fields.Datetime.to_string(start_dt) if start_dt else False,
             "mfo_planned_end": fields.Datetime.to_string(end_dt) if end_dt else False,
             "mfo_crew_team_id": crew_team.id,
@@ -325,7 +346,6 @@ class MfoPlanningOverride(models.Model):
     route_id = fields.Many2one(
         "mfo.route",
         string="Шинэ маршрут",
-        domain="[('project_id', '=', project_id)]",
         ondelete="restrict",
     )
     crew_team_id = fields.Many2one(
@@ -363,6 +383,19 @@ class MfoPlanningOverride(models.Model):
         for override in self:
             if override.template_line_id:
                 override.template_id = override.template_line_id.template_id
+        return self._onchange_project_route_domain()
+
+    @api.onchange("template_id")
+    def _onchange_project_route_domain(self):
+        for override in self:
+            project = override.template_id.project_id
+            if override.route_id and override.route_id.project_id != project:
+                override.route_id = False
+            return {
+                "domain": {
+                    "route_id": [("project_id", "=", project.id)] if project else []
+                }
+            }
 
     @api.constrains("template_id", "template_line_id")
     def _check_template_line_belongs_to_template(self):

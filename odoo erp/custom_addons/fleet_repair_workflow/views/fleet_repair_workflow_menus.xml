@@ -9,7 +9,7 @@
     </record>
 
     <menuitem id="menu_fleet_repair_workflow_root"
-              name="Vehicle Repair Workflow"
+              name="Засварын удирдлага"
               parent="fleet.menu_root"
               sequence="30"
               groups="fleet_repair_workflow.group_fleet_repair_mechanic,fleet_repair_workflow.group_fleet_repair_team_leader,fleet_repair_workflow.group_fleet_repair_accounting,fleet_repair_workflow.group_fleet_repair_administration,fleet_repair_workflow.group_fleet_repair_finance,fleet_repair_workflow.group_fleet_repair_purchaser,fleet_repair_workflow.group_fleet_repair_general_manager,fleet_repair_workflow.group_fleet_repair_ceo,fleet_repair_workflow.group_fleet_repair_manager,base.group_system"/>

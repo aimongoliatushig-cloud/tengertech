@@ -66,7 +66,7 @@
                                     <field name="sequence" widget="handle"/>
                                     <field name="weekday"/>
                                     <field name="route_id"/>
-                                    <field name="district_id" readonly="1"/>
+                                    <field name="subdistrict_names" readonly="1"/>
                                     <field name="shift_type"/>
                                     <field name="crew_team_id"/>
                                     <field name="vehicle_id"/>
@@ -78,7 +78,7 @@
                                             <group>
                                                 <field name="weekday"/>
                                                 <field name="route_id"/>
-                                                <field name="district_id" readonly="1"/>
+                                                <field name="subdistrict_names" readonly="1"/>
                                                 <field name="shift_type"/>
                                             </group>
                                             <group>

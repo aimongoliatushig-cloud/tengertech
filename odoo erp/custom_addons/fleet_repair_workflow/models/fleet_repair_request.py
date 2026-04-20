@@ -468,13 +468,13 @@ class FleetRepairRequest(models.Model):
         group = self.env.ref(xmlid_group, raise_if_not_found=False)
         if not group:
             return self.env["res.users"]
-        return group.sudo().users.filtered(lambda user: user.active)[:1]
+        return group.sudo().user_ids.filtered(lambda user: user.active)[:1]
 
     def _get_group_users(self, xmlid_group):
         group = self.env.ref(xmlid_group, raise_if_not_found=False)
         if not group:
             return self.env["res.users"]
-        return group.sudo().users.filtered(lambda user: user.active)
+        return group.sudo().user_ids.filtered(lambda user: user.active)
 
     def _get_activity_type(self):
         return self.env.ref(
@@ -588,7 +588,7 @@ class FleetRepairRequest(models.Model):
         in_progress_names = ["In Progress", "Progress", "Засварт", "Хийгдэж байна", "In Repair"]
         done_names = ["Done", "Completed", "Дууссан", "Хаагдсан"]
         for request in self.filtered("repair_task_id"):
-            task = request.repair_task_id.with_context(skip_repair_request_sync=True)
+            task = request.repair_task_id.sudo().with_context(skip_repair_request_sync=True)
             if request.state in {"parts_received", "in_repair", "waiting_repair_approval"}:
                 stage = request._find_project_stage(in_progress_names)
                 if stage:
@@ -887,8 +887,9 @@ class FleetRepairRequest(models.Model):
             )
             request.line_ids.write({"purchased": True})
             request._set_state("parts_received")
-            if request.repair_task_id and request.repair_task_id.repair_result == "waiting_parts":
-                request.repair_task_id.with_context(skip_repair_request_sync=True).message_post(
+            repair_task = request.repair_task_id.sudo()
+            if repair_task and repair_task.repair_result == "waiting_parts":
+                repair_task.with_context(skip_repair_request_sync=True).message_post(
                     body="Сэлбэг хүлээн авсан тул засварыг үргэлжлүүлэх боломжтой боллоо."
                 )
             request._activity_schedule_for_users(
@@ -912,8 +913,9 @@ class FleetRepairRequest(models.Model):
         for request in self:
             request._activity_mark_done_for_current_users()
             request._set_state("in_repair")
-            if request.repair_task_id and not request.repair_task_id.repair_start_datetime:
-                request.repair_task_id.with_context(skip_repair_request_sync=True).write(
+            repair_task = request.repair_task_id.sudo()
+            if repair_task and not repair_task.repair_start_datetime:
+                repair_task.with_context(skip_repair_request_sync=True).write(
                     {"repair_start_datetime": fields.Datetime.now()}
                 )
             request._post_transition_message("Засварын ажил эхэллээ.")
@@ -958,17 +960,18 @@ class FleetRepairRequest(models.Model):
                     "downtime_end": request.downtime_end or now_dt,
                 }
             )
-            request._set_state("done")
-            if request.repair_task_id:
+            request.with_context(skip_task_sync=True)._set_state("done")
+            repair_task = request.repair_task_id.sudo()
+            if repair_task:
                 values = {
                     "repair_end_datetime": now_dt,
                     "approved_by_id": self.env.user.id,
-                    "repair_result": request.repair_task_id.repair_result or "fixed",
+                    "repair_result": repair_task.repair_result or "fixed",
                 }
-                if request.repair_task_id.repair_start_datetime and not request.repair_task_id.actual_repair_hours:
-                    start_dt = fields.Datetime.to_datetime(request.repair_task_id.repair_start_datetime)
+                if repair_task.repair_start_datetime and not repair_task.actual_repair_hours:
+                    start_dt = fields.Datetime.to_datetime(repair_task.repair_start_datetime)
                     values["actual_repair_hours"] = max((now_dt - start_dt).total_seconds(), 0.0) / 3600.0
-                request.repair_task_id.with_context(skip_repair_request_sync=True).write(values)
+                repair_task.with_context(skip_repair_request_sync=True).write(values)
             request._post_transition_message("Засварын хүсэлт бүрэн дууслаа.")
         return True
 

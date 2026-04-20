@@ -273,6 +273,112 @@
   font-size: 0.88rem;
 }
 
+.modeRail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.modeChip {
+  display: grid;
+  gap: 4px;
+  min-height: 88px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 22px;
+  background: rgba(74, 154, 93, 0.08);
+  color: var(--ink-900);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.modeChip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px var(--shadow-soft);
+}
+
+.modeChip span {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.modeChip small {
+  color: var(--ink-700);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.modeChipActive {
+  border-color: rgba(31, 95, 49, 0.18);
+  background: linear-gradient(160deg, rgba(31, 95, 49, 0.96), rgba(74, 154, 93, 0.92));
+  color: #f7fcf6;
+  box-shadow: 0 18px 36px rgba(31, 95, 49, 0.2);
+}
+
+.modeChipActive small {
+  color: rgba(247, 252, 246, 0.84);
+}
+
+.previewCard {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(74, 154, 93, 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(166, 211, 157, 0.18), transparent 30%),
+    linear-gradient(180deg, rgba(74, 154, 93, 0.08), rgba(255, 255, 255, 0.96));
+}
+
+.previewHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.previewHeader strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 3vw, 1.7rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.previewGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.previewMeta {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(74, 154, 93, 0.1);
+}
+
+.previewMeta span {
+  color: var(--ink-600);
+  font-size: 0.84rem;
+}
+
+.previewMeta strong {
+  color: var(--ink-900);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.helperNote {
+  margin: 0;
+  color: var(--ink-700);
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
 .taskFilterRail {
   display: grid;
   grid-auto-flow: column;
@@ -733,6 +839,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .previewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .sectionHeader {
     align-items: start;
     flex-direction: column;
@@ -823,6 +933,11 @@
     grid-template-columns: 1fr;
     gap: 12px;
     margin-bottom: 16px;
+  }
+
+  .modeRail,
+  .previewGrid {
+    grid-template-columns: 1fr;
   }
 
   .summaryShowcaseCard {

@@ -27,7 +27,7 @@
 
     <record id="group_fleet_repair_purchaser" model="res.groups">
         <field name="name">Нярав / худалдан авалт</field>
-        <field name="implied_ids" eval="[(6, 0, [ref('fleet.fleet_group_user'), ref('purchase.group_purchase_user')])]"/>
+        <field name="implied_ids" eval="[(6, 0, [ref('fleet.fleet_group_user'), ref('purchase.group_purchase_user'), ref('project.group_project_user')])]"/>
     </record>
 
     <record id="group_fleet_repair_general_manager" model="res.groups">

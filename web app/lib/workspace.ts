@@ -17,6 +17,7 @@ type TaskRecord = {
   id: number;
   name: string;
   project_id: Relation;
+  sequence?: number;
   stage_id: Relation;
   ops_team_leader_id: Relation;
   user_ids: number[];
@@ -72,6 +73,45 @@ export type DepartmentOption = {
   id: number;
   name: string;
   label: string;
+};
+
+type GarbageVehicleRecord = {
+  id: number;
+  name: string;
+  license_plate: string | false;
+};
+
+type GarbageRouteRecord = {
+  id: number;
+  name: string;
+  code: string | false;
+  project_id: Relation;
+  shift_type: string | false;
+  collection_point_count: number;
+  subdistrict_names: string | false;
+};
+
+export type GarbageVehicleOption = {
+  id: number;
+  label: string;
+  plate: string;
+};
+
+export type GarbageRouteOption = {
+  id: number;
+  label: string;
+  name: string;
+  code: string;
+  projectId: number | null;
+  shiftType: string;
+  pointCount: number;
+  subdistrictNames: string;
+};
+
+export type GarbageProjectCreateResult = {
+  project_id: number;
+  created: boolean;
+  message: string;
 };
 
 export type ProjectTaskCard = {
@@ -313,6 +353,101 @@ export async function loadDepartmentOptions(
   }
 }
 
+export async function loadGarbageVehicleOptions(
+  connectionOverrides: Partial<OdooConnection> = {},
+): Promise<GarbageVehicleOption[]> {
+  try {
+    const crewTeams = await executeOdooKw<Array<{ vehicle_id: Relation }>>(
+      "mfo.crew.team",
+      "search_read",
+      [[["active", "=", true], ["operation_type", "=", "garbage"], ["vehicle_id", "!=", false]]],
+      {
+        fields: ["vehicle_id"],
+        order: "name asc",
+        limit: 80,
+      },
+      connectionOverrides,
+    );
+
+    const vehicleIds = Array.from(
+      new Set(
+        crewTeams
+          .map((team) => relationId(team.vehicle_id))
+          .filter((value): value is number => Boolean(value)),
+      ),
+    );
+
+    if (!vehicleIds.length) {
+      return [];
+    }
+
+    const vehicles = await executeOdooKw<GarbageVehicleRecord[]>(
+      "fleet.vehicle",
+      "search_read",
+      [[["id", "in", vehicleIds], ["mfo_active_for_ops", "=", true]]],
+      {
+        fields: ["name", "license_plate"],
+        order: "license_plate asc, name asc",
+        limit: vehicleIds.length,
+      },
+      connectionOverrides,
+    );
+
+    return vehicles.map((vehicle) => {
+      const plate = vehicle.license_plate || vehicle.name || `Техник #${vehicle.id}`;
+      return {
+        id: vehicle.id,
+        label: plate,
+        plate,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function loadGarbageRouteOptions(
+  connectionOverrides: Partial<OdooConnection> = {},
+): Promise<GarbageRouteOption[]> {
+  try {
+    const routes = await executeOdooKw<GarbageRouteRecord[]>(
+      "mfo.route",
+      "search_read",
+      [[["active", "=", true], ["operation_type", "=", "garbage"]]],
+      {
+        fields: [
+          "name",
+          "code",
+          "project_id",
+          "shift_type",
+          "collection_point_count",
+          "subdistrict_names",
+        ],
+        order: "code asc, name asc",
+        limit: 200,
+      },
+      connectionOverrides,
+    );
+
+    return routes.map((route) => {
+      const code = route.code || "";
+      const routeLabel = code ? `${code} - ${route.name}` : route.name;
+      return {
+        id: route.id,
+        label: routeLabel,
+        name: route.name,
+        code,
+        projectId: relationId(route.project_id),
+        shiftType: route.shift_type || "morning",
+        pointCount: route.collection_point_count || 0,
+        subdistrictNames: route.subdistrict_names || "",
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function loadProjectDetail(
   projectId: number,
   connectionOverrides: Partial<OdooConnection> = {},
@@ -335,6 +470,7 @@ export async function loadProjectDetail(
       {
         fields: [
           "name",
+          "sequence",
           "stage_id",
           "ops_team_leader_id",
           "ops_planned_quantity",
@@ -343,7 +479,7 @@ export async function loadProjectDetail(
           "ops_measurement_unit",
           "date_deadline",
         ],
-        order: "priority desc, date_deadline asc, create_date desc",
+        order: "sequence asc, create_date asc, id asc",
         limit: 120,
       },
       connectionOverrides,
@@ -566,6 +702,29 @@ export async function createWorkspaceProject(
     "project.project",
     "create",
     [values],
+    {},
+    connectionOverrides,
+  );
+}
+
+export async function createGarbageWorkspaceProject(
+  input: {
+    vehicleId: number;
+    routeId: number;
+    shiftDate: string;
+  },
+  connectionOverrides: Partial<OdooConnection> = {},
+) {
+  return executeOdooKw<GarbageProjectCreateResult>(
+    "project.project",
+    "action_mfo_create_garbage_daily_project",
+    [
+      {
+        vehicle_id: input.vehicleId,
+        route_id: input.routeId,
+        shift_date: input.shiftDate,
+      },
+    ],
     {},
     connectionOverrides,
   );

@@ -7,7 +7,9 @@ class ProjectTask(models.Model):
 
     def write(self, vals):
         user = self.env.user
-        if user.has_group("ops_role_security.group_ops_worker"):
+        if user.has_group("ops_role_security.group_ops_worker") and not self.env.context.get(
+            "skip_repair_request_sync"
+        ):
             disallowed_fields = set(vals) - {"stage_id"}
             if disallowed_fields:
                 raise AccessError(

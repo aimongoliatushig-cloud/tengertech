@@ -10,25 +10,25 @@ access_mfo_subdistrict_dispatcher,дэд бүс диспетчер,model_mfo_sub
 access_mfo_subdistrict_inspector,дэд бүс хянагч,model_mfo_subdistrict,municipal_field_ops.group_mfo_inspector,1,0,0,0
 access_mfo_subdistrict_mobile,дэд бүс гар утасны хэрэглэгч,model_mfo_subdistrict,municipal_field_ops.group_mfo_mobile_user,1,0,0,0
 access_mfo_subdistrict_project_user,дэд бүс төслийн хэрэглэгч,model_mfo_subdistrict,project.group_project_user,1,0,0,0
-access_mfo_subdistrict_system,дэд бүс системийн админ,model_mfo_subdistrict,base.group_system,1,0,0,0
+access_mfo_subdistrict_system,дэд бүс системийн админ,model_mfo_subdistrict,base.group_system,1,1,1,1
 access_mfo_collection_point_manager,цуглуулах цэг менежер,model_mfo_collection_point,municipal_field_ops.group_mfo_manager,1,1,1,1
 access_mfo_collection_point_dispatcher,цуглуулах цэг диспетчер,model_mfo_collection_point,municipal_field_ops.group_mfo_dispatcher,1,1,1,1
 access_mfo_collection_point_inspector,цуглуулах цэг хянагч,model_mfo_collection_point,municipal_field_ops.group_mfo_inspector,1,0,0,0
 access_mfo_collection_point_mobile,цуглуулах цэг гар утасны хэрэглэгч,model_mfo_collection_point,municipal_field_ops.group_mfo_mobile_user,1,0,0,0
 access_mfo_collection_point_project_user,цуглуулах цэг төслийн хэрэглэгч,model_mfo_collection_point,project.group_project_user,1,0,0,0
-access_mfo_collection_point_system,цуглуулах цэг системийн админ,model_mfo_collection_point,base.group_system,1,0,0,0
+access_mfo_collection_point_system,цуглуулах цэг системийн админ,model_mfo_collection_point,base.group_system,1,1,1,1
 access_mfo_route_manager,маршрут менежер,model_mfo_route,municipal_field_ops.group_mfo_manager,1,1,1,1
 access_mfo_route_dispatcher,маршрут диспетчер,model_mfo_route,municipal_field_ops.group_mfo_dispatcher,1,1,1,1
 access_mfo_route_inspector,маршрут хянагч,model_mfo_route,municipal_field_ops.group_mfo_inspector,1,0,0,0
 access_mfo_route_mobile,маршрут гар утасны хэрэглэгч,model_mfo_route,municipal_field_ops.group_mfo_mobile_user,1,0,0,0
 access_mfo_route_project_user,маршрут төслийн хэрэглэгч,model_mfo_route,project.group_project_user,1,0,0,0
-access_mfo_route_system,маршрут системийн админ,model_mfo_route,base.group_system,1,0,0,0
+access_mfo_route_system,маршрут системийн админ,model_mfo_route,base.group_system,1,1,1,1
 access_mfo_route_line_manager,маршрутын мөр менежер,model_mfo_route_line,municipal_field_ops.group_mfo_manager,1,1,1,1
 access_mfo_route_line_dispatcher,маршрутын мөр диспетчер,model_mfo_route_line,municipal_field_ops.group_mfo_dispatcher,1,1,1,1
 access_mfo_route_line_inspector,маршрутын мөр хянагч,model_mfo_route_line,municipal_field_ops.group_mfo_inspector,1,0,0,0
 access_mfo_route_line_mobile,маршрутын мөр гар утасны хэрэглэгч,model_mfo_route_line,municipal_field_ops.group_mfo_mobile_user,1,0,0,0
 access_mfo_route_line_project_user,маршрутын мөр төслийн хэрэглэгч,model_mfo_route_line,project.group_project_user,1,0,0,0
-access_mfo_route_line_system,маршрутын мөр системийн админ,model_mfo_route_line,base.group_system,1,0,0,0
+access_mfo_route_line_system,маршрутын мөр системийн админ,model_mfo_route_line,base.group_system,1,1,1,1
 access_mfo_crew_team_manager,экипаж менежер,model_mfo_crew_team,municipal_field_ops.group_mfo_manager,1,1,1,1
 access_mfo_crew_team_dispatcher,экипаж диспетчер,model_mfo_crew_team,municipal_field_ops.group_mfo_dispatcher,1,1,1,1
 access_mfo_crew_team_inspector,экипаж хянагч,model_mfo_crew_team,municipal_field_ops.group_mfo_inspector,1,0,0,0

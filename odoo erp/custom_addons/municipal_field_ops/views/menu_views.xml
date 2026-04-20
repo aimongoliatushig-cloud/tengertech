@@ -67,7 +67,8 @@
               name="Дүүрэг"
               parent="menu_mfo_config_root"
               action="action_mfo_district"
-              sequence="10"/>
+              sequence="10"
+              groups="base.group_no_one"/>
 
     <menuitem id="menu_mfo_config_subdistrict"
               name="Хороо"
@@ -76,7 +77,7 @@
               sequence="20"/>
 
     <menuitem id="menu_mfo_config_point"
-              name="Цуглуулалтын цэг"
+              name="Хогийн цэгүүд"
               parent="menu_mfo_config_root"
               action="action_mfo_collection_point"
               sequence="30"/>

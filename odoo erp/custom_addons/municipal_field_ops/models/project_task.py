@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import timedelta
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
@@ -18,12 +19,24 @@ from .common import (
     SHIFT_TYPE_SELECTION,
     STOP_STATE_SELECTION,
     TASK_STATE_SELECTION,
+    combine_date_float_hours,
 )
 
 
 class ProjectTask(models.Model):
     _inherit = "project.task"
 
+    mfo_is_route_point_task = fields.Boolean(
+        string="Маршрутын цэгийн ажилбар",
+        default=False,
+        index=True,
+    )
+    mfo_source_route_line_id = fields.Many2one(
+        "mfo.route.line",
+        string="Эх маршрут мөр",
+        readonly=True,
+        ondelete="set null",
+    )
     mfo_is_operation_project = fields.Boolean(
         string="Хотын ажиллагааны төсөл",
         related="project_id.mfo_is_operation_project",
@@ -60,8 +73,19 @@ class ProjectTask(models.Model):
     mfo_route_id = fields.Many2one(
         "mfo.route",
         string="Маршрут",
-        domain="[('project_id', '=', project_id)]",
         tracking=True,
+    )
+    mfo_route_line_id = fields.Many2one(
+        "mfo.route.line",
+        string="Маршрутын мөр",
+        tracking=True,
+        ondelete="set null",
+    )
+    mfo_collection_point_id = fields.Many2one(
+        "mfo.collection.point",
+        string="Цэг",
+        tracking=True,
+        ondelete="restrict",
     )
     mfo_district_id = fields.Many2one(
         "mfo.district",
@@ -73,6 +97,14 @@ class ProjectTask(models.Model):
         string="Хороо",
         tracking=True,
     )
+    mfo_subdistrict_ids = fields.Many2many(
+        "mfo.subdistrict",
+        "mfo_task_subdistrict_rel",
+        "task_id",
+        "subdistrict_id",
+        string="Khoroos",
+        tracking=True,
+    )
     mfo_crew_team_id = fields.Many2one(
         "mfo.crew.team",
         string="Экипаж",
@@ -82,6 +114,14 @@ class ProjectTask(models.Model):
         "fleet.vehicle",
         string="Техник",
         domain="[('mfo_active_for_ops', '=', True)]",
+        tracking=True,
+    )
+    mfo_vehicle_ids = fields.Many2many(
+        "fleet.vehicle",
+        "mfo_task_vehicle_rel",
+        "task_id",
+        "vehicle_id",
+        string="Vehicles",
         tracking=True,
     )
     mfo_driver_employee_id = fields.Many2one(
@@ -144,6 +184,11 @@ class ProjectTask(models.Model):
         "task_id",
         string="Зогсоолын мөрүүд",
     )
+    mfo_primary_stop_line_id = fields.Many2one(
+        "mfo.stop.execution.line",
+        string="Үндсэн цэгийн мөр",
+        compute="_compute_mfo_primary_stop_line_id",
+    )
     mfo_proof_image_ids = fields.One2many(
         "mfo.proof.image",
         "task_id",
@@ -159,6 +204,17 @@ class ProjectTask(models.Model):
         "task_id",
         string="Өдөр тутмын жингийн нийтүүд",
     )
+
+    @api.onchange("project_id")
+    def _onchange_project_id_mfo_route_domain(self):
+        for task in self:
+            if task.mfo_route_id and task.mfo_route_id.project_id != task.project_id:
+                task.mfo_route_id = False
+            return {
+                "domain": {
+                    "mfo_route_id": [("project_id", "=", task.project_id.id)] if task.project_id else []
+                }
+            }
     mfo_issue_ids = fields.One2many(
         "mfo.issue.report",
         "task_id",
@@ -210,6 +266,13 @@ class ProjectTask(models.Model):
             task.mfo_collector_names = ", ".join(task.mfo_collector_employee_ids.mapped("name"))
             task.mfo_inspector_name = task.mfo_inspector_employee_id.name or False
 
+    @api.depends("mfo_stop_line_ids.sequence")
+    def _compute_mfo_primary_stop_line_id(self):
+        for task in self:
+            task.mfo_primary_stop_line_id = task.mfo_stop_line_ids.sorted(
+                key=lambda line: (line.sequence, line.id)
+            )[:1]
+
     @api.depends("mfo_stop_line_ids.status")
     def _compute_mfo_stop_metrics(self):
         for task in self:
@@ -245,7 +308,7 @@ class ProjectTask(models.Model):
     @api.depends_context("uid")
     def _compute_mfo_action_flags(self):
         for task in self:
-            if not task.mfo_is_operation_project:
+            if not task.mfo_is_operation_project or task.mfo_is_route_point_task:
                 task.mfo_can_dispatch = False
                 task.mfo_can_start = False
                 task.mfo_can_submit = False
@@ -277,6 +340,7 @@ class ProjectTask(models.Model):
             if not task.mfo_crew_team_id:
                 continue
             task.mfo_vehicle_id = task.mfo_crew_team_id.vehicle_id
+            task.mfo_vehicle_ids |= task.mfo_crew_team_id.vehicle_id
             task.mfo_driver_employee_id = task.mfo_crew_team_id.driver_employee_id
             task.mfo_collector_employee_ids = task.mfo_crew_team_id.collector_employee_ids
             task.mfo_inspector_employee_id = task.mfo_crew_team_id.inspector_employee_id
@@ -286,8 +350,60 @@ class ProjectTask(models.Model):
         for task in self:
             if task.mfo_route_id:
                 task.mfo_district_id = task.mfo_route_id.district_id
+                task.mfo_subdistrict_ids = task.mfo_route_id.subdistrict_ids
+                task.mfo_subdistrict_id = (
+                    task.mfo_route_id.subdistrict_ids[:1]
+                    if len(task.mfo_route_id.subdistrict_ids) == 1
+                    else False
+                )
                 if not task.mfo_shift_type:
                     task.mfo_shift_type = task.mfo_route_id.shift_type
+
+    @api.onchange("mfo_route_line_id")
+    def _onchange_mfo_route_line_id(self):
+        for task in self:
+            if not task.mfo_route_line_id:
+                continue
+            task.mfo_route_id = task.mfo_route_line_id.route_id
+            task.mfo_collection_point_id = task.mfo_route_line_id.collection_point_id
+            task.sequence = task.mfo_route_line_id.sequence
+
+    @api.onchange("mfo_collection_point_id")
+    def _onchange_mfo_collection_point_id(self):
+        for task in self:
+            if not task.mfo_collection_point_id:
+                continue
+            task.mfo_district_id = task.mfo_collection_point_id.district_id
+            task.mfo_subdistrict_id = task.mfo_collection_point_id.subdistrict_id
+            if task.mfo_collection_point_id.subdistrict_id:
+                task.mfo_subdistrict_ids = [
+                    Command.set([task.mfo_collection_point_id.subdistrict_id.id])
+                ]
+
+    @api.onchange("mfo_vehicle_id")
+    def _onchange_mfo_vehicle_id(self):
+        for task in self:
+            if task.mfo_vehicle_id:
+                task.mfo_vehicle_ids |= task.mfo_vehicle_id
+                crew_team = self.env["mfo.crew.team"].search(
+                    [
+                        ("vehicle_id", "=", task.mfo_vehicle_id.id),
+                        ("operation_type", "=", task.mfo_operation_type or "garbage"),
+                        ("active", "=", True),
+                    ],
+                    limit=1,
+                )
+                if crew_team:
+                    task.mfo_crew_team_id = crew_team
+                    task.mfo_driver_employee_id = crew_team.driver_employee_id
+                    task.mfo_collector_employee_ids = crew_team.collector_employee_ids
+                    task.mfo_inspector_employee_id = crew_team.inspector_employee_id
+
+    @api.onchange("mfo_subdistrict_id")
+    def _onchange_mfo_subdistrict_id(self):
+        for task in self:
+            if task.mfo_subdistrict_id:
+                task.mfo_subdistrict_ids |= task.mfo_subdistrict_id
 
     @api.constrains(
         "mfo_operation_type",
@@ -299,6 +415,8 @@ class ProjectTask(models.Model):
     def _check_mfo_garbage_requirements(self):
         for task in self:
             if not task.mfo_is_operation_project:
+                continue
+            if task.mfo_is_route_point_task:
                 continue
             if task.mfo_operation_type != "garbage":
                 continue
@@ -318,6 +436,8 @@ class ProjectTask(models.Model):
         for task in self:
             if not task.mfo_is_operation_project:
                 continue
+            if task.mfo_is_route_point_task:
+                continue
             if (
                 task.mfo_subdistrict_id
                 and task.mfo_subdistrict_id.district_id
@@ -330,6 +450,10 @@ class ProjectTask(models.Model):
         for task in self:
             if (
                 not task.mfo_is_operation_project
+                or task.mfo_is_route_point_task
+                or task.mfo_collection_point_id
+                or task.mfo_route_line_id
+                or task.project_id.mfo_selected_route_id
                 or task.mfo_operation_type != "garbage"
                 or not task.mfo_vehicle_id
                 or not task.mfo_shift_date
@@ -403,12 +527,88 @@ class ProjectTask(models.Model):
             if vals:
                 super(ProjectTask, task).write(vals)
 
+    def _mfo_get_matching_crew_team(self, vehicle):
+        self.ensure_one()
+        if not vehicle:
+            return self.env["mfo.crew.team"]
+        domain = [
+            ("vehicle_id", "=", vehicle.id),
+            ("active", "=", True),
+        ]
+        if self.mfo_operation_type:
+            domain.append(("operation_type", "=", self.mfo_operation_type))
+        return self.env["mfo.crew.team"].search(domain, limit=1)
+
+    @api.model
+    def _mfo_prepare_single_stop_line_command(self, collection_point, route_line=False):
+        values = {
+            "sequence": route_line.sequence if route_line else 10,
+            "collection_point_id": collection_point.id,
+            "status": "draft",
+        }
+        if route_line:
+            values.update(
+                {
+                    "route_line_id": route_line.id,
+                    "planned_arrival_hour": route_line.planned_arrival_hour,
+                    "planned_service_minutes": route_line.planned_service_minutes,
+                    "note": route_line.note,
+                }
+            )
+        return [Command.create(values)]
+
     def _mfo_prepare_assignment_defaults(self, vals):
         vals = dict(vals)
+        route_point_task = vals.get("mfo_is_route_point_task")
+        route_line = self.env["mfo.route.line"]
+        if vals.get("mfo_route_line_id"):
+            route_line = self.env["mfo.route.line"].browse(vals["mfo_route_line_id"]).exists()
+            if route_line:
+                vals.setdefault("mfo_collection_point_id", route_line.collection_point_id.id)
+                vals.setdefault("mfo_route_id", route_line.route_id.id)
+                vals.setdefault("mfo_district_id", route_line.collection_point_id.district_id.id)
+                vals.setdefault("mfo_subdistrict_id", route_line.collection_point_id.subdistrict_id.id)
+                vals.setdefault("sequence", route_line.sequence)
+                if route_line.note and not vals.get("description"):
+                    vals["description"] = (
+                        route_line.note or route_line.collection_point_id.address or False
+                    )
+                if vals.get("mfo_shift_date") and route_line.planned_arrival_hour:
+                    planned_start = combine_date_float_hours(
+                        fields.Date.to_date(vals["mfo_shift_date"]),
+                        route_line.planned_arrival_hour,
+                    )
+                    vals.setdefault("mfo_planned_start", fields.Datetime.to_string(planned_start))
+                    if route_line.planned_service_minutes:
+                        vals.setdefault(
+                            "mfo_planned_end",
+                            fields.Datetime.to_string(
+                                planned_start + timedelta(minutes=route_line.planned_service_minutes)
+                            ),
+                        )
+        if vals.get("mfo_vehicle_id") and not vals.get("mfo_crew_team_id"):
+            vehicle = self.env["fleet.vehicle"].browse(vals["mfo_vehicle_id"]).exists()
+            if vehicle:
+                operation_type = vals.get("mfo_operation_type")
+                if not operation_type and vals.get("project_id"):
+                    project = self.env["project.project"].browse(vals["project_id"]).exists()
+                    operation_type = project.mfo_operation_type
+                crew_team = self.env["mfo.crew.team"].search(
+                    [
+                        ("vehicle_id", "=", vehicle.id),
+                        ("operation_type", "=", operation_type or "garbage"),
+                        ("active", "=", True),
+                    ],
+                    limit=1,
+                )
+                if crew_team:
+                    vals.setdefault("mfo_crew_team_id", crew_team.id)
         if vals.get("mfo_crew_team_id"):
             team = self.env["mfo.crew.team"].browse(vals["mfo_crew_team_id"]).exists()
             if team:
                 vals.setdefault("mfo_vehicle_id", team.vehicle_id.id)
+                if team.vehicle_id and not vals.get("mfo_vehicle_ids"):
+                    vals["mfo_vehicle_ids"] = [Command.set([team.vehicle_id.id])]
                 vals.setdefault("mfo_driver_employee_id", team.driver_employee_id.id)
                 vals.setdefault("mfo_inspector_employee_id", team.inspector_employee_id.id)
                 if not vals.get("mfo_collector_employee_ids"):
@@ -419,81 +619,186 @@ class ProjectTask(models.Model):
             route = self.env["mfo.route"].browse(vals["mfo_route_id"]).exists()
             if route:
                 vals["mfo_district_id"] = route.district_id.id
+                if route.subdistrict_ids and not vals.get("mfo_subdistrict_ids"):
+                    vals["mfo_subdistrict_ids"] = [Command.set(route.subdistrict_ids.ids)]
+                if not vals.get("mfo_subdistrict_id") and len(route.subdistrict_ids) == 1:
+                    vals["mfo_subdistrict_id"] = route.subdistrict_ids[:1].id
                 vals.setdefault("mfo_shift_type", route.shift_type)
-        if vals.get("mfo_route_id") and not vals.get("mfo_stop_line_ids"):
-            route = self.env["mfo.route"].browse(vals["mfo_route_id"]).exists()
-            if route and route.line_ids:
-                vals["mfo_stop_line_ids"] = [
-                    Command.create(
-                        {
-                            "sequence": line.sequence,
-                            "route_line_id": line.id,
-                            "collection_point_id": line.collection_point_id.id,
-                            "planned_arrival_hour": line.planned_arrival_hour,
-                            "planned_service_minutes": line.planned_service_minutes,
-                            "status": "draft",
-                            "note": line.note,
-                        }
-                    )
-                    for line in route.line_ids
-                ]
+        if vals.get("mfo_collection_point_id"):
+            collection_point = self.env["mfo.collection.point"].browse(
+                vals["mfo_collection_point_id"]
+            ).exists()
+            if collection_point:
+                vals.setdefault("mfo_district_id", collection_point.district_id.id)
+                vals.setdefault("mfo_subdistrict_id", collection_point.subdistrict_id.id)
+                if collection_point.subdistrict_id and not vals.get("mfo_subdistrict_ids"):
+                    vals["mfo_subdistrict_ids"] = [Command.set([collection_point.subdistrict_id.id])]
+        if vals.get("mfo_vehicle_id") and not vals.get("mfo_vehicle_ids"):
+            vals["mfo_vehicle_ids"] = [Command.set([vals["mfo_vehicle_id"]])]
+        if vals.get("mfo_subdistrict_id") and not vals.get("mfo_subdistrict_ids"):
+            vals["mfo_subdistrict_ids"] = [Command.set([vals["mfo_subdistrict_id"]])]
+        if vals.get("mfo_collection_point_id") and not vals.get("mfo_stop_line_ids") and not route_point_task:
+            collection_point = self.env["mfo.collection.point"].browse(
+                vals["mfo_collection_point_id"]
+            ).exists()
+            if collection_point:
+                vals["mfo_stop_line_ids"] = self._mfo_prepare_single_stop_line_command(
+                    collection_point, route_line
+                )
         return vals
 
     def _mfo_get_assigned_user_ids(self):
         self.ensure_one()
-        users = self.mfo_driver_employee_id.user_id | self.mfo_inspector_employee_id.user_id
+        users = (
+            self.mfo_driver_employee_id.user_id
+            | self.mfo_inspector_employee_id.user_id
+            | self.mfo_collector_employee_ids.mapped("user_id")
+        )
         return users.filtered(lambda user: user and not user.share).ids
 
+    def _mfo_build_route_point_task_values(self, route_line):
+        self.ensure_one()
+        planned_start = False
+        planned_end = False
+        if self.mfo_shift_date and route_line.planned_arrival_hour:
+            start_dt = combine_date_float_hours(self.mfo_shift_date, route_line.planned_arrival_hour)
+            planned_start = fields.Datetime.to_string(start_dt)
+            if route_line.planned_service_minutes:
+                planned_end_dt = fields.Datetime.to_datetime(planned_start) + timedelta(
+                    minutes=route_line.planned_service_minutes
+                )
+                planned_end = fields.Datetime.to_string(planned_end_dt)
+        return {
+            "name": route_line.collection_point_id.name,
+            "project_id": self.project_id.id,
+            "parent_id": self.id,
+            "mfo_is_route_point_task": True,
+            "mfo_source_route_line_id": route_line.id,
+            "mfo_shift_date": self.mfo_shift_date,
+            "mfo_shift_type": self.mfo_shift_type,
+            "mfo_crew_team_id": self.mfo_crew_team_id.id,
+            "mfo_vehicle_id": self.mfo_vehicle_id.id,
+            "mfo_vehicle_ids": [Command.set((self.mfo_vehicle_ids | self.mfo_vehicle_id).ids)],
+            "mfo_driver_employee_id": self.mfo_driver_employee_id.id,
+            "mfo_collector_employee_ids": [Command.set(self.mfo_collector_employee_ids.ids)],
+            "mfo_inspector_employee_id": self.mfo_inspector_employee_id.id,
+            "mfo_route_id": self.mfo_route_id.id,
+            "mfo_district_id": route_line.collection_point_id.district_id.id,
+            "mfo_subdistrict_id": route_line.collection_point_id.subdistrict_id.id,
+            "mfo_subdistrict_ids": [Command.set([route_line.collection_point_id.subdistrict_id.id])],
+            "mfo_state": self.mfo_state,
+            "mfo_planned_start": planned_start,
+            "mfo_planned_end": planned_end,
+            "description": route_line.note or route_line.collection_point_id.address or False,
+            "user_ids": [Command.set(self.user_ids.ids)],
+        }
+
+    def _mfo_sync_route_point_tasks(self):
+        if self.env.context.get("mfo_skip_route_point_tasks"):
+            return
+        Task = self.sudo().with_context(mfo_skip_route_point_tasks=True)
+        for task in self.filtered(
+            lambda item: item.mfo_is_operation_project
+            and not item.mfo_is_route_point_task
+            and item.mfo_operation_type == "garbage"
+        ):
+            existing_by_line = {
+                child.mfo_source_route_line_id.id: child
+                for child in task.child_ids.filtered("mfo_is_route_point_task")
+                if child.mfo_source_route_line_id
+            }
+            target_line_ids = set()
+            route_lines = task.mfo_route_id.line_ids.sorted(key=lambda line: (line.sequence, line.id)) if task.mfo_route_id else self.env["mfo.route.line"]
+            for route_line in route_lines:
+                target_line_ids.add(route_line.id)
+                values = task._mfo_build_route_point_task_values(route_line)
+                existing_task = existing_by_line.get(route_line.id)
+                if existing_task:
+                    existing_task.sudo().with_context(mfo_skip_route_point_tasks=True).write(values)
+                else:
+                    Task.create(values)
+            extra_children = task.child_ids.filtered(
+                lambda child: child.mfo_is_route_point_task
+                and (
+                    not child.mfo_source_route_line_id
+                    or child.mfo_source_route_line_id.id not in target_line_ids
+                )
+            )
+            if extra_children:
+                extra_children.sudo().with_context(mfo_skip_route_point_tasks=True).unlink()
+
     def _mfo_sync_assignees(self):
-        for task in self.filtered("mfo_is_operation_project"):
+        for task in self.filtered(lambda item: item.mfo_is_operation_project and not item.mfo_is_route_point_task):
             user_ids = task._mfo_get_assigned_user_ids()
             if set(task.user_ids.ids) == set(user_ids):
                 continue
             super(ProjectTask, task).write({"user_ids": [Command.set(user_ids)]})
 
+    def _mfo_sync_multi_selection_fields(self):
+        for task in self:
+            values = {}
+            vehicle_ids = task.mfo_vehicle_ids | task.mfo_vehicle_id
+            subdistrict_ids = task.mfo_subdistrict_ids | task.mfo_subdistrict_id
+            if set(vehicle_ids.ids) != set(task.mfo_vehicle_ids.ids):
+                values["mfo_vehicle_ids"] = [Command.set(vehicle_ids.ids)]
+            if set(subdistrict_ids.ids) != set(task.mfo_subdistrict_ids.ids):
+                values["mfo_subdistrict_ids"] = [Command.set(subdistrict_ids.ids)]
+            if values:
+                super(ProjectTask, task).write(values)
+
+    def _mfo_sync_single_stop_line(self):
+        for task in self.filtered("mfo_collection_point_id"):
+            route_line = task.mfo_route_line_id
+            values = {
+                "sequence": task.sequence or (route_line.sequence if route_line else 10),
+                "collection_point_id": task.mfo_collection_point_id.id,
+                "status": "draft",
+            }
+            if route_line:
+                values.update(
+                    {
+                        "route_line_id": route_line.id,
+                        "planned_arrival_hour": route_line.planned_arrival_hour,
+                        "planned_service_minutes": route_line.planned_service_minutes,
+                        "note": route_line.note,
+                    }
+                )
+            primary_line = task.mfo_primary_stop_line_id or task.mfo_stop_line_ids[:1]
+            if primary_line:
+                primary_line.write(values)
+            else:
+                super(ProjectTask, task).write(
+                    {"mfo_stop_line_ids": self._mfo_prepare_single_stop_line_command(task.mfo_collection_point_id, route_line)}
+                )
+            extra_lines = task.mfo_stop_line_ids - primary_line
+            if extra_lines:
+                extra_lines.unlink()
+
     @api.model_create_multi
     def create(self, vals_list):
         tasks = super().create([self._mfo_prepare_assignment_defaults(vals) for vals in vals_list])
+        tasks._mfo_sync_multi_selection_fields()
+        tasks.filtered("mfo_collection_point_id")._mfo_sync_single_stop_line()
         tasks.filtered("mfo_is_operation_project")._mfo_sync_assignees()
         tasks.filtered("mfo_is_operation_project")._mfo_sync_core_status()
         return tasks
 
     def write(self, vals):
         result = super().write(self._mfo_prepare_assignment_defaults(vals))
+        self._mfo_sync_multi_selection_fields()
+        self.filtered("mfo_collection_point_id")._mfo_sync_single_stop_line()
         operation_tasks = self.filtered("mfo_is_operation_project")
         if {
             "mfo_crew_team_id",
             "mfo_vehicle_id",
+            "mfo_vehicle_ids",
             "mfo_driver_employee_id",
             "mfo_collector_employee_ids",
-            "mfo_inspector_employee_id",
+                "mfo_inspector_employee_id",
         } & set(vals):
             operation_tasks._mfo_sync_assignees()
         if "mfo_state" in vals:
             operation_tasks._mfo_sync_core_status()
-        if "mfo_route_id" in vals and self.env.context.get("mfo_force_route_rebuild"):
-            for task in operation_tasks:
-                route = task.mfo_route_id
-                task.mfo_stop_line_ids.unlink()
-                if route:
-                    super(ProjectTask, task).write(
-                        {
-                            "mfo_stop_line_ids": [
-                                Command.create(
-                                    {
-                                        "sequence": line.sequence,
-                                        "route_line_id": line.id,
-                                        "collection_point_id": line.collection_point_id.id,
-                                        "planned_arrival_hour": line.planned_arrival_hour,
-                                        "planned_service_minutes": line.planned_service_minutes,
-                                        "status": "draft",
-                                        "note": line.note,
-                                    }
-                                )
-                                for line in route.line_ids
-                            ]
-                        }
-                    )
         return result
 
     def _mfo_check_dispatch_requirements(self):
@@ -517,10 +822,10 @@ class ProjectTask(models.Model):
 
     def _mfo_check_submission_requirements(self):
         for task in self:
-            if not task.mfo_end_shift_summary:
+            if not task.mfo_collection_point_id and not task.mfo_end_shift_summary:
                 raise UserError(_("Ээлжийн тайланг бөглөнө үү."))
             if not task.mfo_stop_line_ids:
-                raise UserError(_("Маршрутын зогсоолын мөрүүд үүссэн байх ёстой."))
+                raise UserError(_("Цэгийн ажлын мөр үүссэн байх ёстой."))
             unresolved_stops = task.mfo_stop_line_ids.filtered(
                 lambda line: line.status not in {"done", "skipped"}
             )

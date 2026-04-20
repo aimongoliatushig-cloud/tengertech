@@ -29,7 +29,7 @@ class MfoDistrict(models.Model):
 class MfoSubdistrict(models.Model):
     _name = "mfo.subdistrict"
     _description = "Хотын хороо"
-    _order = "district_id, sequence, name"
+    _order = "sequence, name"
 
     name = fields.Char(string="Нэр", required=True)
     code = fields.Char(string="Код")
@@ -38,8 +38,7 @@ class MfoSubdistrict(models.Model):
     district_id = fields.Many2one(
         "mfo.district",
         string="Дүүрэг",
-        required=True,
-        ondelete="restrict",
+        ondelete="set null",
     )
     note = fields.Text(string="Тайлбар")
 
@@ -47,7 +46,7 @@ class MfoSubdistrict(models.Model):
 class MfoCollectionPoint(models.Model):
     _name = "mfo.collection.point"
     _description = "Цуглуулалтын цэг"
-    _order = "district_id, subdistrict_id, name"
+    _order = "subdistrict_id, name"
 
     name = fields.Char(string="Нэр", required=True)
     code = fields.Char(string="Код")
@@ -55,12 +54,14 @@ class MfoCollectionPoint(models.Model):
     district_id = fields.Many2one(
         "mfo.district",
         string="Дүүрэг",
-        required=True,
-        ondelete="restrict",
+        related="subdistrict_id.district_id",
+        store=True,
+        readonly=True,
     )
     subdistrict_id = fields.Many2one(
         "mfo.subdistrict",
         string="Хороо",
+        required=True,
         ondelete="restrict",
     )
     operation_type = fields.Selection(
@@ -78,17 +79,6 @@ class MfoCollectionPoint(models.Model):
         "collection_point_id",
         string="Маршрутын мөрүүд",
     )
-
-    @api.constrains("district_id", "subdistrict_id")
-    def _check_subdistrict_district_match(self):
-        for point in self:
-            if (
-                point.subdistrict_id
-                and point.subdistrict_id.district_id
-                and point.subdistrict_id.district_id != point.district_id
-            ):
-                raise ValidationError(_("Хороо сонгосон дүүрэгтэй таарах ёстой."))
-
 
 class MfoRoute(models.Model):
     _name = "mfo.route"
@@ -116,9 +106,26 @@ class MfoRoute(models.Model):
     district_id = fields.Many2one(
         "mfo.district",
         string="Дүүрэг",
-        required=True,
-        ondelete="restrict",
+        compute="_compute_area_fields",
+        store=True,
+        readonly=True,
+        compute_sudo=True,
         tracking=True,
+    )
+    subdistrict_ids = fields.Many2many(
+        "mfo.subdistrict",
+        compute="_compute_area_fields",
+        string="Хорооны жагсаалт",
+        store=True,
+        readonly=True,
+        compute_sudo=True,
+    )
+    subdistrict_names = fields.Char(
+        string="Хороодууд",
+        compute="_compute_area_fields",
+        store=True,
+        readonly=True,
+        compute_sudo=True,
     )
     shift_type = fields.Selection(
         selection=[
@@ -150,6 +157,18 @@ class MfoRoute(models.Model):
         for route in self:
             route.collection_point_count = len(route.line_ids.mapped("collection_point_id"))
 
+    @api.depends(
+        "line_ids.collection_point_id.district_id",
+        "line_ids.collection_point_id.subdistrict_id",
+    )
+    def _compute_area_fields(self):
+        for route in self:
+            subdistricts = route.line_ids.mapped("collection_point_id.subdistrict_id")
+            districts = route.line_ids.mapped("collection_point_id.district_id")
+            route.subdistrict_ids = subdistricts
+            route.subdistrict_names = ", ".join(subdistricts.mapped("name"))
+            route.district_id = districts[:1] if len(districts) == 1 else False
+
 
 class MfoRouteLine(models.Model):
     _name = "mfo.route.line"
@@ -165,7 +184,7 @@ class MfoRouteLine(models.Model):
     sequence = fields.Integer(string="Дараалал", default=10)
     collection_point_id = fields.Many2one(
         "mfo.collection.point",
-        string="Цэг",
+        string="Хогийн цэг",
         required=True,
         ondelete="restrict",
     )
@@ -186,6 +205,20 @@ class MfoRouteLine(models.Model):
     planned_arrival_hour = fields.Float(string="Төлөвлөсөн очих цаг")
     planned_service_minutes = fields.Integer(string="Төлөвлөсөн үйлчилгээ (мин)", default=10)
     note = fields.Char(string="Тэмдэглэл")
+
+    @api.onchange("route_id")
+    def _onchange_route_id_collection_point_domain(self):
+        for line in self:
+            domain = [("active", "=", True)]
+            if line.route_id and line.route_id.operation_type:
+                domain.append(("operation_type", "=", line.route_id.operation_type))
+            if (
+                line.collection_point_id
+                and line.route_id
+                and line.collection_point_id.operation_type != line.route_id.operation_type
+            ):
+                line.collection_point_id = False
+            return {"domain": {"collection_point_id": domain}}
 
 
 class MfoCrewTeam(models.Model):

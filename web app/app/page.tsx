@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
 import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { DEPARTMENT_GROUPS, getAvailableUnits } from "@/lib/department-groups";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 import styles from "./page.module.css";
@@ -65,6 +66,75 @@ export default async function Home() {
   const reviewQueue = snapshot.reviewQueue.slice(0, 5);
   const qualityAlerts = snapshot.qualityAlerts.slice(0, 5);
   const recentReports = snapshot.reports.slice(0, 5);
+  const availableDepartmentNames = Array.from(
+    new Set([
+      ...snapshot.departments.map((department) => department.name),
+      ...snapshot.projects.map((project) => project.departmentName),
+    ]),
+  );
+  const departmentCards = DEPARTMENT_GROUPS.map((group) => {
+    const availableUnits = getAvailableUnits(group, availableDepartmentNames);
+    if (!availableUnits.length) {
+      return null;
+    }
+
+    const relatedDepartments = snapshot.departments.filter((department) =>
+      availableUnits.includes(department.name),
+    );
+    const openTasks = relatedDepartments.reduce(
+      (sum, department) => sum + department.openTasks,
+      0,
+    );
+    const reviewTasks = relatedDepartments.reduce(
+      (sum, department) => sum + department.reviewTasks,
+      0,
+    );
+    const completionWeight = relatedDepartments.reduce(
+      (sum, department) => sum + Math.max(department.openTasks + department.reviewTasks, 1),
+      0,
+    );
+    const completion = completionWeight
+      ? Math.round(
+          relatedDepartments.reduce(
+            (sum, department) =>
+              sum +
+              department.completion *
+                Math.max(department.openTasks + department.reviewTasks, 1),
+            0,
+          ) / completionWeight,
+        )
+      : 0;
+
+    const hrefParams = new URLSearchParams();
+    hrefParams.set("department", group.name);
+    if (availableUnits[0]) {
+      hrefParams.set("unit", availableUnits[0]);
+    }
+
+    return {
+      name: group.name,
+      label: availableUnits.join(" • "),
+      icon: group.icon,
+      accent: group.accent,
+      openTasks,
+      reviewTasks,
+      completion,
+      href: `/projects?${hrefParams.toString()}`,
+    };
+  }).filter(
+    (
+      card,
+    ): card is {
+      name: string;
+      label: string;
+      icon: string;
+      accent: string;
+      openTasks: number;
+      reviewTasks: number;
+      completion: number;
+      href: string;
+    } => Boolean(card),
+  );
 
   return (
     <main className={styles.shell}>
@@ -137,10 +207,10 @@ export default async function Home() {
             </div>
 
             <div className={styles.departmentGrid}>
-              {snapshot.departments.map((department) => (
+              {departmentCards.map((department) => (
                 <article key={department.name} className={styles.departmentCard}>
                   <Link
-                    href={`/projects?department=${encodeURIComponent(department.name)}`}
+                    href={department.href}
                     className={styles.departmentCardLink}
                   >
                     <span

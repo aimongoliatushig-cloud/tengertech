@@ -7,6 +7,11 @@ MFO_SHARED_FIELD_GROUPS = ",".join(
         "municipal_field_ops.group_mfo_dispatcher",
         "municipal_field_ops.group_mfo_inspector",
         "municipal_field_ops.group_mfo_mobile_user",
+        "ops_role_security.group_ops_system_admin",
+        "ops_role_security.group_ops_general_manager",
+        "ops_role_security.group_ops_project_leader",
+        "ops_role_security.group_ops_team_leader",
+        "ops_role_security.group_ops_worker",
         "base.group_system",
     ]
 )

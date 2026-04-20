@@ -1,0 +1,75 @@
+{
+  "total_created": 135,
+  "total_updated": 0,
+  "total_users_without_admin": 135,
+  "role_counts": {
+    "director": 1,
+    "general_manager": 1,
+    "project_manager": 2,
+    "senior_master": 1,
+    "team_leader": 2,
+    "worker": 129
+  },
+  "sample": [
+    {
+      "id": 6,
+      "name": "П.Мөнх-Эрдэнэ",
+      "login": "99996632",
+      "ops_user_type": "director"
+    },
+    {
+      "id": 7,
+      "name": "Г.Анхбаяр",
+      "login": "80007504",
+      "ops_user_type": "general_manager"
+    },
+    {
+      "id": 8,
+      "name": "Б.Нарангоо",
+      "login": "99015540",
+      "ops_user_type": "worker"
+    },
+    {
+      "id": 9,
+      "name": "П.Баасанхүү",
+      "login": "99032458",
+      "ops_user_type": "worker"
+    },
+    {
+      "id": 10,
+      "name": "П.Сувдаа",
+      "login": "99149551",
+      "ops_user_type": "worker"
+    },
+    {
+      "id": 11,
+      "name": "Д.Сумъяадорж",
+      "login": "95871256",
+      "ops_user_type": "worker"
+    },
+    {
+      "id": 12,
+      "name": "Б.Сүхнаран",
+      "login": "95015011",
+      "ops_user_type": "worker"
+    },
+    {
+      "id": 13,
+      "name": "Ө.Пүрэвсүрэн",
+      "login": "88892049",
+      "ops_user_type": "worker"
+    },
+    {
+      "id": 14,
+      "name": "А.Саранцэцэг",
+      "login": "96001576",
+      "ops_user_type": "worker"
+    },
+    {
+      "id": 15,
+      "name": "Б.Болормаа",
+      "login": "90858504",
+      "ops_user_type": "worker"
+    }
+  ]
+}

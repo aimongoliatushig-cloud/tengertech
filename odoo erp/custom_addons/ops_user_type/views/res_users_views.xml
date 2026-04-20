@@ -33,9 +33,11 @@
             <xpath expr="//search/filter[@name='Inactive']" position="after">
                 <separator/>
                 <filter name="ops_user_type_system_admin" string="Системийн админ" domain="[('ops_user_type', '=', 'system_admin')]"/>
+                <filter name="ops_user_type_director" string="Захирал" domain="[('ops_user_type', '=', 'director')]"/>
                 <filter name="ops_user_type_general_manager" string="Ерөнхий менежер" domain="[('ops_user_type', '=', 'general_manager')]"/>
-                <filter name="ops_user_type_project_manager" string="Төслийн удирдагч" domain="[('ops_user_type', '=', 'project_manager')]"/>
-                <filter name="ops_user_type_team_leader" string="Багийн ахлагч" domain="[('ops_user_type', '=', 'team_leader')]"/>
+                <filter name="ops_user_type_project_manager" string="Хэлтсийн дарга" domain="[('ops_user_type', '=', 'project_manager')]"/>
+                <filter name="ops_user_type_senior_master" string="Ахлах мастер" domain="[('ops_user_type', '=', 'senior_master')]"/>
+                <filter name="ops_user_type_team_leader" string="Мастер" domain="[('ops_user_type', '=', 'team_leader')]"/>
                 <filter name="ops_user_type_worker" string="Ажилтан" domain="[('ops_user_type', '=', 'worker')]"/>
             </xpath>
         </field>

@@ -20,6 +20,7 @@ import {
   uploadFieldStopProof,
 } from "@/lib/field-ops";
 import {
+  createGarbageWorkspaceProject,
   createWorkspaceProject,
   createWorkspaceTask,
   createWorkspaceTaskReport,
@@ -40,6 +41,22 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
   return "Үйлдлийг гүйцэтгэх үед алдаа гарлаа.";
+}
+
+function isRedirectException(error: unknown) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      typeof (error as { digest?: unknown }).digest === "string" &&
+      String((error as { digest: string }).digest).startsWith("NEXT_REDIRECT"),
+  );
+}
+
+function rethrowIfRedirectError(error: unknown) {
+  if (isRedirectException(error)) {
+    throw error;
+  }
 }
 
 function redirectWithMessage(
@@ -106,11 +123,52 @@ export async function createProjectAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const managerIdRaw = String(formData.get("manager_id") ?? "").trim();
   const departmentIdRaw = String(formData.get("department_id") ?? "").trim();
+  const operationUnit = String(formData.get("operation_unit") ?? "").trim();
   const trackQuantity = String(formData.get("track_quantity") ?? "").trim() === "1";
   const plannedQuantityRaw = String(formData.get("planned_quantity") ?? "").trim();
   const measurementUnit = String(formData.get("measurement_unit") ?? "").trim();
   const startDate = String(formData.get("start_date") ?? "").trim();
   const deadline = String(formData.get("deadline") ?? "").trim();
+  const garbageVehicleIdRaw = String(formData.get("garbage_vehicle_id") ?? "").trim();
+  const garbageRouteIdRaw = String(formData.get("garbage_route_id") ?? "").trim();
+
+  if (operationUnit === "garbage_transport") {
+    if (!departmentIdRaw || !garbageVehicleIdRaw || !garbageRouteIdRaw || !startDate) {
+      redirectWithMessage(
+        "/projects/new",
+        "error",
+        "Хог тээвэрлэлтийн ажилд машин, маршрут, огноо гурвыг заавал сонгоно уу.",
+      );
+    }
+
+    try {
+      const connectionOverrides = await getConnectionOverrides();
+      const result = await createGarbageWorkspaceProject(
+        {
+          vehicleId: Number(garbageVehicleIdRaw),
+          routeId: Number(garbageRouteIdRaw),
+          shiftDate: startDate,
+        },
+        connectionOverrides,
+      );
+
+      revalidatePath("/");
+      revalidatePath("/projects");
+      revalidatePath("/tasks");
+      revalidatePath("/review");
+      revalidatePath("/reports");
+      revalidatePath("/projects/new");
+      revalidatePath(`/projects/${result.project_id}`);
+      redirect(
+        `/projects/${result.project_id}?notice=${encodeURIComponent(
+          result.message || "Хог тээвэрлэлтийн ажил амжилттай үүслээ.",
+        )}`,
+      );
+    } catch (error) {
+      rethrowIfRedirectError(error);
+      redirectWithMessage("/projects/new", "error", getErrorMessage(error));
+    }
+  }
 
   if (!name || !departmentIdRaw) {
     redirectWithMessage(
@@ -163,6 +221,7 @@ export async function createProjectAction(formData: FormData) {
     revalidatePath("/projects/new");
     redirect(`/projects/${projectId}?notice=${encodeURIComponent("Төсөл амжилттай үүслээ.")}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage("/projects/new", "error", getErrorMessage(error));
   }
 }
@@ -206,6 +265,7 @@ export async function createTaskAction(formData: FormData) {
     revalidatePath(`/projects/${projectId}`);
     redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Шинэ ажил амжилттай үүслээ.")}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(`/projects/${projectId}`, "error", getErrorMessage(error));
   }
 }
@@ -243,6 +303,7 @@ export async function createTaskReportAction(formData: FormData) {
     revalidatePath(`/tasks/${taskId}`);
     redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Тайлан амжилттай хадгалагдлаа.")}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(`/tasks/${taskId}`, "error", getErrorMessage(error), "#report-form");
   }
 }
@@ -260,6 +321,7 @@ export async function submitTaskForReviewAction(formData: FormData) {
     revalidatePath(`/tasks/${taskId}`);
     redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Ажлыг шалгалтад илгээлээ.")}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(`/tasks/${taskId}`, "error", getErrorMessage(error));
   }
 }
@@ -277,6 +339,7 @@ export async function markTaskDoneAction(formData: FormData) {
     revalidatePath(`/tasks/${taskId}`);
     redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Ажил дууссан төлөвт орлоо.")}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(`/tasks/${taskId}`, "error", getErrorMessage(error));
   }
 }
@@ -299,6 +362,7 @@ export async function returnTaskForChangesAction(formData: FormData) {
     revalidatePath(`/tasks/${taskId}`);
     redirect(`/tasks/${taskId}?notice=${encodeURIComponent("Ажлыг засвар нэхэж буцаалаа.")}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(`/tasks/${taskId}`, "error", getErrorMessage(error));
   }
 }
@@ -313,6 +377,7 @@ export async function startFieldShiftAction(formData: FormData) {
     revalidateFieldPaths(taskId);
     redirect(`${path}&notice=${encodeURIComponent("Ээлжийг эхлүүллээ.")}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(path, "error", getErrorMessage(error));
   }
 }
@@ -332,6 +397,7 @@ export async function submitFieldShiftAction(formData: FormData) {
     revalidateFieldPaths(taskId);
     redirect(`${path}&notice=${encodeURIComponent("Ээлжийг шалгалтад илгээлээ.")}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(path, "error", getErrorMessage(error));
   }
 }
@@ -348,6 +414,7 @@ export async function saveFieldStopNoteAction(formData: FormData) {
     revalidateFieldPaths(taskId);
     redirect(`${path}&notice=${encodeURIComponent("Тэмдэглэлийг хадгаллаа.")}${hash}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(path, "error", getErrorMessage(error), hash);
   }
 }
@@ -363,6 +430,7 @@ export async function markFieldStopArrivedAction(formData: FormData) {
     revalidateFieldPaths(taskId);
     redirect(`${path}&notice=${encodeURIComponent("Цэг дээр ирснийг тэмдэглэлээ.")}${hash}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(path, "error", getErrorMessage(error), hash);
   }
 }
@@ -378,6 +446,7 @@ export async function markFieldStopDoneAction(formData: FormData) {
     revalidateFieldPaths(taskId);
     redirect(`${path}&notice=${encodeURIComponent("Цэгийг дууссан төлөвт орууллаа.")}${hash}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(path, "error", getErrorMessage(error), hash);
   }
 }
@@ -398,6 +467,7 @@ export async function markFieldStopSkippedAction(formData: FormData) {
     revalidateFieldPaths(taskId);
     redirect(`${path}&notice=${encodeURIComponent("Цэгийг алгассан төлөвт орууллаа.")}${hash}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(path, "error", getErrorMessage(error), hash);
   }
 }
@@ -440,6 +510,7 @@ export async function uploadFieldStopProofAction(formData: FormData) {
     revalidateFieldPaths(taskId);
     redirect(`${path}&notice=${encodeURIComponent("Зургийг орууллаа.")}${hash}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(path, "error", getErrorMessage(error), hash);
   }
 }
@@ -473,6 +544,7 @@ export async function createFieldStopIssueAction(formData: FormData) {
     revalidateFieldPaths(taskId);
     redirect(`${path}&notice=${encodeURIComponent("Асуудлыг бүртгэлээ.")}${hash}`);
   } catch (error) {
+    rethrowIfRedirectError(error);
     redirectWithMessage(path, "error", getErrorMessage(error), hash);
   }
 }
