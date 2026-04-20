@@ -10,7 +10,7 @@ import {
 } from "@/app/actions";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import { loadTaskDetail } from "@/lib/workspace";
 
 import styles from "./task-detail.module.css";
@@ -55,9 +55,11 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
   const noticeMessage = getMessage(query.notice);
   const returnTo = getMessage(query.returnTo);
   const safeReturnTo = returnTo.startsWith("/") ? returnTo : "";
+  const workerMode = isWorkerOnly(session);
   const useExecutiveLayout = safeReturnTo.startsWith("/tasks");
-  const backHref = safeReturnTo || "/projects";
-  const backLabel = useExecutiveLayout ? "Өнөөдрийн ажил руу буцах" : "Ажил руу буцах";
+  const backHref = safeReturnTo || (workerMode ? "/tasks" : "/projects");
+  const backLabel =
+    useExecutiveLayout || workerMode ? "Ажилбар руу буцах" : "Ажил руу буцах";
 
   const canCreateProject = hasCapability(session, "create_projects");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
@@ -79,13 +81,14 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           <div className={shellStyles.contentWithMenu}>
             <aside className={shellStyles.menuColumn}>
               <AppMenu
-                active={useExecutiveLayout ? "tasks" : "projects"}
+                active={workerMode || useExecutiveLayout ? "tasks" : "projects"}
                 variant={useExecutiveLayout ? "executive" : "default"}
                 canCreateProject={canCreateProject}
                 canViewQualityCenter={canViewQualityCenter}
                 canUseFieldConsole={canUseFieldConsole}
                 userName={session.name}
                 roleLabel={getRoleLabel(session.role)}
+                workerMode={workerMode}
               />
             </aside>
 
@@ -129,13 +132,14 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
         <div className={shellStyles.contentWithMenu}>
           <aside className={shellStyles.menuColumn}>
             <AppMenu
-              active={useExecutiveLayout ? "tasks" : "projects"}
+              active={workerMode || useExecutiveLayout ? "tasks" : "projects"}
               variant={useExecutiveLayout ? "executive" : "default"}
               canCreateProject={canCreateProject}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
               roleLabel={getRoleLabel(session.role)}
+              workerMode={workerMode}
             />
           </aside>
 

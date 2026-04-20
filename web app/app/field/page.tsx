@@ -15,7 +15,7 @@ import {
 import { BestEffortGpsFields } from "@/app/field/best-effort-gps-fields";
 import fieldStyles from "@/app/field/field.module.css";
 import workspaceStyles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import { loadAssignedGarbageTasks, type FieldStop } from "@/lib/field-ops";
 
 export const dynamic = "force-dynamic";
@@ -87,6 +87,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
   const canCreateProject = hasCapability(session, "create_projects");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
+  const workerMode = isWorkerOnly(session);
 
   let fieldLoadError = "";
   let bundle: Awaited<ReturnType<typeof loadAssignedGarbageTasks>> = {
@@ -124,7 +125,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
         <header className={workspaceStyles.navBar}>
           <div className={workspaceStyles.navLinks}>
             <Link href="/" className={workspaceStyles.backLink}>
-              Хяналтын самбар
+              {workerMode ? "Миний ажил" : "Хяналтын самбар"}
             </Link>
             <span>{getRoleLabel(session.role)}</span>
             <span>{session.name}</span>
@@ -146,6 +147,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
           canUseFieldConsole={canUseFieldConsole}
           userName={session.name}
           roleLabel={getRoleLabel(session.role)}
+          workerMode={workerMode}
         />
 
         <section className={`${workspaceStyles.heroCard} ${fieldStyles.heroCard}`}>

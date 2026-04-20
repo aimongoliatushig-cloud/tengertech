@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import { loadProjectDetail } from "@/lib/workspace";
 
 type PageProps = {
@@ -51,6 +52,9 @@ function StagePill({ label, bucket }: { label: string; bucket: string }) {
 
 export default async function ProjectDetailPage({ params, searchParams }: PageProps) {
   const session = await requireSession();
+  if (isWorkerOnly(session)) {
+    redirect("/");
+  }
   const resolvedParams = await params;
   const projectId = Number(resolvedParams.projectId);
   const query = (await searchParams) ?? {};

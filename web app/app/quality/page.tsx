@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,9 @@ function MetricCard({
 
 export default async function QualityPage() {
   const session = await requireSession();
+  if (isWorkerOnly(session)) {
+    redirect("/");
+  }
   const canCreateProject = hasCapability(session, "create_projects");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");

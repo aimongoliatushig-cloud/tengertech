@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
+
 import { AppMenu } from "@/app/_components/app-menu";
 import { createProjectAction } from "@/app/actions";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import {
   loadDepartmentOptions,
   loadGarbageRouteOptions,
@@ -28,6 +30,9 @@ function getMessage(value?: string | string[]) {
 
 export default async function NewProjectPage({ searchParams }: PageProps) {
   const session = await requireSession();
+  if (isWorkerOnly(session)) {
+    redirect("/");
+  }
   const params = (await searchParams) ?? {};
   const errorMessage = getMessage(params.error);
   const noticeMessage = getMessage(params.notice);

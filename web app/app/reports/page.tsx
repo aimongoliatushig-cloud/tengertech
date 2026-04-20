@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import {
   DEPARTMENT_GROUPS,
   findDepartmentGroupByName,
@@ -69,6 +70,9 @@ export const dynamic = "force-dynamic";
 
 export default async function ReportsPage({ searchParams }: PageProps) {
   const session = await requireSession();
+  if (isWorkerOnly(session)) {
+    redirect("/");
+  }
   const snapshot = await loadMunicipalSnapshot({
     login: session.login,
     password: session.password,

@@ -1,7 +1,9 @@
 export type UserRole =
   | "system_admin"
+  | "director"
   | "general_manager"
   | "project_manager"
+  | "senior_master"
   | "team_leader"
   | "worker"
   | string;
@@ -54,7 +56,7 @@ export function getPrimaryAppRole(context: RoleContext): AppRole {
   if (context.role === "system_admin") {
     return "admin";
   }
-  if (context.role === "general_manager") {
+  if (context.role === "director" || context.role === "general_manager") {
     return "executive";
   }
   if (groupFlags.mfoDispatcher) {
@@ -66,22 +68,30 @@ export function getPrimaryAppRole(context: RoleContext): AppRole {
   if (context.role === "project_manager" || groupFlags.mfoManager) {
     return "manager";
   }
-  if (context.role === "team_leader") {
+  if (context.role === "senior_master" || context.role === "team_leader") {
     return "leader";
   }
   return "field_user";
+}
+
+export function isMasterRole(role: UserRole) {
+  return role === "senior_master" || role === "team_leader";
 }
 
 export function getRoleLabel(role: UserRole) {
   switch (role) {
     case "system_admin":
       return "Системийн админ";
+    case "director":
+      return "Захирал";
     case "general_manager":
       return "Ерөнхий менежер";
     case "project_manager":
       return "Ажлын менежер";
+    case "senior_master":
+      return "Ахлах мастер";
     case "team_leader":
-      return "Багийн ахлагч";
+      return "Мастер";
     case "worker":
       return "Ажилтан";
     default:
@@ -94,18 +104,30 @@ export function hasCapability(context: RoleContext, capability: Capability) {
 
   switch (capability) {
     case "create_projects":
-      return context.role === "system_admin" || context.role === "general_manager";
+      return (
+        context.role === "system_admin" ||
+        context.role === "director" ||
+        context.role === "general_manager"
+      );
     case "create_tasks":
       return (
         context.role === "system_admin" ||
+        context.role === "director" ||
         context.role === "general_manager" ||
-        context.role === "project_manager"
+        context.role === "project_manager" ||
+        context.role === "senior_master" ||
+        context.role === "team_leader"
       );
     case "write_workspace_reports":
-      return context.role === "system_admin" || context.role === "team_leader";
+      return (
+        context.role === "system_admin" ||
+        context.role === "senior_master" ||
+        context.role === "team_leader"
+      );
     case "view_quality_center":
       return (
         context.role === "system_admin" ||
+        context.role === "director" ||
         context.role === "general_manager" ||
         context.role === "project_manager" ||
         groupFlags.mfoManager ||
@@ -115,6 +137,7 @@ export function hasCapability(context: RoleContext, capability: Capability) {
     case "use_field_console":
       return (
         context.role === "system_admin" ||
+        context.role === "senior_master" ||
         context.role === "team_leader" ||
         context.role === "worker" ||
         groupFlags.mfoManager ||

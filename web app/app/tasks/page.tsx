@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AppMenu } from "@/app/_components/app-menu";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 import styles from "./tasks.module.css";
@@ -66,18 +66,26 @@ export default async function TasksPage({ searchParams }: PageProps) {
   const canCreateProject = hasCapability(session, "create_projects");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
+  const workerMode = isWorkerOnly(session);
+  const workerTasks = workerMode
+    ? snapshot.taskDirectory.filter((task) => task.assigneeIds?.includes(session.uid))
+    : [];
 
   const selectedDepartment =
-    requestedDepartment && requestedDepartment !== "all"
+    !workerMode && requestedDepartment && requestedDepartment !== "all"
       ? snapshot.departments.find((department) => department.name === requestedDepartment) ?? null
       : null;
 
-  const scopedProjects = snapshot.projects.filter(
-    (project) => !selectedDepartment || project.departmentName === selectedDepartment.name,
-  );
-  const scopedTasks = snapshot.taskDirectory.filter(
-    (task) => !selectedDepartment || task.departmentName === selectedDepartment.name,
-  );
+  const scopedProjects = workerMode
+    ? Array.from(new Set(workerTasks.map((task) => task.projectName)))
+    : snapshot.projects.filter(
+        (project) => !selectedDepartment || project.departmentName === selectedDepartment.name,
+      );
+  const scopedTasks = workerMode
+    ? workerTasks
+    : snapshot.taskDirectory.filter(
+        (task) => !selectedDepartment || task.departmentName === selectedDepartment.name,
+      );
 
   const counts = {
     all: scopedTasks.length,
@@ -94,7 +102,9 @@ export default async function TasksPage({ searchParams }: PageProps) {
     return task.statusKey === activeFilter;
   });
 
-  const selectedDepartmentLabel = selectedDepartment?.name ?? "Бүх алба нэгж";
+  const selectedDepartmentLabel = workerMode
+    ? "Надад оноогдсон ажилбар"
+    : selectedDepartment?.name ?? "Бүх алба нэгж";
 
   return (
     <main className={shellStyles.shell}>
@@ -109,6 +119,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
               roleLabel={getRoleLabel(session.role)}
+              workerMode={workerMode}
             />
           </aside>
 
@@ -116,12 +127,14 @@ export default async function TasksPage({ searchParams }: PageProps) {
             <header className={styles.pageHeader}>
               <div className={styles.pageHeaderMain}>
                 <div className={styles.titleBlock}>
-                  <span className={styles.pageKicker}>Бүх урсгал</span>
-                  <h1>Бүх ажилбар</h1>
+                  <span className={styles.pageKicker}>
+                    {workerMode ? "Миний урсгал" : "Бүх урсгал"}
+                  </span>
+                  <h1>{workerMode ? "Надад оноогдсон ажилбар" : "Бүх ажилбар"}</h1>
                   <p>
-                    Odoo ERP дээр бүртгэгдсэн бүх ажилбарыг алба нэгж, ажил, төлөвөөр нь нэг
-                    дороос харуулна. Асуудалтай болон хяналт хүлээж буй ажилбарыг эхэнд нь ялгаж,
-                    дэлгэрэнгүй рүү шууд нээнэ.
+                    {workerMode
+                      ? "Зөвхөн танд хамаарах ажилбаруудыг эндээс харна. Төлөвөөр нь хурдан шүүж, дэлгэрэнгүй рүү шууд орж ажлаа үргэлжлүүлнэ."
+                      : "Odoo ERP дээр бүртгэгдсэн бүх ажилбарыг алба нэгж, ажил, төлөвөөр нь нэг дороос харуулна. Асуудалтай болон хяналт хүлээж буй ажилбаруудыг эхэнд нь ялгаж, дэлгэрэнгүй рүү шууд нээнэ."}
                   </p>
                 </div>
 
@@ -133,46 +146,75 @@ export default async function TasksPage({ searchParams }: PageProps) {
               </div>
 
               <div className={styles.pageHeaderAside}>
-                <form className={styles.dateFilterForm} method="get">
-                  <label htmlFor="tasks-department">Алба нэгж</label>
-                  <div className={styles.dateRow}>
-                    <select
-                      id="tasks-department"
-                      name="department"
-                      defaultValue={selectedDepartment?.name ?? "all"}
-                      className={styles.dateInput}
-                    >
-                      <option value="all">Бүх алба нэгж</option>
-                      {snapshot.departments.map((department) => (
-                        <option key={department.name} value={department.name}>
-                          {department.name}
-                        </option>
-                      ))}
-                    </select>
-                    <input type="hidden" name="filter" value={activeFilter} />
-                    <button type="submit" className={styles.dateButton}>
-                      Харах
-                    </button>
+                {workerMode ? (
+                  <div className={styles.userBlock}>
+                    <span>Өнөөдрийн ажил</span>
+                    <strong>{canUseFieldConsole ? "Маршрут нээх" : "Маршрутгүй"}</strong>
+                    <small>
+                      {canUseFieldConsole
+                        ? "Өнөөдөрт оноогдсон маршрут, талбайн урсгал руу шууд орно."
+                        : "Энэ хэрэглэгч дээр талбайн маршрут харах эрх идэвхгүй байна."}
+                    </small>
+                    {canUseFieldConsole ? (
+                      <Link href="/field" className={styles.dateButton}>
+                        Өнөөдрийн ажил
+                      </Link>
+                    ) : null}
                   </div>
-                </form>
+                ) : (
+                  <form className={styles.dateFilterForm} method="get">
+                    <label htmlFor="tasks-department">Алба нэгж</label>
+                    <div className={styles.dateRow}>
+                      <select
+                        id="tasks-department"
+                        name="department"
+                        defaultValue={selectedDepartment?.name ?? "all"}
+                        className={styles.dateInput}
+                      >
+                        <option value="all">Бүх алба нэгж</option>
+                        {snapshot.departments.map((department) => (
+                          <option key={department.name} value={department.name}>
+                            {department.name}
+                          </option>
+                        ))}
+                      </select>
+                      <input type="hidden" name="filter" value={activeFilter} />
+                      <button type="submit" className={styles.dateButton}>
+                        Харах
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             </header>
 
             <section className={styles.summaryStrip}>
               <article className={styles.summaryCard}>
-                <span>Сонгосон алба нэгж</span>
+                <span>{workerMode ? "Харагдах хүрээ" : "Сонгосон алба нэгж"}</span>
                 <strong>{selectedDepartmentLabel}</strong>
-                <small>{snapshot.departments.length} алба нэгжээс шүүж байна</small>
+                <small>
+                  {workerMode
+                    ? "Зөвхөн танд оноогдсон ажилбаруудыг харуулж байна"
+                    : `${snapshot.departments.length} алба нэгжээс шүүж байна`}
+                </small>
               </article>
               <article className={styles.summaryCard}>
-                <span>Нийт ажилбар</span>
+                <span>{workerMode ? "Надад оноогдсон ажилбар" : "Нийт ажилбар"}</span>
                 <strong>{counts.all}</strong>
-                <small>Odoo ERP-ээс орж ирсэн бүх ажилбар</small>
+                <small>
+                  {workerMode
+                    ? "Тухайн хэрэглэгчид оноогдсон нийт ажилбар"
+                    : "Odoo ERP-ээс орж ирсэн бүх ажилбар"}
+                </small>
               </article>
               <article className={styles.summaryCard}>
-                <span>Нийт ажил</span>
+                <span>{workerMode ? "Холбогдсон ажил" : "Нийт ажил"}</span>
                 <strong>{scopedProjects.length}</strong>
-                <small>Энэ шүүлтэд хамаарах ажлууд</small>
+                <small>
+                  {workerMode
+                    ? "Эдгээр ажилд таны ажилбарууд багтаж байна"
+                    : "Энэ шүүлтэд хамаарах ажлууд"}
+                </small>
               </article>
             </section>
 
@@ -180,18 +222,19 @@ export default async function TasksPage({ searchParams }: PageProps) {
               <div className={styles.filterHeader}>
                 <div>
                   <span className={styles.filterKicker}>Төлөвийн шүүлт</span>
-                  <h2>Ажлыг хурдан ангилж харах</h2>
+                  <h2>{workerMode ? "Миний ажилбарын төлөв" : "Ажлыг хурдан ангилж харах"}</h2>
                 </div>
                 <p>
-                  Эхлээд асуудалтай, дараа нь хяналт хүлээж буй ажилбаруудыг ялгаж харахад
-                  тохиромжтой.
+                  {workerMode
+                    ? "Асуудалтай, хяналт хүлээж буй, баталгаажсан ажилбараа нэг товшилтоор ялгаж харна."
+                    : "Эхлээд асуудалтай, дараа нь хяналт хүлээж буй ажилбаруудыг ялгаж харахад тохиромжтой."}
                 </p>
               </div>
 
               <div className={styles.filterScroller}>
                 {FILTERS.map((item) => {
                   const hrefParams = new URLSearchParams();
-                  if (selectedDepartment?.name) {
+                  if (!workerMode && selectedDepartment?.name) {
                     hrefParams.set("department", selectedDepartment.name);
                   }
                   if (item.key !== "all") {
@@ -217,10 +260,16 @@ export default async function TasksPage({ searchParams }: PageProps) {
             <section className={styles.taskSection}>
               <div className={styles.sectionHeader}>
                 <div>
-                  <span className={styles.filterKicker}>Ажлын жагсаалт</span>
-                  <h2>Odoo-оос татсан бүх ажилбар</h2>
+                  <span className={styles.filterKicker}>
+                    {workerMode ? "Миний жагсаалт" : "Ажлын жагсаалт"}
+                  </span>
+                  <h2>{workerMode ? "Надад хамаарах ажилбар" : "Odoo-оос татсан бүх ажилбар"}</h2>
                 </div>
-                <p>{visibleTasks.length} ажилбар одоогоор дэлгэц дээр харагдаж байна</p>
+                <p>
+                  {workerMode
+                    ? `${visibleTasks.length} ажилбар танд одоогоор харагдаж байна`
+                    : `${visibleTasks.length} ажилбар одоогоор дэлгэц дээр харагдаж байна`}
+                </p>
               </div>
 
               {visibleTasks.length ? (
@@ -280,9 +329,9 @@ export default async function TasksPage({ searchParams }: PageProps) {
                     <table className={styles.taskTable}>
                       <thead>
                         <tr>
-                          <th>Ажил</th>
+                          <th>Ажилбар</th>
                           <th>Алба нэгж</th>
-                        <th>Ажил</th>
+                          <th>Ажил</th>
                           <th>Төлөв</th>
                           <th>Ахлагч</th>
                           <th>Явц</th>
@@ -325,8 +374,16 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 </>
               ) : (
                 <div className={styles.emptyState}>
-                  <h3>Энэ шүүлтээр ажил олдсонгүй</h3>
-                  <p>Өөр алба нэгж эсвэл өөр төлөв сонгоод дахин шүүж үзнэ үү.</p>
+                  <h3>
+                    {workerMode
+                      ? "Танд тохирох ажилбар энэ шүүлтээр олдсонгүй"
+                      : "Энэ шүүлтээр ажил олдсонгүй"}
+                  </h3>
+                  <p>
+                    {workerMode
+                      ? "Өөр төлөв сонгоод дахин шүүж үзнэ үү."
+                      : "Өөр алба нэгж эсвэл өөр төлөв сонгоод дахин шүүж үзнэ үү."}
+                  </p>
                 </div>
               )}
             </section>

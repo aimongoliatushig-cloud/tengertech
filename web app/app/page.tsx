@@ -3,9 +3,10 @@ import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import { DEPARTMENT_GROUPS, getAvailableUnits } from "@/lib/department-groups";
-import { loadMunicipalSnapshot } from "@/lib/odoo";
+import { loadAssignedGarbageTasks } from "@/lib/field-ops";
+import { loadMunicipalSnapshot, type TaskDirectoryItem } from "@/lib/odoo";
 
 import styles from "./page.module.css";
 
@@ -48,6 +49,54 @@ function StagePill({
   return <span className={`${styles.stagePill} ${tone}`}>{label}</span>;
 }
 
+type WorkerProjectSummary = {
+  projectName: string;
+  departmentName: string;
+  totalTasks: number;
+  activeTasks: number;
+  reviewTasks: number;
+  completedTasks: number;
+};
+
+function getAssignedTasks(tasks: TaskDirectoryItem[], userId: number) {
+  return tasks.filter((task) => task.assigneeIds?.includes(userId));
+}
+
+function buildWorkerProjects(tasks: TaskDirectoryItem[]): WorkerProjectSummary[] {
+  return Array.from(
+    tasks.reduce<Map<string, WorkerProjectSummary>>((accumulator, task) => {
+      const existing = accumulator.get(task.projectName) ?? {
+        projectName: task.projectName,
+        departmentName: task.departmentName,
+        totalTasks: 0,
+        activeTasks: 0,
+        reviewTasks: 0,
+        completedTasks: 0,
+      };
+
+      existing.totalTasks += 1;
+      if (task.statusKey === "review") {
+        existing.reviewTasks += 1;
+      }
+      if (task.statusKey === "verified") {
+        existing.completedTasks += 1;
+      } else {
+        existing.activeTasks += 1;
+      }
+
+      accumulator.set(task.projectName, existing);
+      return accumulator;
+    }, new Map()),
+  )
+    .map(([, project]) => project)
+    .sort((left, right) => {
+      if (right.activeTasks !== left.activeTasks) {
+        return right.activeTasks - left.activeTasks;
+      }
+      return left.projectName.localeCompare(right.projectName, "mn");
+    });
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
@@ -60,6 +109,27 @@ export default async function Home() {
   const canCreateProject = hasCapability(session, "create_projects");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
+  const workerMode = isWorkerOnly(session);
+  const assignedTasks = workerMode ? getAssignedTasks(snapshot.taskDirectory, session.uid) : [];
+  const workerProjects = workerMode ? buildWorkerProjects(assignedTasks) : [];
+
+  let todayAssignments: Awaited<ReturnType<typeof loadAssignedGarbageTasks>>["assignments"] = [];
+  if (workerMode && canUseFieldConsole) {
+    try {
+      const bundle = await loadAssignedGarbageTasks(
+        {
+          userId: session.uid,
+        },
+        {
+          login: session.login,
+          password: session.password,
+        },
+      );
+      todayAssignments = bundle.assignments;
+    } catch (error) {
+      console.warn("Worker daily assignments could not be loaded:", error);
+    }
+  }
 
   const featuredProjects = snapshot.projects.slice(0, 4);
   const activeTasks = snapshot.liveTasks.slice(0, 4);
@@ -135,6 +205,288 @@ export default async function Home() {
       href: string;
     } => Boolean(card),
   );
+
+  if (workerMode) {
+    return (
+      <main className={styles.shell}>
+        <div className={styles.layoutGrid}>
+          <aside className={styles.sideRail}>
+            <AppMenu
+              active="dashboard"
+              canCreateProject={canCreateProject}
+              canViewQualityCenter={canViewQualityCenter}
+              canUseFieldConsole={canUseFieldConsole}
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+              workerMode={workerMode}
+            />
+          </aside>
+
+          <div className={styles.mainColumn}>
+            <header className={styles.topbar}>
+              <div className={styles.brandBlock}>
+                <div className={styles.brandMark}>
+                  <Image
+                    src="/logo.png"
+                    alt="Хот тохижилтын удирдлагын төв"
+                    width={180}
+                    height={56}
+                    className={styles.brandLogo}
+                    priority
+                    unoptimized
+                  />
+                </div>
+
+                <div>
+                  <span className={styles.kicker}>Өдөр тутмын урсгал</span>
+                  <h1>Миний ажил</h1>
+                </div>
+              </div>
+
+              <div className={styles.topbarActions}>
+                <div className={styles.userPanel}>
+                  <span>{getRoleLabel(session.role)}</span>
+                  <strong>{session.name}</strong>
+                  <small>Сүүлд шинэчлэгдсэн: {snapshot.generatedAt}</small>
+                </div>
+
+                <form action={logoutAction}>
+                  <button type="submit" className={styles.logoutButton}>
+                    Гарах
+                  </button>
+                </form>
+              </div>
+            </header>
+
+            {snapshot.source === "demo" ? (
+              <section className={styles.sourceNotice}>
+                <div>
+                  <strong>Odoo-оос бүх мэдээлэл бүрэн ирээгүй байна.</strong>
+                  <p>Түр нөөц мэдээлэл ашиглаж байгаа тул оноолт, ажилбарын жагсаалтыг давхар шалгана уу.</p>
+                </div>
+              </section>
+            ) : null}
+
+            <section className={styles.commandStrip}>
+              <MetricCard
+                label="Надад хамаарах ажил"
+                value={String(workerProjects.length)}
+                note="Өөртэй тань холбогдсон ажлууд"
+                tone="slate"
+              />
+              <MetricCard
+                label="Надад оноогдсон ажилбар"
+                value={String(assignedTasks.length)}
+                note="Одоогоор танд харагдаж буй ажилбар"
+                tone={assignedTasks.length ? "teal" : "slate"}
+              />
+              <MetricCard
+                label="Өнөөдрийн ажил"
+                value={String(todayAssignments.length)}
+                note="Өнөөдөр гүйцэтгэх маршрут"
+                tone={todayAssignments.length ? "amber" : "slate"}
+              />
+              <MetricCard
+                label="Хянагдаж буй ажилбар"
+                value={String(assignedTasks.filter((task) => task.statusKey === "review").length)}
+                note="Тайлан илгээгдээд шалгагдаж буй ажилбар"
+                tone="amber"
+              />
+            </section>
+
+            <section className={styles.projectsSection}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Өнөөдрийн ажил</span>
+                  <h2>Тухайн өдрийн маршрут</h2>
+                </div>
+                {canUseFieldConsole ? (
+                  <Link href="/field" className={styles.sectionLink}>
+                    Нээх
+                  </Link>
+                ) : null}
+              </div>
+
+              {todayAssignments.length ? (
+                <div className={styles.taskList}>
+                  {todayAssignments.map((assignment) => (
+                    <Link
+                      key={assignment.id}
+                      href={`/field?taskId=${assignment.id}`}
+                      className={styles.taskCard}
+                    >
+                      <div className={styles.taskCardTop}>
+                        <span>{assignment.shiftTypeLabel}</span>
+                        <StagePill
+                          label={assignment.stateLabel}
+                          bucket={
+                            assignment.state === "verified"
+                              ? "done"
+                              : assignment.state === "submitted"
+                                ? "review"
+                                : assignment.state === "in_progress"
+                                  ? "progress"
+                                  : "todo"
+                          }
+                        />
+                      </div>
+
+                      <h3>{assignment.routeName}</h3>
+                      <p>
+                        {assignment.vehicleName} • {assignment.districtName}
+                      </p>
+
+                      <div className={styles.taskStats}>
+                        <span>Жолооч: {assignment.driverName}</span>
+                        <span>Хянагч: {assignment.inspectorName}</span>
+                        <span>
+                          {assignment.completedStopCount}/{assignment.stopCount} цэг
+                        </span>
+                      </div>
+
+                      <div className={styles.taskQuantities}>
+                        <b>{assignment.shiftDateLabel}</b>
+                        <strong>{assignment.progressPercent}%</strong>
+                      </div>
+
+                      <div className={styles.progressTrack}>
+                        <span style={{ width: `${assignment.progressPercent}%` }} />
+                      </div>
+
+                      <div className={styles.cardFooter}>
+                        <span className={styles.cardLinkLabel}>Өнөөдрийн ажлыг нээх</span>
+                        <strong aria-hidden>→</strong>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyColumnState}>Өнөөдөр танд оноогдсон маршрут алга.</div>
+              )}
+            </section>
+
+            <section className={styles.projectsSection}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Миний ажил</span>
+                  <h2>Надад хамаарах ажил</h2>
+                </div>
+              </div>
+
+              {workerProjects.length ? (
+                <div className={styles.projectRail}>
+                  {workerProjects.map((project) => {
+                    const projectBucket =
+                      project.completedTasks === project.totalTasks
+                        ? "done"
+                        : project.reviewTasks > 0
+                          ? "review"
+                          : project.activeTasks > 0
+                            ? "progress"
+                            : "todo";
+
+                    return (
+                      <article key={project.projectName} className={styles.projectCard}>
+                        <div className={styles.projectCardTop}>
+                          <span>{project.departmentName}</span>
+                          <StagePill
+                            label={
+                              projectBucket === "done"
+                                ? "Дууссан"
+                                : projectBucket === "review"
+                                  ? "Хянагдаж байна"
+                                  : "Идэвхтэй"
+                            }
+                            bucket={projectBucket}
+                          />
+                        </div>
+
+                        <h3>{project.projectName}</h3>
+                        <p>{project.totalTasks} ажилбар холбогдсон</p>
+
+                        <div className={styles.projectMeta}>
+                          <div>
+                            <span>Идэвхтэй</span>
+                            <strong>{project.activeTasks}</strong>
+                          </div>
+                          <div>
+                            <span>Хяналт</span>
+                            <strong>{project.reviewTasks}</strong>
+                          </div>
+                        </div>
+
+                        <div className={styles.progressTrack}>
+                          <span
+                            style={{
+                              width: `${Math.round((project.completedTasks / project.totalTasks) * 100)}%`,
+                            }}
+                          />
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className={styles.emptyColumnState}>Танд хамаарах ажил одоогоор олдсонгүй.</div>
+              )}
+            </section>
+
+            <section className={styles.projectsSection}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Миний ажилбар</span>
+                  <h2>Надад оноогдсон ажилбар</h2>
+                </div>
+                <Link href="/tasks" className={styles.sectionLink}>
+                  Бүгдийг харах
+                </Link>
+              </div>
+
+              {assignedTasks.length ? (
+                <div className={styles.taskList}>
+                  {assignedTasks.slice(0, 6).map((task) => (
+                    <Link key={task.id} href={task.href} className={styles.taskCard}>
+                      <div className={styles.taskCardTop}>
+                        <span>{task.deadline}</span>
+                        <StagePill label={task.stageLabel} bucket={task.stageBucket} />
+                      </div>
+
+                      <h3>{task.name}</h3>
+                      <p>{task.projectName}</p>
+
+                      <div className={styles.taskStats}>
+                        <span>Алба нэгж: {task.departmentName}</span>
+                        <span>Ахлагч: {task.leaderName}</span>
+                        <span>Төлөв: {task.priorityLabel}</span>
+                      </div>
+
+                      <div className={styles.taskQuantities}>
+                        <b>
+                          {task.completedQuantity} / {task.plannedQuantity} {task.measurementUnit}
+                        </b>
+                        <strong>{task.progress}%</strong>
+                      </div>
+
+                      <div className={styles.progressTrack}>
+                        <span style={{ width: `${task.progress}%` }} />
+                      </div>
+
+                      <div className={styles.cardFooter}>
+                        <span className={styles.cardLinkLabel}>Ажилбарыг нээх</span>
+                        <strong aria-hidden>→</strong>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyColumnState}>Танд оноогдсон ажилбар одоогоор алга.</div>
+              )}
+            </section>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.shell}>

@@ -1,12 +1,17 @@
+import { redirect } from "next/navigation";
+
 import { AppMenu } from "@/app/_components/app-menu";
 import { DataDownloadClient } from "@/app/data-download/data-download-client";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function DataDownloadPage() {
   const session = await requireSession();
+  if (isWorkerOnly(session)) {
+    redirect("/");
+  }
   const canCreateProject = hasCapability(session, "create_projects");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");

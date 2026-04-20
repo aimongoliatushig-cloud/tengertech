@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getDateKeyFromValue } from "@/lib/dashboard-scope";
 import type { RoleGroupFlags } from "@/lib/roles";
 
 type OdooRelation = [number, string] | false;
@@ -28,6 +29,7 @@ type OdooTaskRecord = {
   ops_measurement_unit?: string | false;
   priority?: string;
   date_deadline?: string | false;
+  mfo_shift_date?: string | false;
   state?: string;
   mfo_is_operation_project?: boolean;
   mfo_operation_type?: string | false;
@@ -118,6 +120,7 @@ type LiveTask = {
   stageLabel: string;
   stageBucket: StageBucket;
   deadline: string;
+  scheduledDate?: string | null;
   plannedQuantity: number;
   completedQuantity: number;
   remainingQuantity: number;
@@ -140,6 +143,7 @@ export type TaskDirectoryItem = {
   statusKey: TaskStatusKey;
   statusLabel: string;
   deadline: string;
+  scheduledDate?: string | null;
   leaderName: string;
   priorityLabel: string;
   progress: number;
@@ -149,6 +153,7 @@ export type TaskDirectoryItem = {
   measurementUnit: string;
   operationTypeLabel: string;
   issueFlag: boolean;
+  assigneeIds?: number[];
   href: string;
 };
 
@@ -339,6 +344,7 @@ const TASK_FIELD_VARIANTS: string[][] = [
     "ops_measurement_unit",
     "priority",
     "date_deadline",
+    "mfo_shift_date",
     "state",
     "mfo_is_operation_project",
     "mfo_operation_type",
@@ -363,6 +369,7 @@ const TASK_FIELD_VARIANTS: string[][] = [
     "ops_measurement_unit",
     "priority",
     "date_deadline",
+    "mfo_shift_date",
     "state",
     "mfo_is_operation_project",
     "mfo_operation_type",
@@ -381,6 +388,7 @@ const TASK_FIELD_VARIANTS: string[][] = [
     "ops_measurement_unit",
     "priority",
     "date_deadline",
+    "mfo_shift_date",
     "state",
   ],
 ];
@@ -1103,6 +1111,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
         statusKey,
         statusLabel: getTaskStatusLabel(statusKey),
         deadline: formatCompactDate(task.date_deadline),
+        scheduledDate: getDateKeyFromValue(task.mfo_shift_date || task.date_deadline || null),
         leaderName: relationName(task.ops_team_leader_id ?? false),
         priorityLabel: priorityLabel(task.priority || ""),
         progress: Math.round(task.ops_progress_percent ?? 0),
@@ -1112,6 +1121,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
         measurementUnit: task.ops_measurement_unit || "ш",
         operationTypeLabel: operationTypeLabel(task.mfo_operation_type),
         issueFlag: statusKey === "problem",
+        assigneeIds: task.user_ids ?? [],
         href: buildTaskHref(task.id, "/tasks"),
       } satisfies TaskDirectoryItem;
     })
@@ -1140,6 +1150,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     stageLabel: STAGE_LABELS[getStageBucket(relationName(task.stage_id, ""))],
     stageBucket: getStageBucket(relationName(task.stage_id, "")),
     deadline: formatCompactDate(task.date_deadline),
+    scheduledDate: getDateKeyFromValue(task.mfo_shift_date || task.date_deadline || null),
     plannedQuantity: task.ops_planned_quantity ?? 0,
     completedQuantity: task.ops_completed_quantity ?? 0,
     remainingQuantity: task.ops_remaining_quantity ?? 0,

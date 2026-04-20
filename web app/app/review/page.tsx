@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
-import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
+import { getRoleLabel, hasCapability, isWorkerOnly, requireSession } from "@/lib/auth";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 type PageProps = {
@@ -42,6 +43,9 @@ export const dynamic = "force-dynamic";
 
 export default async function ReviewPage({ searchParams }: PageProps) {
   const session = await requireSession();
+  if (isWorkerOnly(session)) {
+    redirect("/");
+  }
   const snapshot = await loadMunicipalSnapshot({
     login: session.login,
     password: session.password,

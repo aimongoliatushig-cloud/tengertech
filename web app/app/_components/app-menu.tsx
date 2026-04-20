@@ -24,6 +24,7 @@ type AppMenuProps = {
   variant?: "default" | "executive";
   userName?: string;
   roleLabel?: string;
+  masterMode?: boolean;
   workerMode?: boolean;
 };
 
@@ -43,6 +44,8 @@ export function AppMenu({
   variant = "default",
   userName = "Хэрэглэгч",
   roleLabel = "Систем",
+  masterMode = false,
+  workerMode = false,
 }: AppMenuProps) {
   void canViewQualityCenter;
 
@@ -71,68 +74,137 @@ export function AppMenu({
             icon: "◫",
           },
         ]
-      : [
-          ...(canUseFieldConsole
-            ? [
-                {
-                  key: "field",
-                  href: "/field",
-                  label: "Өнөөдрийн маршрут",
-                  note: "Талбайн ажил",
-                  icon: "◎",
-                } satisfies MenuItem,
-              ]
-            : []),
-          {
-            key: "dashboard",
-            href: "/",
-            label: "Хяналтын самбар",
-            note: "Нүүр хуудас",
-            icon: "⌂",
-          },
-          {
-            key: "projects",
-            href: "/projects",
-            label: "Ажил",
-            note: "Ажлын жагсаалт",
-            icon: "▣",
-          },
-          {
-            key: "review",
-            href: "/review",
-            label: "Хяналт",
-            note: "Баталгаажуулалт",
-            icon: "✓",
-          },
-          ...(canCreateProject
-            ? [
-                {
-                  key: "new-project",
-                  href: "/projects/new",
-                  label: "Шинэ ажил",
-                  note: "Шууд үүсгэх",
-                  icon: "+",
-                } satisfies MenuItem,
-              ]
-            : []),
-          {
-            key: "reports",
-            href: "/reports",
-            label: "Тайлан",
-            note: "Өдрийн урсгал",
-            icon: "◫",
-          },
-          {
-            key: "data-download",
-            href: "/data-download",
-            label: "Өгөгдөл татах",
-            note: "Файл ба тайлан",
-            icon: "↓",
-          },
-        ];
+      : workerMode
+        ? [
+            {
+              key: "dashboard",
+              href: "/",
+              label: "Миний ажил",
+              note: "Надад хамаарах ажил",
+              icon: "⌂",
+            },
+            ...(canUseFieldConsole
+              ? [
+                  {
+                    key: "field",
+                    href: "/field",
+                    label: "Өнөөдрийн ажил",
+                    note: "Тухайн өдрийн маршрут",
+                    icon: "◎",
+                  } satisfies MenuItem,
+                ]
+              : []),
+            {
+              key: "tasks",
+              href: "/tasks",
+              label: "Ажилбар",
+              note: "Надад оноогдсон жагсаалт",
+              icon: "≣",
+            },
+          ]
+        : masterMode
+          ? [
+              {
+                key: "dashboard",
+                href: "/",
+                label: "Нэгжийн самбар",
+                note: "Өнөөдрийн хураангуй",
+                icon: "⌂",
+              },
+              {
+                key: "tasks",
+                href: "/tasks",
+                label: "Өнөөдрийн ажил",
+                note: "Зөвхөн өнөөдөр харагдана",
+                icon: "≣",
+              },
+              {
+                key: "projects",
+                href: "/projects",
+                label: "Ажил нэмэх",
+                note: "Ажлаас ажилбар нээх",
+                icon: "+",
+              },
+              {
+                key: "reports",
+                href: "/reports",
+                label: "Тайлан",
+                note: "Илгээсэн тайлан",
+                icon: "◫",
+              },
+            ]
+        : [
+            ...(canUseFieldConsole
+              ? [
+                  {
+                    key: "field",
+                    href: "/field",
+                    label: "Өнөөдрийн маршрут",
+                    note: "Талбайн ажил",
+                    icon: "◎",
+                  } satisfies MenuItem,
+                ]
+              : []),
+            {
+              key: "dashboard",
+              href: "/",
+              label: "Хяналтын самбар",
+              note: "Нүүр хуудас",
+              icon: "⌂",
+            },
+            {
+              key: "projects",
+              href: "/projects",
+              label: "Ажил",
+              note: "Ажлын жагсаалт",
+              icon: "▣",
+            },
+            {
+              key: "review",
+              href: "/review",
+              label: "Хяналт",
+              note: "Баталгаажуулалт",
+              icon: "✓",
+            },
+            ...(canCreateProject
+              ? [
+                  {
+                    key: "new-project",
+                    href: "/projects/new",
+                    label: "Шинэ ажил",
+                    note: "Шууд үүсгэх",
+                    icon: "+",
+                  } satisfies MenuItem,
+                ]
+              : []),
+            {
+              key: "reports",
+              href: "/reports",
+              label: "Тайлан",
+              note: "Өдрийн урсгал",
+              icon: "◫",
+            },
+            {
+              key: "data-download",
+              href: "/data-download",
+              label: "Өгөгдөл татах",
+              note: "Файл ба тайлан",
+              icon: "↓",
+            },
+          ];
 
-  const toggleId = variant === "executive" ? "executive-menu-toggle" : "default-menu-toggle";
-  const menuTitle = variant === "executive" ? "Ерөнхий цэс" : "Ажлын цэс";
+  const toggleId =
+    variant === "executive"
+      ? "executive-menu-toggle"
+      : masterMode
+        ? "master-menu-toggle"
+        : "default-menu-toggle";
+  const menuTitle =
+    variant === "executive"
+      ? "Ерөнхий цэс"
+      : masterMode
+        ? "Мастерын цэс"
+        : "Ажлын цэс";
   const activeItem = items.find((item) => item.key === active) ?? items[0];
 
   return (
