@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import { logoutAction } from "@/app/actions";
@@ -42,15 +43,32 @@ function MetricCard({
   );
 }
 
+function TopbarNotice({ count, note }: { count: number; note: string }) {
+  return (
+    <div className={styles.noticePanel} aria-label={`Мэдэгдэл ${count}`}>
+      <span className={styles.noticeGlyph} aria-hidden>
+        •
+      </span>
+      <div className={styles.noticeCopy}>
+        <span>Мэдэгдэл</span>
+        <strong>{count}</strong>
+        <small>{note}</small>
+      </div>
+    </div>
+  );
+}
+
 function StagePill({
   label,
   bucket,
 }: {
   label: string;
-  bucket: "todo" | "progress" | "review" | "done" | "unknown";
+  bucket: "todo" | "progress" | "review" | "done" | "unknown" | "problem";
 }) {
   const tone =
-    bucket === "done"
+    bucket === "problem"
+      ? styles.stageProblem
+      : bucket === "done"
       ? styles.stageDone
       : bucket === "review"
         ? styles.stageReview
@@ -58,7 +76,11 @@ function StagePill({
           ? styles.stageProgress
           : styles.stageTodo;
 
-  return <span className={`${styles.stagePill} ${tone}`}>{label}</span>;
+  return (
+    <span className={`${styles.stagePill} ${tone}`} aria-label={label} title={label}>
+      {label}
+    </span>
+  );
 }
 
 type WorkerProjectSummary = {
@@ -119,6 +141,8 @@ export default async function Home() {
   });
 
   const canCreateProject = hasCapability(session, "create_projects");
+  const canCreateTasks = hasCapability(session, "create_tasks");
+  const canWriteReports = hasCapability(session, "write_workspace_reports");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
   const workerMode = isWorkerOnly(session);
@@ -145,6 +169,9 @@ export default async function Home() {
         getTodayDateKey(),
       )
     : [];
+  const masterActiveTaskCount = masterTodayTasks.filter(
+    (task) => task.statusKey !== "verified",
+  ).length;
 
   let todayAssignments: Awaited<ReturnType<typeof loadAssignedGarbageTasks>>["assignments"] = [];
   if (workerMode && canUseFieldConsole) {
@@ -240,9 +267,7 @@ export default async function Home() {
   );
 
   if (masterMode) {
-    const masterActiveTaskCount = masterTodayTasks.filter(
-      (task) => task.statusKey !== "verified",
-    ).length;
+    redirect("/projects");
 
     return (
       <main className={styles.shell}>
@@ -251,6 +276,8 @@ export default async function Home() {
             <AppMenu
               active="dashboard"
               canCreateProject={canCreateProject}
+              canCreateTasks={canCreateTasks}
+              canWriteReports={canWriteReports}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
@@ -281,6 +308,10 @@ export default async function Home() {
               </div>
 
               <div className={styles.topbarActions}>
+                <TopbarNotice
+                  count={masterActiveTaskCount}
+                  note="Өнөөдөр анхаарах идэвхтэй ажил"
+                />
                 <div className={styles.userPanel}>
                   <span>{getRoleLabel(session.role)}</span>
                   <strong>{session.name}</strong>
@@ -491,6 +522,8 @@ export default async function Home() {
             <AppMenu
               active="dashboard"
               canCreateProject={canCreateProject}
+              canCreateTasks={canCreateTasks}
+              canWriteReports={canWriteReports}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
@@ -521,6 +554,10 @@ export default async function Home() {
               </div>
 
               <div className={styles.topbarActions}>
+                <TopbarNotice
+                  count={todayAssignments.length}
+                  note="Өнөөдрийн маршрут болон явж буй ажил"
+                />
                 <div className={styles.userPanel}>
                   <span>{getRoleLabel(session.role)}</span>
                   <strong>{session.name}</strong>
@@ -772,6 +809,8 @@ export default async function Home() {
           <AppMenu
             active="dashboard"
             canCreateProject={canCreateProject}
+            canCreateTasks={canCreateTasks}
+            canWriteReports={canWriteReports}
             canViewQualityCenter={canViewQualityCenter}
             canUseFieldConsole={canUseFieldConsole}
             userName={session.name}
@@ -801,6 +840,10 @@ export default async function Home() {
             </div>
 
             <div className={styles.topbarActions}>
+              <TopbarNotice
+                count={reviewQueue.length + qualityAlerts.length}
+                note="Хяналт болон чанарын анхаарах зүйл"
+              />
               <div className={styles.userPanel}>
                 <span>{getRoleLabel(session.role)}</span>
                 <strong>{session.name}</strong>

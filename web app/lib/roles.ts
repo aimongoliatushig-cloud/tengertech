@@ -107,7 +107,9 @@ export function hasCapability(context: RoleContext, capability: Capability) {
       return (
         context.role === "system_admin" ||
         context.role === "director" ||
-        context.role === "general_manager"
+        context.role === "general_manager" ||
+        context.role === "senior_master" ||
+        context.role === "team_leader"
       );
     case "create_tasks":
       return (

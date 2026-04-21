@@ -18,6 +18,8 @@ type Props = {
   managerOptions: SelectOption[];
   garbageVehicleOptions: GarbageVehicleOption[];
   garbageRouteOptions: GarbageRouteOption[];
+  lockedDepartmentId?: string;
+  lockedDepartmentLabel?: string;
 };
 
 function getTodayValue() {
@@ -62,9 +64,19 @@ export function NewWorkForm({
   managerOptions,
   garbageVehicleOptions,
   garbageRouteOptions,
+  lockedDepartmentId,
+  lockedDepartmentLabel,
 }: Props) {
-  const [departmentId, setDepartmentId] = useState("");
-  const [operationUnit, setOperationUnit] = useState("standard");
+  const [departmentId, setDepartmentId] = useState(lockedDepartmentId ?? "");
+  const [operationUnit, setOperationUnit] = useState(() => {
+    const initialDepartment = departmentOptions.find(
+      (option) => String(option.id) === (lockedDepartmentId ?? ""),
+    );
+
+    return initialDepartment?.name === COMBINED_DEPARTMENT_NAME
+      ? "garbage_transport"
+      : "standard";
+  });
   const [vehicleId, setVehicleId] = useState("");
   const [routeId, setRouteId] = useState("");
   const [shiftDate, setShiftDate] = useState(getTodayValue());
@@ -84,6 +96,7 @@ export function NewWorkForm({
 
   const isCombinedDepartment = selectedDepartment?.name === COMBINED_DEPARTMENT_NAME;
   const isGarbageTransport = isCombinedDepartment && operationUnit === "garbage_transport";
+  const isDepartmentLocked = Boolean(lockedDepartmentId);
 
   const generatedName = useMemo(() => {
     if (!isGarbageTransport) {
@@ -111,23 +124,33 @@ export function NewWorkForm({
 
   return (
     <form action={action} className={styles.form}>
-      <div className={styles.field}>
-        <label htmlFor="department_id">Хэлтэс</label>
-        <select
-          id="department_id"
-          name="department_id"
-          value={departmentId}
-          onChange={(event) => handleDepartmentChange(event.target.value)}
-          required
-        >
-          <option value="">Хэлтэс сонгоно уу</option>
-          {departmentOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {isDepartmentLocked ? (
+        <div className={styles.field}>
+          <label>Хэлтэс</label>
+          <div className={styles.lockedFieldValue}>
+            {lockedDepartmentLabel ?? selectedDepartment?.label ?? selectedDepartment?.name}
+          </div>
+          <input type="hidden" name="department_id" value={departmentId} />
+        </div>
+      ) : (
+        <div className={styles.field}>
+          <label htmlFor="department_id">Хэлтэс</label>
+          <select
+            id="department_id"
+            name="department_id"
+            value={departmentId}
+            onChange={(event) => handleDepartmentChange(event.target.value)}
+            required
+          >
+            <option value="">Хэлтэс сонгоно уу</option>
+            {departmentOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {isCombinedDepartment ? (
         <div className={styles.optionalSection}>
@@ -218,7 +241,10 @@ export function NewWorkForm({
           <div className={styles.previewCard}>
             <div className={styles.previewHeader}>
               <span className={styles.eyebrow}>Хог тээвэрлэлтийн ажил</span>
-              <strong>{generatedName || "Машин, маршрут сонгоход нэр автоматаар үүснэ"}</strong>
+              <strong>
+                {generatedName ||
+                  "Машин, маршрут сонгоход нэр автоматаар үүснэ"}
+              </strong>
             </div>
 
             <div className={styles.previewGrid}>
@@ -236,9 +262,7 @@ export function NewWorkForm({
               </div>
               <div className={styles.previewMeta}>
                 <span>Ээлж</span>
-                <strong>
-                  {selectedRoute ? formatShiftLabel(selectedRoute.shiftType) : "—"}
-                </strong>
+                <strong>{selectedRoute ? formatShiftLabel(selectedRoute.shiftType) : "—"}</strong>
               </div>
             </div>
 

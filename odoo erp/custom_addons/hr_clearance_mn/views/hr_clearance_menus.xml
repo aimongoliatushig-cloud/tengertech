@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_hr_clearance_root"
+              name="Тойрох хуудас"
+              parent="hr.menu_hr_root"
+              sequence="32"
+              groups="hr_clearance_mn.group_hr_clearance_user,hr_clearance_mn.group_hr_clearance_manager,hr.group_hr_manager,base.group_system"/>
+
+    <menuitem id="menu_hr_clearance_record"
+              name="Тойрох хуудасны бүртгэл"
+              parent="menu_hr_clearance_root"
+              action="action_hr_employee_clearance"
+              sequence="10"
+              groups="hr_clearance_mn.group_hr_clearance_user,hr_clearance_mn.group_hr_clearance_manager,hr.group_hr_manager,base.group_system"/>
+</odoo>

@@ -11,6 +11,7 @@ import {
   requireSession,
   signInWithOdooCredentials,
 } from "@/lib/auth";
+import { pickPrimaryDepartmentName } from "@/lib/dashboard-scope";
 import {
   createFieldStopIssue,
   markFieldStopArrived,
@@ -21,12 +22,14 @@ import {
   submitFieldShift,
   uploadFieldStopProof,
 } from "@/lib/field-ops";
+import { loadMunicipalSnapshot } from "@/lib/odoo";
 import {
   createGarbageWorkspaceProject,
   createWorkspaceProject,
   createWorkspaceTask,
   createWorkspaceTaskReport,
   markWorkspaceTaskDone,
+  loadDepartmentOptions,
   returnWorkspaceTaskForChanges,
   submitWorkspaceTaskForReview,
 } from "@/lib/workspace";
@@ -163,6 +166,7 @@ export async function logoutAction() {
 }
 
 export async function createProjectAction(formData: FormData) {
+  const session = await requireSession();
   const name = String(formData.get("name") ?? "").trim();
   const managerIdRaw = String(formData.get("manager_id") ?? "").trim();
   const departmentIdRaw = String(formData.get("department_id") ?? "").trim();
@@ -174,9 +178,59 @@ export async function createProjectAction(formData: FormData) {
   const deadline = String(formData.get("deadline") ?? "").trim();
   const garbageVehicleIdRaw = String(formData.get("garbage_vehicle_id") ?? "").trim();
   const garbageRouteIdRaw = String(formData.get("garbage_route_id") ?? "").trim();
+  const connectionOverrides = {
+    login: session.login,
+    password: session.password,
+  };
+
+  if (!hasCapability(session, "create_projects")) {
+    redirectWithMessage(
+      "/projects/new",
+      "error",
+      "Танд шинэ ажил үүсгэх эрх нээгдээгүй байна.",
+    );
+  }
+
+  let effectiveDepartmentIdRaw = departmentIdRaw;
+
+  if (isMasterRole(session.role)) {
+    const [masterSnapshot, departmentOptions] = await Promise.all([
+      loadMunicipalSnapshot(connectionOverrides),
+      loadDepartmentOptions(connectionOverrides),
+    ]);
+
+    const masterDepartmentName = pickPrimaryDepartmentName({
+      taskDirectory: masterSnapshot.taskDirectory,
+      reports: masterSnapshot.reports,
+      projects: masterSnapshot.projects,
+      departments: masterSnapshot.departments,
+    });
+    const lockedDepartmentOption = masterDepartmentName
+      ? departmentOptions.find((option) => option.name === masterDepartmentName) ?? null
+      : null;
+
+    if (!lockedDepartmentOption) {
+      redirectWithMessage(
+        "/projects/new",
+        "error",
+        "Таны харьяалах алба нэгжийг тодорхойлж чадсангүй. Дараа дахин оролдоно уу.",
+      );
+    }
+
+    const lockedDepartmentId = lockedDepartmentOption?.id;
+    if (!lockedDepartmentId) {
+      redirectWithMessage(
+        "/projects/new",
+        "error",
+        "Таны харьяалах алба нэгжийг тодорхойлж чадсангүй. Дараа дахин оролдоно уу.",
+      );
+    }
+
+    effectiveDepartmentIdRaw = String(lockedDepartmentId);
+  }
 
   if (operationUnit === "garbage_transport") {
-    if (!departmentIdRaw || !garbageVehicleIdRaw || !garbageRouteIdRaw || !startDate) {
+    if (!effectiveDepartmentIdRaw || !garbageVehicleIdRaw || !garbageRouteIdRaw || !startDate) {
       redirectWithMessage(
         "/projects/new",
         "error",
@@ -185,7 +239,6 @@ export async function createProjectAction(formData: FormData) {
     }
 
     try {
-      const connectionOverrides = await getConnectionOverrides();
       const result = await createGarbageWorkspaceProject(
         {
           vehicleId: Number(garbageVehicleIdRaw),
@@ -213,7 +266,7 @@ export async function createProjectAction(formData: FormData) {
     }
   }
 
-  if (!name || !departmentIdRaw) {
+  if (!name || !effectiveDepartmentIdRaw) {
     redirectWithMessage(
       "/projects/new",
       "error",
@@ -241,12 +294,11 @@ export async function createProjectAction(formData: FormData) {
   }
 
   try {
-    const connectionOverrides = await getConnectionOverrides();
     const projectId = await createWorkspaceProject(
       {
         name,
         managerId: managerIdRaw ? Number(managerIdRaw) : null,
-        departmentId: departmentIdRaw ? Number(departmentIdRaw) : null,
+        departmentId: effectiveDepartmentIdRaw ? Number(effectiveDepartmentIdRaw) : null,
         trackQuantity,
         plannedQuantity:
           trackQuantity && plannedQuantityRaw ? Number(plannedQuantityRaw) : null,

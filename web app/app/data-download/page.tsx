@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
+import { WorkspaceHeader } from "@/app/_components/workspace-header";
 import { DataDownloadClient } from "@/app/data-download/data-download-client";
 import styles from "@/app/workspace.module.css";
 import {
@@ -19,6 +20,8 @@ export default async function DataDownloadPage() {
     redirect("/");
   }
   const canCreateProject = hasCapability(session, "create_projects");
+  const canCreateTasks = hasCapability(session, "create_tasks");
+  const canWriteReports = hasCapability(session, "write_workspace_reports");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
 
@@ -30,6 +33,8 @@ export default async function DataDownloadPage() {
             <AppMenu
               active="data-download"
               canCreateProject={canCreateProject}
+              canCreateTasks={canCreateTasks}
+              canWriteReports={canWriteReports}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
@@ -38,6 +43,13 @@ export default async function DataDownloadPage() {
           </aside>
 
           <div className={styles.pageContent}>
+            <WorkspaceHeader
+              title="Өгөгдөл татах"
+              subtitle="WRS болон Odoo хоорондын өдрийн тайлангийн таталт"
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+            />
+
             <section className={styles.heroCard}>
               <span className={styles.eyebrow}>Өгөгдөл татах</span>
               <h1>WRS-ээс өдрийн тайлан татах</h1>

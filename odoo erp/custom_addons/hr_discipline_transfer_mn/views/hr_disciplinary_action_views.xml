@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_disciplinary_action_search" model="ir.ui.view">
+        <field name="name">hr.disciplinary.action.search</field>
+        <field name="model">hr.disciplinary.action</field>
+        <field name="arch" type="xml">
+            <search string="Сахилгын бүртгэл">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="employee_department_id"/>
+                <field name="action_type"/>
+                <field name="violation_date"/>
+                <filter string="Сануулга" name="filter_warning" domain="[('action_type', '=', 'warning')]"/>
+                <filter string="20% суутгал" name="filter_salary_deduction" domain="[('action_type', '=', 'salary_deduction_20')]"/>
+                <filter string="Ажлаас халах санал" name="filter_termination" domain="[('action_type', '=', 'termination_proposal')]"/>
+                <separator/>
+                <filter string="Ноорог" name="filter_draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Батлуулахаар илгээсэн" name="filter_submitted" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Батлагдсан" name="filter_approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Цуцлагдсан" name="filter_rejected" domain="[('state', '=', 'rejected')]"/>
+                <separator/>
+                <filter string="Огноо" name="filter_violation_date" date="violation_date"/>
+                <group>
+                    <filter string="Хэлтэс" name="group_department" context="{'group_by': 'employee_department_id'}"/>
+                    <filter string="Төрөл" name="group_action_type" context="{'group_by': 'action_type'}"/>
+                    <filter string="Төлөв" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Огноо" name="group_violation_date" context="{'group_by': 'violation_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_hr_disciplinary_action_list" model="ir.ui.view">
+        <field name="name">hr.disciplinary.action.list</field>
+        <field name="model">hr.disciplinary.action</field>
+        <field name="arch" type="xml">
+            <list string="Сахилгын бүртгэл" default_order="violation_date desc"
+                  decoration-info="state == 'submitted'"
+                  decoration-success="state == 'approved'"
+                  decoration-muted="state == 'rejected'">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="employee_department_id"/>
+                <field name="action_type"/>
+                <field name="violation_title"/>
+                <field name="violation_date"/>
+                <field name="effective_date"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_disciplinary_action_form" model="ir.ui.view">
+        <field name="name">hr.disciplinary.action.form</field>
+        <field name="model">hr.disciplinary.action</field>
+        <field name="arch" type="xml">
+            <form string="Сахилгын бүртгэл">
+                <header>
+                    <button name="button_submit"
+                            string="Илгээх"
+                            type="object"
+                            class="btn btn-primary"
+                            invisible="state != 'draft'"
+                            groups="hr_discipline_transfer_mn.group_hr_discipline_user,hr_discipline_transfer_mn.group_hr_discipline_manager,hr.group_hr_manager,base.group_system"/>
+                    <button name="button_approve"
+                            string="Батлах"
+                            type="object"
+                            class="btn btn-primary"
+                            invisible="state != 'submitted'"
+                            groups="hr_discipline_transfer_mn.group_hr_director_approval,hr_discipline_transfer_mn.group_hr_discipline_manager,hr.group_hr_manager,base.group_system"/>
+                    <button name="button_reject"
+                            string="Цуцлах"
+                            type="object"
+                            class="btn btn-secondary"
+                            invisible="state != 'submitted'"
+                            groups="hr_discipline_transfer_mn.group_hr_director_approval,hr_discipline_transfer_mn.group_hr_discipline_manager,hr.group_hr_manager,base.group_system"/>
+                    <button name="button_reset_to_draft"
+                            string="Ноорог болгох"
+                            type="object"
+                            class="btn btn-secondary"
+                            invisible="state not in ('approved', 'rejected')"
+                            groups="hr_discipline_transfer_mn.group_hr_discipline_manager,hr.group_hr_manager,base.group_system"/>
+                    <button name="%(action_report_hr_disciplinary_action)d"
+                            string="Хэвлэх"
+                            type="action"
+                            class="btn btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,rejected"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Цуцлагдсан" bg_color="text-bg-danger" invisible="state != 'rejected'"/>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="employee_id" readonly="state != 'draft'"/>
+                            <field name="employee_department_id" readonly="1"/>
+                            <field name="employee_job_id" readonly="1"/>
+                            <field name="action_type" readonly="state != 'draft'"/>
+                            <field name="salary_deduction_percent"
+                                   invisible="action_type != 'salary_deduction_20'"
+                                   readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="violation_date" readonly="state != 'draft'"/>
+                            <field name="report_date" readonly="state != 'draft'"/>
+                            <field name="effective_date" readonly="state == 'approved'" required="action_type in ['salary_deduction_20', 'termination_proposal']"/>
+                            <field name="created_by_id"/>
+                            <field name="hr_responsible_id" readonly="state == 'approved'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="violation_title" readonly="state == 'approved'"/>
+                        <field name="violation_description" readonly="state == 'approved'"/>
+                        <field name="rejection_reason"
+                               placeholder="Цуцлах шалтгааныг энд бичнэ"
+                               readonly="state == 'approved'"
+                               invisible="state not in ('submitted', 'rejected')"/>
+                    </group>
+                    <group string="Хавсралт">
+                        <field name="attachment_ids" widget="many2many_binary" readonly="state == 'approved'"/>
+                        <field name="director_order_attachment_ids" widget="many2many_binary" readonly="state == 'approved'"/>
+                    </group>
+                    <group string="Баталгаажуулалт">
+                        <group>
+                            <field name="approved_by_id"/>
+                            <field name="approved_date"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter reload_on_follower="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hr_disciplinary_action_graph" model="ir.ui.view">
+        <field name="name">hr.disciplinary.action.graph</field>
+        <field name="model">hr.disciplinary.action</field>
+        <field name="arch" type="xml">
+            <graph string="Шийтгэлийн тайлан" type="bar">
+                <field name="employee_department_id"/>
+                <field name="action_type"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_hr_disciplinary_action_pivot" model="ir.ui.view">
+        <field name="name">hr.disciplinary.action.pivot</field>
+        <field name="model">hr.disciplinary.action</field>
+        <field name="arch" type="xml">
+            <pivot string="Шийтгэлийн тайлан">
+                <field name="employee_department_id" type="row"/>
+                <field name="action_type" type="col"/>
+                <field name="violation_date" interval="month" type="col"/>
+                <field name="employee_id" type="row"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_hr_disciplinary_action" model="ir.actions.act_window">
+        <field name="name">Сахилгын бүртгэл</field>
+        <field name="res_model">hr.disciplinary.action</field>
+        <field name="view_mode">list,form,graph,pivot</field>
+        <field name="search_view_id" ref="view_hr_disciplinary_action_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Сахилгын шинэ бүртгэл үүсгэнэ үү.</p>
+        </field>
+    </record>
+
+    <record id="action_hr_disciplinary_report" model="ir.actions.act_window">
+        <field name="name">Шийтгэлийн тайлан</field>
+        <field name="res_model">hr.disciplinary.action</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="search_view_id" ref="view_hr_disciplinary_action_search"/>
+    </record>
+</odoo>

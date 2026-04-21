@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
+import { WorkspaceHeader } from "@/app/_components/workspace-header";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
 import {
@@ -26,10 +27,12 @@ type PageProps = {
     department?: string | string[];
     category?: string | string[];
     unit?: string | string[];
+    quickAction?: string | string[];
   }>;
 };
 
 type ProjectFilterKey = "all" | "progress" | "planned";
+type QuickActionMode = "task" | "report" | "none";
 const PROJECT_FILTERS: Array<{ key: ProjectFilterKey; label: string }> = [
   { key: "all", label: "Бүгд" },
   { key: "progress", label: "Явагдаж буй ажил" },
@@ -65,6 +68,14 @@ function normalizeProjectFilter(value: string): ProjectFilterKey {
   return PROJECT_FILTERS.some((item) => item.key === value) ? (value as ProjectFilterKey) : "all";
 }
 
+function normalizeQuickAction(value: string): QuickActionMode {
+  if (value === "task" || value === "report") {
+    return value;
+  }
+
+  return "none";
+}
+
 /* local group helpers removed in favor of shared lib helpers */
 
 function StagePill({
@@ -72,10 +83,12 @@ function StagePill({
   bucket,
 }: {
   label: string;
-  bucket: "todo" | "progress" | "review" | "done" | "unknown";
+  bucket: "todo" | "progress" | "review" | "done" | "unknown" | "problem";
 }) {
   const tone =
-    bucket === "done"
+    bucket === "problem"
+      ? dashboardStyles.stageProblem
+      : bucket === "done"
       ? dashboardStyles.stageDone
       : bucket === "review"
         ? dashboardStyles.stageReview
@@ -83,7 +96,40 @@ function StagePill({
           ? dashboardStyles.stageProgress
           : dashboardStyles.stageTodo;
 
-  return <span className={`${dashboardStyles.stagePill} ${tone}`}>{label}</span>;
+  return (
+    <span
+      className={`${dashboardStyles.stagePill} ${tone}`}
+      aria-label={label}
+      title={label}
+    >
+      {label}
+    </span>
+  );
+}
+
+function getProjectStageRank(bucket: string) {
+  switch (bucket) {
+    case "review":
+      return 0;
+    case "progress":
+      return 1;
+    case "todo":
+      return 2;
+    case "unknown":
+      return 3;
+    case "done":
+      return 4;
+    default:
+      return 5;
+  }
+}
+
+function getProgressWidth(value: number) {
+  if (value <= 0) {
+    return "0%";
+  }
+
+  return `${Math.max(Math.min(value, 100), 6)}%`;
 }
 
 export const dynamic = "force-dynamic";
@@ -99,6 +145,8 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   });
 
   const canCreateProject = hasCapability(session, "create_projects");
+  const canCreateTasks = hasCapability(session, "create_tasks");
+  const canWriteReports = hasCapability(session, "write_workspace_reports");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
   const masterMode = isMasterRole(session.role);
@@ -107,6 +155,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const requestedDepartment = getDepartmentParam(params.department);
   const requestedUnit = getDepartmentParam(params.unit);
   const activeFilter = normalizeProjectFilter(getDepartmentParam(params.category));
+  const quickActionMode = normalizeQuickAction(getDepartmentParam(params.quickAction));
   const masterDepartmentName = masterMode
     ? pickPrimaryDepartmentName({
         taskDirectory: snapshot.taskDirectory,
@@ -150,19 +199,40 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
         }
         return true;
       })
-  ).sort((left, right) => right.completion - left.completion);
+  ).sort((left, right) => {
+    if (masterMode) {
+      const stageRankDiff =
+        getProjectStageRank(left.stageBucket) - getProjectStageRank(right.stageBucket);
+      if (stageRankDiff !== 0) {
+        return stageRankDiff;
+      }
 
-  const activeProjects = scopedProjects.filter((project) => {
-    if (activeFilter === "all") {
-      return true;
+      if (right.openTasks !== left.openTasks) {
+        return right.openTasks - left.openTasks;
+      }
+
+      return left.name.localeCompare(right.name, "mn");
     }
 
-    if (activeFilter === "progress") {
-      return project.stageBucket === "progress" || project.stageBucket === "review";
-    }
-
-    return project.stageBucket === "todo" || project.stageBucket === "unknown";
+    return right.completion - left.completion;
   });
+  const scopedTasks = masterMode
+    ? filterByDepartment(snapshot.taskDirectory, masterDepartmentName)
+    : [];
+
+  const activeProjects = masterMode
+    ? scopedProjects
+    : scopedProjects.filter((project) => {
+        if (activeFilter === "all") {
+          return true;
+        }
+
+        if (activeFilter === "progress") {
+          return project.stageBucket === "progress" || project.stageBucket === "review";
+        }
+
+        return project.stageBucket === "todo" || project.stageBucket === "unknown";
+      });
 
   const selectedDepartmentName = masterMode
     ? masterDepartmentName ?? "Миний алба нэгж"
@@ -181,10 +251,24 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const reviewProjectsCount = scopedProjects.filter(
     (project) => project.stageBucket === "review",
   ).length;
+  const activeStageProjectsCount = scopedProjects.filter(
+    (project) => project.stageBucket === "progress",
+  ).length;
   const totalOpenTaskCount = scopedProjects.reduce(
     (sum, project) => sum + project.openTasks,
     0,
   );
+  const averageProjectCompletion = scopedProjects.length
+    ? Math.round(
+        scopedProjects.reduce((sum, project) => sum + project.completion, 0) /
+          scopedProjects.length,
+      )
+    : 0;
+  const averageTaskProgress = scopedTasks.length
+    ? Math.round(
+        scopedTasks.reduce((sum, task) => sum + task.progress, 0) / scopedTasks.length,
+      )
+    : 0;
   const weightedCompletion = scopedProjects.length
     ? Math.round(
         totalOpenTaskCount > 0
@@ -196,6 +280,83 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
               scopedProjects.length,
       )
     : 0;
+  const activeProjectShare = scopedProjects.length
+    ? Math.round((projectCounts.progress / scopedProjects.length) * 100)
+    : 0;
+  const insightProgressCards = [
+    {
+      key: "project",
+      label: "Ажлын явц",
+      value: averageProjectCompletion,
+      note: "Нийт ажлын ерөнхий гүйцэтгэл.",
+      cardClass: styles.masterInsightsProgressCardProject,
+      unitLabel: "Ажил",
+    },
+    {
+      key: "task",
+      label: "Ажилбарын явц",
+      value: averageTaskProgress,
+      note: "Нээлттэй ажилбарын бодит явц.",
+      cardClass: styles.masterInsightsProgressCardTask,
+      unitLabel: "Ажилбар",
+    },
+  ] as const;
+  const statusDistribution = [
+    {
+      key: "progress",
+      label: "Явж буй ажил",
+      count: activeStageProjectsCount,
+      note: "Талбай дээр яваа ажил",
+      share: scopedProjects.length
+        ? Math.round((activeStageProjectsCount / scopedProjects.length) * 100)
+        : 0,
+      toneClass: styles.masterInsightsStatusProgress,
+    },
+    {
+      key: "review",
+      label: "Шалгагдаж буй ажил",
+      count: reviewProjectsCount,
+      note: "Баталгаажуулалт хүлээж буй",
+      share: scopedProjects.length
+        ? Math.round((reviewProjectsCount / scopedProjects.length) * 100)
+        : 0,
+      toneClass: styles.masterInsightsStatusReview,
+    },
+    {
+      key: "planned",
+      label: "Төлөвлөсөн ажил",
+      count: projectCounts.planned,
+      note: "Эхлээгүй эсвэл хүлээгдэж буй",
+      share: scopedProjects.length
+        ? Math.round((projectCounts.planned / scopedProjects.length) * 100)
+        : 0,
+      toneClass: styles.masterInsightsStatusPlanned,
+    },
+  ] as const;
+  const insightSummaryCards = [
+    {
+      label: "Нийт ажил",
+      value: String(scopedProjects.length),
+      note: "Бүртгэлтэй ажил",
+    },
+    {
+      label: "Нийт ажилбар",
+      value: String(scopedTasks.length),
+      note: "Бүх ажилбарын нийлбэр",
+    },
+    {
+      label: "Нээлттэй ажилбар",
+      value: String(totalOpenTaskCount),
+      note: "Хаагдаагүй ажилбар",
+    },
+  ] as const;
+  const progressGap = averageTaskProgress - averageProjectCompletion;
+  const progressGapLabel =
+    progressGap === 0
+      ? "Ажил, ажилбарын явц ижил түвшинд байна."
+      : progressGap > 0
+        ? `Ажилбарын явц ажлынхаас ${progressGap}% өндөр байна.`
+        : `Ажлын явц ажилбарынхаас ${Math.abs(progressGap)}% өндөр байна.`;
   const summaryCards = [
     {
       label: "Нийт ажил",
@@ -243,6 +404,62 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
       : activeFilter === "planned"
         ? "Одоогоор эхлээгүй, төлөвлөсөн шатанд байгаа ажлуудыг харуулна"
         : "Сонгосон алба нэгжийн бүх ажлыг нэг дор харуулна";
+  const selectionParams = new URLSearchParams();
+  if (selectedGroup?.name) {
+    selectionParams.set("department", selectedGroup.name);
+  }
+  if (selectedUnit) {
+    selectionParams.set("unit", selectedUnit);
+  }
+  if (activeFilter !== "all") {
+    selectionParams.set("category", activeFilter);
+  }
+  if (quickActionMode !== "none") {
+    selectionParams.set("quickAction", quickActionMode);
+  }
+  const selectionReturnTo = `/projects${selectionParams.toString() ? `?${selectionParams.toString()}` : ""}`;
+  const quickActionMessage =
+    quickActionMode === "task"
+      ? "Эхлээд ажил сонгоод тухайн ажлын дотор шинэ ажилбар нэмнэ."
+      : quickActionMode === "report"
+        ? "Эхлээд ажил сонгоод, дараа нь ажилбар дээрээс тайлан оруулна."
+        : "";
+  const allProjectsHref = `/projects${
+    (() => {
+      const hrefParams = new URLSearchParams();
+      if (activeFilter !== "all") {
+        hrefParams.set("category", activeFilter);
+      }
+      if (quickActionMode !== "none") {
+        hrefParams.set("quickAction", quickActionMode);
+      }
+      return hrefParams.toString() ? `?${hrefParams.toString()}` : "";
+    })()
+  }`;
+  const sectionNote =
+    quickActionMode === "task"
+      ? "Ажил сонгоод дармагц ажилбар нэмэх цонх руу орно."
+      : quickActionMode === "report"
+        ? "Ажил сонгоод доторх ажилбараас тайлан оруулах урсгал руу орно."
+        : masterMode
+          ? "Ажил дээр дарахад тухайн ажлаас шинэ ажилбар нээх болон өнөөдрийн урсгал руу орно."
+          : "Ажил дээр дарахад тухайн ажлын ажилбарууд нээгдэнэ";
+  const projectCardLabel =
+    quickActionMode === "task"
+      ? "Энэ ажил дээр ажилбар нэмэх"
+      : quickActionMode === "report"
+        ? "Ажилбар сонгох"
+        : "Ажлын ажилбар харах";
+  const buildProjectHref = (projectHref: string) => {
+    if (quickActionMode === "none") {
+      return projectHref;
+    }
+
+    const hrefParams = new URLSearchParams();
+    hrefParams.set("quickAction", quickActionMode);
+    hrefParams.set("returnTo", selectionReturnTo);
+    return `${projectHref}?${hrefParams.toString()}`;
+  };
 
   return (
     <main className={styles.shell}>
@@ -250,8 +467,10 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
         <div className={styles.contentWithMenu}>
           <aside className={styles.menuColumn}>
             <AppMenu
-              active="projects"
+              active={masterMode ? "dashboard" : "projects"}
               canCreateProject={canCreateProject}
+              canCreateTasks={canCreateTasks}
+              canWriteReports={canWriteReports}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
@@ -261,6 +480,19 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
           </aside>
 
           <div className={styles.pageContent}>
+            <WorkspaceHeader
+              title={masterMode ? "Нэгжийн ажил" : "Ажлын сан"}
+              subtitle={
+                masterMode
+                  ? "Өнөөдөр явах ажил, төслийн нэгдсэн жагсаалт"
+                  : "Ажлын ерөнхий жагсаалт болон шүүлт"
+              }
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+              notificationCount={scopedProjects.length}
+              notificationNote={`${scopedProjects.length} ажил, төсөл энэ хүрээнд байна`}
+            />
+
             {!masterMode ? (
               <section className={dashboardStyles.projectsSection}>
                 <div className={dashboardStyles.sectionHeader}>
@@ -279,7 +511,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                 >
                   <div className={dashboardStyles.departmentTabBar}>
                     <Link
-                      href={activeFilter === "all" ? "/projects" : `/projects?category=${activeFilter}`}
+                      href={allProjectsHref}
                       className={`${dashboardStyles.departmentTab} ${
                         !selectedGroup ? dashboardStyles.departmentTabActive : ""
                       }`}
@@ -304,6 +536,9 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                       hrefParams.set("department", group.name);
                       if (activeFilter !== "all") {
                         hrefParams.set("category", activeFilter);
+                      }
+                      if (quickActionMode !== "none") {
+                        hrefParams.set("quickAction", quickActionMode);
                       }
 
                       return (
@@ -359,6 +594,9 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                     if (activeFilter !== "all") {
                       hrefParams.set("category", activeFilter);
                     }
+                    if (quickActionMode !== "none") {
+                      hrefParams.set("quickAction", quickActionMode);
+                    }
 
                     return (
                       <Link
@@ -392,14 +630,176 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                   </span>
                   <h2>{selectedDepartmentName}</h2>
                   <small className={dashboardStyles.sectionNote}>
-                    {masterMode
-                      ? "Ажил дээр дарахад тухайн ажлаас шинэ ажилбар нээх болон өнөөдрийн урсгал руу орно."
-                      : "Ажил дээр дарахад тухайн ажлын ажилбарууд нээгдэнэ"}
+                    {sectionNote}
                   </small>
                 </div>
               </div>
 
-              <div className={styles.summaryShowcaseGrid}>
+              {quickActionMessage ? (
+                <div className={`${styles.message} ${styles.noticeMessage}`}>
+                  {quickActionMessage}
+                </div>
+              ) : null}
+
+              {masterMode ? (
+                <div className={styles.masterInsightsGrid}>
+                  <article className={styles.masterInsightsChart}>
+                    <div className={styles.masterInsightsHeader}>
+                      <div className={styles.masterInsightsTitleBlock}>
+                        <span className={styles.masterInsightsKicker}>Явцын диаграм</span>
+                        <h3>Нэгжийн ажлын зураг</h3>
+                        <p>
+                          Ажил, ажилбарын явц болон төлөвийн бүтцийг нэг дор харуулна.
+                        </p>
+                      </div>
+
+                      <div className={styles.masterInsightsHighlight}>
+                        <span>Идэвхтэй ажил</span>
+                        <strong>{projectCounts.progress}</strong>
+                        <small>{scopedProjects.length} ажлаас яг одоо идэвхтэй нь</small>
+                        <div className={styles.masterInsightsHighlightMeta}>
+                          <span>Нээлттэй {totalOpenTaskCount}</span>
+                          <span>Идэвхтэй {activeProjectShare}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.masterInsightsBody}>
+                      <div className={styles.masterInsightsProgressGrid}>
+                        {insightProgressCards.map((item) => {
+                          const degrees = Math.round((item.value / 100) * 360);
+
+                          return (
+                            <article
+                              key={item.key}
+                              className={`${styles.masterInsightsProgressCard} ${item.cardClass}`}
+                            >
+                              <div
+                                className={styles.masterInsightsRing}
+                                aria-hidden
+                                style={{
+                                  background: `conic-gradient(var(--insight-ring-strong) 0deg ${degrees}deg, var(--insight-ring-soft) ${degrees}deg 360deg)`,
+                                }}
+                              >
+                                <div className={styles.masterInsightsRingInner}>
+                                  <strong>{item.value}%</strong>
+                                  <span>{item.unitLabel}</span>
+                                </div>
+                              </div>
+
+                              <div className={styles.masterInsightsProgressCopy}>
+                                <span>{item.label}</span>
+                                <strong>{item.value}%</strong>
+                                <small>{item.note}</small>
+                                <div className={styles.masterInsightsTrack} aria-hidden>
+                                  <span style={{ width: getProgressWidth(item.value) }} />
+                                </div>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+
+                      <article className={styles.masterInsightsStatusCard}>
+                        <div className={styles.masterInsightsStatusHeader}>
+                          <div>
+                            <span className={styles.masterInsightsStatusKicker}>
+                              Төлөвийн бүтэц
+                            </span>
+                            <strong>Ажлын төлөв</strong>
+                          </div>
+                          <small>{scopedProjects.length} ажил</small>
+                        </div>
+
+                        <div className={styles.masterInsightsStatusList}>
+                          {statusDistribution.map((item) => (
+                            <div
+                              key={item.key}
+                              className={`${styles.masterInsightsStatusItem} ${item.toneClass}`}
+                            >
+                              <div className={styles.masterInsightsStatusTop}>
+                                <span>{item.label}</span>
+                                <strong>{item.count}</strong>
+                              </div>
+                              <small>{item.note}</small>
+                              <div className={styles.masterInsightsMiniTrack} aria-hidden>
+                                <span style={{ width: getProgressWidth(item.share) }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </article>
+                    </div>
+
+                    <div className={styles.masterInsightsMeta}>
+                      {insightSummaryCards.map((item) => (
+                        <div key={item.label} className={styles.masterInsightsMetaItem}>
+                          <span>{item.label}</span>
+                          <strong>{item.value}</strong>
+                          <small>{item.note}</small>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+
+                  <div className={styles.masterInsightsSide}>
+                    <article className={styles.masterInsightsStoryCard}>
+                      <span className={styles.masterInsightsStoryKicker}>Өнөөдрийн зураг</span>
+                      <h3>{selectedDepartmentName}</h3>
+                      <p>
+                        Ачаалал, хяналтын шат, нээлттэй ажилбарын байдлыг товч харуулна.
+                      </p>
+
+                      <div className={styles.masterInsightsStoryList}>
+                        <div className={styles.masterInsightsStoryItem}>
+                          <strong>Идэвхтэй урсгал</strong>
+                          <span>
+                            {scopedProjects.length} ажлаас {projectCounts.progress} нь идэвхтэй байна.
+                          </span>
+                        </div>
+                        <div className={styles.masterInsightsStoryItem}>
+                          <strong>Хяналтын шат</strong>
+                          <span>
+                            {reviewProjectsCount > 0
+                              ? `${reviewProjectsCount} ажил хяналт хүлээж байна.`
+                              : "Хяналт хүлээж буй ажил алга."}
+                          </span>
+                        </div>
+                        <div className={styles.masterInsightsStoryItem}>
+                          <strong>Ажилбарын ачаалал</strong>
+                          <span>
+                            {scopedTasks.length} ажилбараас {totalOpenTaskCount} нь нээлттэй байна.
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={styles.masterInsightsStoryStats}>
+                        <div className={styles.masterInsightsStoryStat}>
+                          <span>Нээлттэй</span>
+                          <strong>{totalOpenTaskCount}</strong>
+                        </div>
+                        <div className={styles.masterInsightsStoryStat}>
+                          <span>Нийт ажилбар</span>
+                          <strong>{scopedTasks.length}</strong>
+                        </div>
+                        <div className={styles.masterInsightsStoryStat}>
+                          <span>Идэвхтэй хувь</span>
+                          <strong>{activeProjectShare}%</strong>
+                        </div>
+                      </div>
+
+                      <div className={styles.masterInsightsDelta}>
+                        <span>Харьцуулалт</span>
+                        <strong>{progressGapLabel}</strong>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              ) : null}
+
+              {!masterMode ? (
+                <>
+                  <div className={styles.summaryShowcaseGrid}>
                 {visibleSummaryCards.map((card) => (
                   <article key={card.label} className={`${styles.summaryShowcaseCard} ${card.tone}`}>
                     <div className={styles.summaryShowcaseTop}>
@@ -422,7 +822,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                 ))}
               </div>
 
-              <div className={styles.taskFilterRail}>
+                  <div className={styles.taskFilterRail}>
                 {PROJECT_FILTERS.map((filter) => {
                   const hrefParams = new URLSearchParams();
                   if (selectedGroup?.name) {
@@ -433,6 +833,9 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                   }
                   if (filter.key !== "all") {
                     hrefParams.set("category", filter.key);
+                  }
+                  if (quickActionMode !== "none") {
+                    hrefParams.set("quickAction", quickActionMode);
                   }
 
                   return (
@@ -448,21 +851,72 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                     </Link>
                   );
                 })}
-              </div>
+                    </div>
+                </>
+              ) : null}
 
               {activeProjects.length ? (
                 <>
-                  <div className={dashboardStyles.sectionHeader}>
-                    <div>
-                      <span className={dashboardStyles.kicker}>{filterTitle}</span>
-                      <h2>{selectedDepartmentName}</h2>
-                      <small className={dashboardStyles.sectionNote}>{filterNote}</small>
+                  {!masterMode ? (
+                    <div className={dashboardStyles.sectionHeader}>
+                      <div>
+                        <span className={dashboardStyles.kicker}>{filterTitle}</span>
+                        <h2>{selectedDepartmentName}</h2>
+                        <small className={dashboardStyles.sectionNote}>{filterNote}</small>
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
 
-                  <div className={dashboardStyles.projectRail}>
+                  {masterMode ? (
+                    <div className={dashboardStyles.reviewList}>
+                      {activeProjects.map((project) => (
+                        <Link
+                          key={project.id}
+                          href={buildProjectHref(project.href)}
+                          className={dashboardStyles.reviewItem}
+                        >
+                          <div className={styles.projectListRowMain}>
+                            <div className={styles.projectListRowTop}>
+                              <h3>{project.name}</h3>
+                              <StagePill
+                                label={project.stageLabel}
+                                bucket={project.stageBucket}
+                              />
+                            </div>
+                            <p>
+                              Алба нэгж: {project.departmentName} · Менежер:{" "}
+                              {project.manager}
+                            </p>
+                          </div>
+
+                          <div className={dashboardStyles.reviewMeta}>
+                            <strong>{project.openTasks}</strong>
+                            <span>Нээлттэй ажилбар</span>
+                            <span>{project.deadline}</span>
+                          </div>
+
+                          <div className={styles.projectListProgress}>
+                            <div className={styles.projectListProgressScale}>
+                              <strong>{project.completion}%</strong>
+                            </div>
+                            <div
+                              className={`${dashboardStyles.progressTrack} ${styles.projectListProgressTrack}`}
+                              aria-hidden
+                            >
+                              <span style={{ width: `${project.completion}%` }} />
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={dashboardStyles.projectRail}>
                   {activeProjects.map((project) => (
-                    <Link key={project.id} href={project.href} className={dashboardStyles.projectCard}>
+                    <Link
+                      key={project.id}
+                      href={buildProjectHref(project.href)}
+                      className={dashboardStyles.projectCard}
+                    >
                       <div className={dashboardStyles.projectCardTop}>
                         <span>{project.deadline}</span>
                         <StagePill label={project.stageLabel} bucket={project.stageBucket} />
@@ -487,12 +941,13 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                       </div>
 
                       <div className={dashboardStyles.cardFooter}>
-                        <span className={dashboardStyles.cardLinkLabel}>Ажлын ажилбар харах</span>
+                        <span className={dashboardStyles.cardLinkLabel}>{projectCardLabel}</span>
                         <strong aria-hidden>→</strong>
                       </div>
                     </Link>
                   ))}
-                  </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className={dashboardStyles.emptyColumnState}>

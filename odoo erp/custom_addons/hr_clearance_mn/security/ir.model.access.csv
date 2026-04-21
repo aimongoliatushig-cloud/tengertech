@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_employee_clearance_user,hr.employee.clearance.user,model_hr_employee_clearance,hr_clearance_mn.group_hr_clearance_user,1,1,1,0
+access_hr_employee_clearance_manager,hr.employee.clearance.manager,model_hr_employee_clearance,hr_clearance_mn.group_hr_clearance_manager,1,1,1,1
+access_hr_employee_clearance_hr_manager,hr.employee.clearance.hr.manager,model_hr_employee_clearance,hr.group_hr_manager,1,1,1,1

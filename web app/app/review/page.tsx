@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
+import { WorkspaceHeader } from "@/app/_components/workspace-header";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
 import {
@@ -53,10 +54,12 @@ function StagePill({
   bucket,
 }: {
   label: string;
-  bucket: "todo" | "progress" | "review" | "done" | "unknown";
+  bucket: "todo" | "progress" | "review" | "done" | "unknown" | "problem";
 }) {
   const tone =
-    bucket === "done"
+    bucket === "problem"
+      ? dashboardStyles.stageProblem
+      : bucket === "done"
       ? dashboardStyles.stageDone
       : bucket === "review"
         ? dashboardStyles.stageReview
@@ -64,7 +67,15 @@ function StagePill({
           ? dashboardStyles.stageProgress
           : dashboardStyles.stageTodo;
 
-  return <span className={`${dashboardStyles.stagePill} ${tone}`}>{label}</span>;
+  return (
+    <span
+      className={`${dashboardStyles.stagePill} ${tone}`}
+      aria-label={label}
+      title={label}
+    >
+      {label}
+    </span>
+  );
 }
 
 function createUnitScope(
@@ -117,6 +128,8 @@ export default async function ReviewPage({ searchParams }: PageProps) {
   });
 
   const canCreateProject = hasCapability(session, "create_projects");
+  const canCreateTasks = hasCapability(session, "create_tasks");
+  const canWriteReports = hasCapability(session, "write_workspace_reports");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
 
@@ -303,6 +316,8 @@ export default async function ReviewPage({ searchParams }: PageProps) {
             <AppMenu
               active="review"
               canCreateProject={canCreateProject}
+              canCreateTasks={canCreateTasks}
+              canWriteReports={canWriteReports}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
@@ -311,6 +326,15 @@ export default async function ReviewPage({ searchParams }: PageProps) {
           </aside>
 
           <div className={shellStyles.pageContent}>
+            <WorkspaceHeader
+              title="Хяналт"
+              subtitle="Шалгах, батлах урсгалын нэгтгэсэн самбар"
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+              notificationCount={visibleReviewTasks.length}
+              notificationNote={`${visibleReviewTasks.length} ажилбар шийдвэр хүлээж байна`}
+            />
+
             <section className={shellStyles.heroCard}>
               <span className={shellStyles.eyebrow}>Хяналтын урсгал</span>
               <h1>Хянах болон хянасан ажлууд</h1>

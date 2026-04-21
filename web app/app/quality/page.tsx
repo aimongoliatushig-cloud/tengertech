@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
+import { WorkspaceHeader } from "@/app/_components/workspace-header";
 import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
 import {
@@ -41,6 +42,8 @@ export default async function QualityPage() {
     redirect("/");
   }
   const canCreateProject = hasCapability(session, "create_projects");
+  const canCreateTasks = hasCapability(session, "create_tasks");
+  const canWriteReports = hasCapability(session, "write_workspace_reports");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
   const snapshot = await loadMunicipalSnapshot({
@@ -56,6 +59,8 @@ export default async function QualityPage() {
             <AppMenu
               active="quality"
               canCreateProject={canCreateProject}
+              canCreateTasks={canCreateTasks}
+              canWriteReports={canWriteReports}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
@@ -64,6 +69,15 @@ export default async function QualityPage() {
           </aside>
 
           <div className={styles.pageContent}>
+            <WorkspaceHeader
+              title="Чанарын төв"
+              subtitle="Талбарын зөрчил, анхааруулгын нэгдсэн хяналт"
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+              notificationCount={snapshot.qualityAlerts.length}
+              notificationNote={`${snapshot.qualityAlerts.length} чанарын анхааруулга бүртгэгдсэн`}
+            />
+
             {!canViewQualityCenter ? (
               <section className={styles.emptyState}>
                 <h2>Чанарын төв рүү хандах эрх алга</h2>

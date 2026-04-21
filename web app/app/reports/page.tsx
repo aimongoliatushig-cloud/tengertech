@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
+import { WorkspaceHeader } from "@/app/_components/workspace-header";
 import dashboardStyles from "@/app/page.module.css";
 import shellStyles from "@/app/workspace.module.css";
 import {
@@ -107,6 +108,8 @@ export default async function ReportsPage({ searchParams }: PageProps) {
   });
 
   const canCreateProject = hasCapability(session, "create_projects");
+  const canCreateTasks = hasCapability(session, "create_tasks");
+  const canWriteReports = hasCapability(session, "write_workspace_reports");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
   const masterMode = isMasterRole(session.role);
@@ -209,6 +212,8 @@ export default async function ReportsPage({ searchParams }: PageProps) {
             <AppMenu
               active="reports"
               canCreateProject={canCreateProject}
+              canCreateTasks={canCreateTasks}
+              canWriteReports={canWriteReports}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
@@ -218,6 +223,15 @@ export default async function ReportsPage({ searchParams }: PageProps) {
           </aside>
 
           <div className={shellStyles.pageContent}>
+            <WorkspaceHeader
+              title="Тайлан"
+              subtitle="Өдрийн тайлан, зураг, аудио урсгал"
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+              notificationCount={filteredReviewQueue.length}
+              notificationNote={`${filteredReviewQueue.length} ажилбар хяналт хүлээж байна`}
+            />
+
             <header className={styles.pageHeader}>
               <div className={styles.titleBlock}>
                 <span className={styles.kicker}>Тайлан</span>

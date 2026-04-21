@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
+import { WorkspaceHeader } from "@/app/_components/workspace-header";
 import {
   createFieldStopIssueAction,
   logoutAction,
@@ -85,6 +86,8 @@ export default async function FieldPage({ searchParams }: PageProps) {
   const noticeMessage = getMessage(query.notice);
   const errorMessage = getMessage(query.error);
   const canCreateProject = hasCapability(session, "create_projects");
+  const canCreateTasks = hasCapability(session, "create_tasks");
+  const canWriteReports = hasCapability(session, "write_workspace_reports");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
   const workerMode = isWorkerOnly(session);
@@ -122,6 +125,15 @@ export default async function FieldPage({ searchParams }: PageProps) {
   return (
     <main className={workspaceStyles.shell}>
       <div className={workspaceStyles.container}>
+        <WorkspaceHeader
+          title="Талбарын маршрут"
+          subtitle="Өнөөдрийн маршрут, талбарын хяналтын урсгал"
+          userName={session.name}
+          roleLabel={getRoleLabel(session.role)}
+          notificationCount={bundle.assignments.length}
+          notificationNote={`${bundle.assignments.length} маршрут өнөөдөр оноогдсон байна`}
+        />
+
         <header className={workspaceStyles.navBar}>
           <div className={workspaceStyles.navLinks}>
             <Link href="/" className={workspaceStyles.backLink}>
@@ -143,6 +155,8 @@ export default async function FieldPage({ searchParams }: PageProps) {
         <AppMenu
           active="field"
           canCreateProject={canCreateProject}
+          canCreateTasks={canCreateTasks}
+          canWriteReports={canWriteReports}
           canViewQualityCenter={canViewQualityCenter}
           canUseFieldConsole={canUseFieldConsole}
           userName={session.name}

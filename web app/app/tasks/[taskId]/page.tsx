@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
+import { WorkspaceHeader } from "@/app/_components/workspace-header";
 import {
   createTaskReportAction,
   markTaskDoneAction,
@@ -43,7 +44,9 @@ function getMessage(value?: string | string[]) {
 
 function StagePill({ label, bucket }: { label: string; bucket: string }) {
   const tone =
-    bucket === "done"
+    bucket === "problem"
+      ? dashboardStyles.stageProblem
+      : bucket === "done"
       ? dashboardStyles.stageDone
       : bucket === "review"
         ? dashboardStyles.stageReview
@@ -51,7 +54,15 @@ function StagePill({ label, bucket }: { label: string; bucket: string }) {
           ? dashboardStyles.stageProgress
           : dashboardStyles.stageTodo;
 
-  return <span className={`${dashboardStyles.stagePill} ${tone}`}>{label}</span>;
+  return (
+    <span
+      className={`${dashboardStyles.stagePill} ${tone}`}
+      aria-label={label}
+      title={label}
+    >
+      {label}
+    </span>
+  );
 }
 
 function formatQuantityLabel(value: number, unit: string, quantityOptional: boolean) {
@@ -74,17 +85,28 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
   const openReportComposer = composer === "report";
   const workerMode = isWorkerOnly(session);
   const masterMode = isMasterRole(session.role);
+  const fromCreateFlow = safeReturnTo.startsWith("/create");
   const useExecutiveLayout = !masterMode && safeReturnTo.startsWith("/tasks");
-  const activeMenuKey = safeReturnTo.startsWith("/tasks") ? "tasks" : "projects";
+  const activeMenuKey = fromCreateFlow
+    ? "new-project"
+    : safeReturnTo.startsWith("/tasks")
+    ? "tasks"
+    : masterMode
+      ? "dashboard"
+      : "projects";
   const backHref = safeReturnTo || (workerMode || masterMode ? "/tasks" : "/projects");
   const backLabel =
-    masterMode
+    fromCreateFlow
+      ? "Тайлангийн ажилбар сонгох руу буцах"
+      : masterMode
       ? "Өнөөдрийн ажил руу буцах"
       : useExecutiveLayout || workerMode
         ? "Ажилбар руу буцах"
         : "Ажил руу буцах";
 
   const canCreateProject = hasCapability(session, "create_projects");
+  const canCreateTasks = hasCapability(session, "create_tasks");
+  const canWriteReports = hasCapability(session, "write_workspace_reports");
   const canViewQualityCenter = hasCapability(session, "view_quality_center");
   const canUseFieldConsole = hasCapability(session, "use_field_console");
 
@@ -107,6 +129,8 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                 active={activeMenuKey}
                 variant={useExecutiveLayout ? "executive" : "default"}
                 canCreateProject={canCreateProject}
+                canCreateTasks={canCreateTasks}
+                canWriteReports={canWriteReports}
                 canViewQualityCenter={canViewQualityCenter}
                 canUseFieldConsole={canUseFieldConsole}
                 userName={session.name}
@@ -168,6 +192,8 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
               active={activeMenuKey}
               variant={useExecutiveLayout ? "executive" : "default"}
               canCreateProject={canCreateProject}
+              canCreateTasks={canCreateTasks}
+              canWriteReports={canWriteReports}
               canViewQualityCenter={canViewQualityCenter}
               canUseFieldConsole={canUseFieldConsole}
               userName={session.name}
@@ -178,6 +204,15 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
           </aside>
 
           <div className={shellStyles.pageContent}>
+            <WorkspaceHeader
+              title="Ажилбарын дэлгэрэнгүй"
+              subtitle="Сонгосон ажилбарын тайлан ба гүйцэтгэлийн урсгал"
+              userName={session.name}
+              roleLabel={getRoleLabel(session.role)}
+              notificationCount={task.reports.length}
+              notificationNote={`${task.reports.length} тайлан энэ ажилбарт бүртгэгдсэн`}
+            />
+
             {errorMessage ? (
               <div className={`${shellStyles.message} ${shellStyles.errorMessage}`}>{errorMessage}</div>
             ) : null}

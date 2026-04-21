@@ -159,6 +159,54 @@
   gap: 14px;
 }
 
+.noticePanel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(74, 154, 93, 0.12);
+}
+
+.noticeGlyph {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(223, 187, 83, 0.18);
+  color: #8f6a10;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.noticeCopy {
+  display: grid;
+  gap: 2px;
+}
+
+.noticeCopy span {
+  color: var(--brand-800);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.noticeCopy strong {
+  font-size: 1.1rem;
+  line-height: 1.1;
+}
+
+.noticeCopy small {
+  color: var(--ink-600);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .userPanel {
   display: grid;
   gap: 2px;
@@ -1138,26 +1186,33 @@
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .stageTodo {
-  background: rgba(95, 117, 99, 0.12);
-  color: #48614d;
+  background: #e4e7e4;
+  color: #667266;
 }
 
 .stageProgress {
-  background: rgba(74, 154, 93, 0.14);
-  color: var(--brand-800);
+  background: #cfe8cb;
+  color: #2f7a3f;
 }
 
 .stageReview {
-  background: rgba(143, 189, 134, 0.18);
-  color: #3f7146;
+  background: #f4df8b;
+  color: #7a6213;
 }
 
 .stageDone {
-  background: rgba(44, 119, 64, 0.16);
-  color: var(--brand-900);
+  background: #46b965;
+  color: #f7fff8;
+}
+
+.stageProblem {
+  background: #dd6363;
+  color: #fff7f7;
 }
 
 .mobileDock {
@@ -1207,6 +1262,7 @@
     align-items: stretch;
   }
 
+  .noticePanel,
   .userPanel {
     min-width: 0;
   }
@@ -1246,11 +1302,26 @@
   }
 
   .topbarActions {
-    display: none;
+    display: grid;
+    width: 100%;
+    gap: 10px;
   }
 
   .brandBlock h1 {
     font-size: clamp(1.45rem, 8vw, 2rem);
+  }
+
+  .stagePill {
+    width: 14px;
+    min-width: 14px;
+    height: 14px;
+    min-height: 14px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+    line-height: 0;
+    color: transparent;
+    text-indent: -9999px;
   }
 
   .metricsGrid {
