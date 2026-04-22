@@ -8,7 +8,7 @@
     </record>
 
     <record id="rule_ops_task_field_report_general_manager" model="ir.rule">
-        <field name="name">Гүйцэтгэлийн тайлан: ерөнхий менежер бүх бичлэгийг харах</field>
+        <field name="name">Гүйцэтгэлийн тайлан: үйл ажиллагаа хариуцсан менежер бүх бичлэгийг харах</field>
         <field name="model_id" ref="model_ops_task_report"/>
         <field name="perm_create" eval="False"/>
         <field name="perm_write" eval="False"/>

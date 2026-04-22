@@ -35,7 +35,7 @@
               sequence="30"/>
 
     <menuitem id="menu_fleet_repair_general_manager"
-              name="Ерөнхий менежерийн хяналт"
+              name="Үйл ажиллагаа хариуцсан менежерийн хяналт"
               parent="menu_fleet_repair_workflow_root"
               action="fleet_repair_workflow.action_fleet_repair_request_general_manager"
               groups="fleet_repair_workflow.group_fleet_repair_general_manager,fleet_repair_workflow.group_fleet_repair_manager,base.group_system"

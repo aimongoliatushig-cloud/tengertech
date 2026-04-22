@@ -278,7 +278,7 @@
     </record>
 
     <record id="action_fleet_repair_request_general_manager" model="ir.actions.act_window">
-        <field name="name">Ерөнхий менежерийн хяналт</field>
+        <field name="name">Үйл ажиллагаа хариуцсан менежерийн хяналт</field>
         <field name="res_model">fleet.repair.request</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('state', 'not in', ['done', 'cancelled'])]</field>

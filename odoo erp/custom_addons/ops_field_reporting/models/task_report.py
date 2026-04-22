@@ -310,7 +310,7 @@ class ProjectTask(models.Model):
     def action_ops_mark_done(self):
         for task in self:
             if not task._ops_is_current_user_general_manager():
-                raise AccessError(_("Зөвхөн ерөнхий менежер шалгасны дараа энэ ажлыг дуусгах боломжтой."))
+                raise AccessError(_("Зөвхөн үйл ажиллагаа хариуцсан менежер шалгасны дараа энэ ажлыг дуусгах боломжтой."))
 
             done_stage = task._ops_get_target_stage("done")
             if not done_stage:
@@ -322,13 +322,13 @@ class ProjectTask(models.Model):
                     "state": "1_done",
                 }
             )
-            task.message_post(body=_("Ажлыг ерөнхий менежер шалгаад дуусгалаа."))
+            task.message_post(body=_("Ажлыг үйл ажиллагаа хариуцсан менежер шалгаад дуусгалаа."))
         return True
 
     def action_ops_open_return_wizard(self):
         self.ensure_one()
         if not self._ops_is_current_user_general_manager():
-            raise AccessError(_("Зөвхөн ерөнхий менежер шалгагдаж буй ажлыг буцаах боломжтой."))
+            raise AccessError(_("Зөвхөн үйл ажиллагаа хариуцсан менежер шалгагдаж буй ажлыг буцаах боломжтой."))
         if self._ops_get_stage_bucket() != "review":
             raise UserError(_("Зөвхөн `Шалгагдаж буй ажил` үе шатанд байгаа ажлыг буцаана уу."))
 

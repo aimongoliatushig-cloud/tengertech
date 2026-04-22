@@ -69,9 +69,11 @@ class ResUsers(models.Model):
         if default_companies:
             default_companies.write({"name": DEFAULT_COMPANY_NAME})
 
-        general_channel = self.env.ref(
-            "mail.channel_all_employees", raise_if_not_found=False
-        )
+        general_channel = False
+        if "discuss.channel" in self.env or "mail.channel" in self.env:
+            general_channel = self.env.ref(
+                "mail.channel_all_employees", raise_if_not_found=False
+            )
         if general_channel:
             channel_vals = {}
             if general_channel.name == "general":
@@ -81,9 +83,11 @@ class ResUsers(models.Model):
             if channel_vals:
                 general_channel.sudo().write(channel_vals)
 
-        welcome_message = self.env.ref(
-            "mail.module_install_notification", raise_if_not_found=False
-        )
+        welcome_message = False
+        if "mail.message" in self.env:
+            welcome_message = self.env.ref(
+                "mail.module_install_notification", raise_if_not_found=False
+            )
         if welcome_message:
             message_vals = {}
             if welcome_message.subject == "Welcome to Odoo!":

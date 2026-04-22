@@ -150,7 +150,7 @@ class FleetRepairRequest(models.Model):
     purchase_datetime = fields.Datetime(string="Худалдан авалт хийсэн хугацаа")
     parts_received_datetime = fields.Datetime(string="Сэлбэг хүлээн авсан хугацаа")
     repair_completed_datetime = fields.Datetime(string="Засвар бүрэн дууссан хугацаа")
-    general_manager_id = fields.Many2one("res.users", string="Ерөнхий менежер", tracking=True)
+    general_manager_id = fields.Many2one("res.users", string="Үйл ажиллагаа хариуцсан менежер", tracking=True)
 
     director_order_number = fields.Char(string="Захирлын тушаалын дугаар", tracking=True)
     director_order_date = fields.Date(string="Захирлын тушаалын огноо", tracking=True)

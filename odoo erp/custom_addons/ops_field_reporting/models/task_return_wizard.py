@@ -27,7 +27,7 @@ class OpsTaskReturnWizard(models.TransientModel):
         if not reason:
             raise ValidationError(_("Буцаах шалтгаанаа оруулна уу."))
         if not task._ops_is_current_user_general_manager():
-            raise AccessError(_("Зөвхөн ерөнхий менежер шалгагдаж буй ажлыг буцаах боломжтой."))
+            raise AccessError(_("Зөвхөн үйл ажиллагаа хариуцсан менежер шалгагдаж буй ажлыг буцаах боломжтой."))
 
         progress_stage = task._ops_get_target_stage("progress")
         if not progress_stage:
@@ -42,7 +42,7 @@ class OpsTaskReturnWizard(models.TransientModel):
         reason_html = html.escape(reason).replace("\n", "<br/>")
         task.message_post(
             body=_(
-                "Ерөнхий менежер ажлыг засвар нэхэж буцаалаа.<br/><br/><strong>Шалтгаан:</strong><br/>%s"
+                "Үйл ажиллагаа хариуцсан менежер ажлыг засвар нэхэж буцаалаа.<br/><br/><strong>Шалтгаан:</strong><br/>%s"
             )
             % reason_html
         )
