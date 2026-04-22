@@ -18,7 +18,6 @@ export function TaskReportModal({
   action,
   taskId,
   defaultOpen = false,
-  quantityOptional = false,
   measurementUnit,
 }: Props) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -56,13 +55,7 @@ export function TaskReportModal({
     };
   }, [isOpen]);
 
-  const quantityLabel = quantityOptional
-    ? `Хийсэн хэмжээ${measurementUnit ? ` (${measurementUnit}, заавал биш)` : " (заавал биш)"}`
-    : `Хийсэн хэмжээ${measurementUnit ? ` (${measurementUnit})` : ""}`;
-  const quantityPlaceholder = quantityOptional ? "Хэрэгтэй үед л оруулна" : "12";
-  const quantityHint = quantityOptional
-    ? "Хогийн ажил дээр хэмжээ заавал биш. Онцгой тохиолдолд л тоо оруулж болно."
-    : "Хийсэн ажлын тоо хэмжээг энд оруулна.";
+  const quantityLabel = `Хийсэн хэмжээ${measurementUnit ? ` (${measurementUnit})` : ""}`;
 
   const modalContent =
     mounted && isOpen
@@ -82,9 +75,8 @@ export function TaskReportModal({
                     Гүйцэтгэлийн тайлан оруулах
                   </strong>
                   <p className={styles.actionLead}>
-                    Текст тайлан, зураг, аудиогоо нэг дороос бүртгэнэ. Хэмжээтэй ажил дээр
-                    гүйцэтгэсэн тоогоо, хогийн ажил дээр бол зөвхөн шаардлагатай үед хэмжээгээ
-                    оруулна.
+                    Тайлангийн тоо хэмжээг заавал 0-ээс их утгаар оруулж, текст тайлан, зураг,
+                    аудиог нэг дор бүртгэнэ.
                   </p>
                 </div>
 
@@ -106,8 +98,8 @@ export function TaskReportModal({
                     <div className={styles.composerHighlight}>
                       <strong>Текст тайлан</strong>
                       <p className={styles.composerHint}>
-                        Хийсэн ажлаа товч, тодорхой бичнэ. Хэмжээ шаардлагатай бол доор нь нэмж
-                        оруулна.
+                        Хийсэн ажлаа товч, тодорхой бичнэ. Доорх тоо хэмжээ нь master-data
+                        хэмжих нэгжтэй автоматаар холбогдоно.
                       </p>
                     </div>
 
@@ -118,12 +110,14 @@ export function TaskReportModal({
                         name="reported_quantity"
                         type="number"
                         step="0.01"
-                        min="0"
+                        min="0.01"
                         inputMode="decimal"
-                        placeholder={quantityPlaceholder}
-                        required={!quantityOptional}
+                        placeholder="Жишээ: 12"
+                        required
                       />
-                      <small className={styles.inputHint}>{quantityHint}</small>
+                      <small className={styles.inputHint}>
+                        Гүйцэтгэсэн хэмжээ 0-ээс их байх ёстой.
+                      </small>
                     </label>
 
                     <label htmlFor="report_text" className={styles.modalField}>

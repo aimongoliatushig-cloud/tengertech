@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_employee_form_ops_registry" model="ir.ui.view">
+        <field name="name">hr.employee.form.ops.registry</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='work_information']//field[@name='parent_id']" position="after">
+                <field name="user_id" widget="many2one_avatar_user"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_employee_tree_ops_registry" model="ir.ui.view">
+        <field name="name">hr.employee.tree.ops.registry</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='user_id']" position="attributes">
+                <attribute name="optional">show</attribute>
+                <attribute name="string">Системийн хэрэглэгч</attribute>
+            </xpath>
+            <xpath expr="//list/field[@name='active']" position="attributes">
+                <attribute name="column_invisible">False</attribute>
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_employee_list_ops_registry" model="ir.ui.view">
+        <field name="name">hr.employee.list.ops.registry</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.hr_employee_list_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='name']" position="after">
+                <field name="user_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="work_phone" optional="show"/>
+                <field name="active" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_employee_filter_ops_registry" model="ir.ui.view">
+        <field name="name">hr.employee.filter.ops.registry</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search/field[@name='job_id']" position="after">
+                <field name="user_id"/>
+            </xpath>
+            <xpath expr="//search/group/filter[@name='group_job']" position="after">
+                <filter name="group_user" string="Системийн хэрэглэгч" domain="[]" context="{'group_by': 'user_id'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

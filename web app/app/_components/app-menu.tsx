@@ -12,8 +12,11 @@ import styles from "./app-menu.module.css";
 type MenuKey =
   | "dashboard"
   | "tasks"
+  | "auto-base"
+  | "hr"
   | "field"
   | "projects"
+  | "procurement"
   | "review"
   | "quality"
   | "new-project"
@@ -86,7 +89,14 @@ export function AppMenu({
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const createHubHref = "/create";
+  const autoBaseHref = "/auto-base";
   const canOpenCreateHub = canCreateProject || canCreateTasks || canWriteReports;
+  const canViewHrDirectory =
+    roleLabel === "Ерөнхий менежер" ||
+    roleLabel === "Үйл ажиллагаа хариуцсан менежер" ||
+    roleLabel === "Захирал" ||
+    roleLabel === "Системийн админ";
+  const canViewAutoBaseShortcut = canViewHrDirectory;
 
   const items: MenuItem[] =
     variant === "executive"
@@ -105,6 +115,35 @@ export function AppMenu({
             note: "Ажилбарын жагсаалт",
             icon: "≣",
           },
+          {
+            key: "procurement",
+            href: "/procurement",
+            label: "Худалдан авалт",
+            note: "Хүсэлт ба шат",
+            icon: "¤",
+          },
+          ...(canViewAutoBaseShortcut
+            ? [
+                {
+                  key: "auto-base",
+                  href: autoBaseHref,
+                  label: "Авто бааз",
+                  note: "Машины төлөв",
+                  icon: "▥",
+                } satisfies MenuItem,
+              ]
+            : []),
+          ...(canViewHrDirectory
+            ? [
+                {
+                  key: "hr",
+                  href: "/hr",
+                  label: "Хүний нөөц",
+                  note: "Ажилтны бүртгэл",
+                  icon: "◉",
+                } satisfies MenuItem,
+              ]
+            : []),
           {
             key: "reports",
             href: "/reports",
@@ -140,6 +179,13 @@ export function AppMenu({
               note: "Надад оноогдсон жагсаалт",
               icon: "≣",
             },
+            {
+              key: "procurement",
+              href: "/procurement",
+              label: "Худалдан авалт",
+              note: "Надад хамаарах хүсэлт",
+              icon: "¤",
+            },
           ]
         : masterMode
           ? [
@@ -163,6 +209,13 @@ export function AppMenu({
                 label: "Ажил нэмэх",
                 note: "Өөрийн нэгжийн ажил үүсгэх",
                 icon: "+",
+              },
+              {
+                key: "procurement",
+                href: "/procurement",
+                label: "Худалдан авалт",
+                note: "Нэгжийн хүсэлтүүд",
+                icon: "¤",
               },
               {
                 key: "reports",
@@ -191,6 +244,17 @@ export function AppMenu({
                 note: "Нүүр хуудас",
                 icon: "⌂",
               },
+              ...(canViewAutoBaseShortcut
+                ? [
+                    {
+                      key: "auto-base",
+                      href: autoBaseHref,
+                      label: "Авто бааз",
+                      note: "Машины төлөв",
+                      icon: "▥",
+                    } satisfies MenuItem,
+                  ]
+                : []),
               {
                 key: "projects",
                 href: "/projects",
@@ -199,12 +263,30 @@ export function AppMenu({
                 icon: "▣",
               },
               {
+                key: "procurement",
+                href: "/procurement",
+                label: "Худалдан авалт",
+                note: "Хүсэлт ба явц",
+                icon: "¤",
+              },
+              {
                 key: "review",
                 href: "/review",
                 label: "Хяналт",
                 note: "Баталгаажуулалт",
                 icon: "✓",
               },
+              ...(canViewHrDirectory
+                ? [
+                    {
+                      key: "hr",
+                      href: "/hr",
+                      label: "Хүний нөөц",
+                      note: "Бүх ажилтан",
+                      icon: "◉",
+                    } satisfies MenuItem,
+                  ]
+                : []),
               ...(canCreateProject
                 ? [
                     {

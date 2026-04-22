@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "@/app/workspace.module.css";
-import type { SelectOption } from "@/lib/workspace";
+import type { SelectOption, WorkUnitOption } from "@/lib/workspace";
+
+import { ProjectTaskCreateForm } from "./project-task-create-form";
 
 type Props = {
   action: (formData: FormData) => void | Promise<void>;
@@ -12,6 +14,9 @@ type Props = {
   deadline: string;
   masterMode: boolean;
   teamLeaderOptions: SelectOption[];
+  allowedUnits: WorkUnitOption[];
+  defaultUnitId: number | null;
+  allowedUnitSummary?: string;
   defaultOpen?: boolean;
 };
 
@@ -21,6 +26,9 @@ export function ProjectTaskCreateModal({
   deadline,
   masterMode,
   teamLeaderOptions,
+  allowedUnits,
+  defaultUnitId,
+  allowedUnitSummary,
   defaultOpen = false,
 }: Props) {
   const [isOpen, setIsOpen] = useState(() => {
@@ -79,7 +87,8 @@ export function ProjectTaskCreateModal({
                     {masterMode ? "Өнөөдрийн ажил нэмэх" : "Ажилбар үүсгэх"}
                   </strong>
                   <p className={styles.modalLead}>
-                    Товч мэдээллээ оруулаад энэ ажлын дотор шинэ ажилбар нээнэ.
+                    Ажлын төрлөөс зөвшөөрөгдсөн хэмжих нэгжүүдээр шүүгдсэн хэлбэрээр шинэ
+                    ажилбар бүртгэнэ.
                   </p>
                 </div>
 
@@ -93,88 +102,18 @@ export function ProjectTaskCreateModal({
                 </button>
               </div>
 
-              <form action={action} className={styles.modalForm}>
-                <input type="hidden" name="project_id" value={projectId} />
-
-                <div className={styles.field}>
-                  <label htmlFor="task-name">Ажилбарын нэр</label>
-                  <input
-                    id="task-name"
-                    name="name"
-                    type="text"
-                    placeholder="Жишээ: Хогийн савны тойргийн цэвэрлэгээ"
-                    required
-                  />
-                </div>
-
-                {!masterMode ? (
-                  <div className={styles.field}>
-                    <label htmlFor="task-team-leader">Хариуцсан мастер</label>
-                    <select id="task-team-leader" name="team_leader_id" defaultValue="">
-                      <option value="">Сонгоогүй</option>
-                      {teamLeaderOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null}
-
-                <div className={styles.field}>
-                  <label htmlFor="task-deadline">Хугацаа</label>
-                  <input
-                    id="task-deadline"
-                    name="deadline"
-                    type="date"
-                    defaultValue={deadline}
-                  />
-                </div>
-
-                <div className={styles.field}>
-                  <label htmlFor="task-planned-quantity">Төлөвлөсөн хэмжээ</label>
-                  <input
-                    id="task-planned-quantity"
-                    name="planned_quantity"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className={styles.field}>
-                  <label htmlFor="task-measurement-unit">Хэмжих нэгж</label>
-                  <input
-                    id="task-measurement-unit"
-                    name="measurement_unit"
-                    type="text"
-                    placeholder="ш, м.кв, рейс"
-                  />
-                </div>
-
-                <div className={styles.field}>
-                  <label htmlFor="task-description">Товч тайлбар</label>
-                  <textarea
-                    id="task-description"
-                    name="description"
-                    placeholder="Өнөөдөр хийх ажлын хүрээ, байршил, онцгой зааврыг товч бичнэ."
-                  />
-                </div>
-
-                <div className={styles.modalActions}>
-                  <button
-                    type="button"
-                    className={styles.secondaryButton}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Болих
-                  </button>
-                  <button type="submit" className={styles.primaryButton}>
-                    {masterMode ? "Ажил нэмэх" : "Ажилбар үүсгэх"}
-                  </button>
-                </div>
-              </form>
+              <ProjectTaskCreateForm
+                action={action}
+                className={styles.modalForm}
+                footerClassName={styles.modalActions}
+                projectId={projectId}
+                deadline={deadline}
+                masterMode={masterMode}
+                teamLeaderOptions={teamLeaderOptions}
+                allowedUnits={allowedUnits}
+                defaultUnitId={defaultUnitId}
+                allowedUnitSummary={allowedUnitSummary}
+              />
             </div>
           </div>,
           portalTarget,

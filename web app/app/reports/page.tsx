@@ -45,6 +45,7 @@ type FeedReport = {
   projectName: string;
   summary: string;
   reportedQuantity: number;
+  measurementUnit: string;
   imageCount: number;
   audioCount: number;
   submittedAt: string;
@@ -578,7 +579,9 @@ export default async function ReportsPage({ searchParams }: PageProps) {
 
                           <div className={styles.reportMeta}>
                             <span>Илгээгч: {report.reporter}</span>
-                            <span>Хэмжээ: {report.reportedQuantity} нэгж</span>
+                            <span>
+                              Хэмжээ: {formatQuantity(report.reportedQuantity, report.measurementUnit)}
+                            </span>
                             <span>Зураг: {report.imageCount}</span>
                             <span>Аудио: {report.audioCount}</span>
                           </div>

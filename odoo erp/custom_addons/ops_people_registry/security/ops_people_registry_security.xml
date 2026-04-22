@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_category_ops_people_registry" model="ir.module.category">
+        <field name="name">Ажилтан бүртгэл</field>
+        <field name="description">Ажилтан бүртгэл, системийн эрх, аудитын тохиргоо.</field>
+        <field name="sequence">35</field>
+    </record>
+
+    <record id="privilege_ops_people_registry" model="res.groups.privilege">
+        <field name="name">Ажилтан бүртгэл</field>
+        <field name="description">Ажилтан бүртгэл, эрхийн профайл, аудитын тохиргоо.</field>
+        <field name="category_id" ref="ops_people_registry.module_category_ops_people_registry"/>
+        <field name="sequence">35</field>
+        <field name="placeholder">Сонгоогүй</field>
+    </record>
+
+    <record id="group_ops_employee_reader" model="res.groups">
+        <field name="name">Ажилтан мэдээлэл харах</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+    </record>
+
+    <record id="group_ops_people_admin" model="res.groups">
+        <field name="name">Ажилтан бүртгэлийн админ</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('hr.group_hr_manager')), (4, ref('base.group_erp_manager'))]"/>
+    </record>
+
+    <record id="group_ops_people_hr_manager" model="res.groups">
+        <field name="name">Ажилтан бүртгэлийн HR менежер</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('hr.group_hr_user'))]"/>
+    </record>
+
+    <record id="group_ops_profile_admin" model="res.groups">
+        <field name="name">Системийн эрх: Администратор</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_employee_reader')), (4, ref('ops_people_registry.group_ops_people_admin')), (4, ref('ops_role_security.group_ops_system_admin'))]"/>
+    </record>
+
+    <record id="group_ops_profile_director" model="res.groups">
+        <field name="name">Системийн эрх: Захирал</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_employee_reader')), (4, ref('ops_role_security.group_ops_general_manager'))]"/>
+    </record>
+
+    <record id="group_ops_profile_general_manager" model="res.groups">
+        <field name="name">Системийн эрх: Ерөнхий менежер</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_employee_reader')), (4, ref('ops_role_security.group_ops_general_manager'))]"/>
+    </record>
+
+    <record id="group_ops_profile_department_head" model="res.groups">
+        <field name="name">Системийн эрх: Хэлтсийн дарга</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_employee_reader')), (4, ref('ops_role_security.group_ops_project_leader'))]"/>
+    </record>
+
+    <record id="group_ops_profile_senior_master" model="res.groups">
+        <field name="name">Системийн эрх: Ахлах мастер</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_employee_reader')), (4, ref('ops_role_security.group_ops_team_leader'))]"/>
+    </record>
+
+    <record id="group_ops_profile_master" model="res.groups">
+        <field name="name">Системийн эрх: Мастер</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_employee_reader')), (4, ref('ops_role_security.group_ops_team_leader'))]"/>
+    </record>
+
+    <record id="group_ops_profile_specialist" model="res.groups">
+        <field name="name">Системийн эрх: Мэргэжилтэн</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_employee_reader')), (4, ref('ops_role_security.group_ops_worker'))]"/>
+    </record>
+
+    <record id="group_ops_profile_worker" model="res.groups">
+        <field name="name">Системийн эрх: Ажилтан</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_employee_reader')), (4, ref('ops_role_security.group_ops_worker'))]"/>
+    </record>
+
+    <record id="group_ops_profile_finance" model="res.groups">
+        <field name="name">Системийн эрх: Санхүү</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_profile_specialist'))]"/>
+    </record>
+
+    <record id="group_ops_profile_hr" model="res.groups">
+        <field name="name">Системийн эрх: Хүний нөөц</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_profile_specialist'))]"/>
+    </record>
+
+    <record id="group_ops_profile_storekeeper" model="res.groups">
+        <field name="name">Системийн эрх: Нярав</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_profile_worker'))]"/>
+    </record>
+
+    <record id="group_ops_profile_mechanic" model="res.groups">
+        <field name="name">Системийн эрх: Механик</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_profile_worker'))]"/>
+    </record>
+
+    <record id="group_ops_profile_control" model="res.groups">
+        <field name="name">Системийн эрх: Хяналт</field>
+        <field name="privilege_id" ref="ops_people_registry.privilege_ops_people_registry"/>
+        <field name="implied_ids" eval="[(4, ref('ops_people_registry.group_ops_profile_specialist'))]"/>
+    </record>
+
+    <record id="rule_ops_people_employee_all_admin" model="ir.rule">
+        <field name="name">Ажилтан: админ ба удирдлага бүх бичлэг харах</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(6, 0, [
+            ref('ops_people_registry.group_ops_people_admin'),
+            ref('ops_people_registry.group_ops_people_hr_manager'),
+            ref('ops_people_registry.group_ops_profile_admin'),
+            ref('ops_people_registry.group_ops_profile_director'),
+            ref('ops_people_registry.group_ops_profile_general_manager')
+        ])]"/>
+    </record>
+
+    <record id="rule_ops_people_employee_department_head" model="ir.rule">
+        <field name="name">Ажилтан: хэлтсийн дарга өөрийн алба нэгжийг харах</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="domain_force">[(0, '=', 1)] if not user.ops_department_id else [('department_id', 'child_of', [user.ops_department_id.id])]</field>
+        <field name="groups" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_department_head')])]"/>
+    </record>
+
+    <record id="rule_ops_people_employee_team_scope" model="ir.rule">
+        <field name="name">Ажилтан: мастер өөрийн багийг харах</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="domain_force">['|', ('user_id', '=', user.id), ('parent_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [
+            ref('ops_people_registry.group_ops_profile_senior_master'),
+            ref('ops_people_registry.group_ops_profile_master')
+        ])]"/>
+    </record>
+
+    <record id="rule_ops_people_employee_self_scope" model="ir.rule">
+        <field name="name">Ажилтан: хэрэглэгч өөрийн мэдээллийг харах</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [
+            ref('ops_people_registry.group_ops_profile_specialist'),
+            ref('ops_people_registry.group_ops_profile_worker'),
+            ref('ops_people_registry.group_ops_profile_finance'),
+            ref('ops_people_registry.group_ops_profile_hr'),
+            ref('ops_people_registry.group_ops_profile_storekeeper'),
+            ref('ops_people_registry.group_ops_profile_mechanic'),
+            ref('ops_people_registry.group_ops_profile_control')
+        ])]"/>
+    </record>
+</odoo>

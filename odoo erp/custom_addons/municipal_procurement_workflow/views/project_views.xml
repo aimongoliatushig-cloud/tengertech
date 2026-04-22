@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_form_mpw_procurement" model="ir.ui.view">
+        <field name="name">project.project.form.mpw.procurement</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_procurement_requests" type="object" class="oe_stat_button" icon="fa-shopping-basket" invisible="procurement_request_count == 0">
+                    <field name="procurement_request_count" widget="statinfo" string="Худалдан авалт"/>
+                </button>
+            </xpath>
+            <xpath expr="//notebook/page[@name='description']" position="after">
+                <page string="Худалдан авалт">
+                    <field name="procurement_request_ids" nolabel="1" context="{'default_project_id': id}">
+                        <list open_form_view="True">
+                            <field name="name"/>
+                            <field name="title"/>
+                            <field name="responsible_storekeeper_user_id"/>
+                            <field name="state" widget="badge"/>
+                            <field name="flow_type" widget="badge"/>
+                            <field name="selected_supplier_id"/>
+                            <field name="selected_supplier_total"/>
+                            <field name="required_date"/>
+                            <field name="delay_days"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_task_form_mpw_procurement" model="ir.ui.view">
+        <field name="name">project.task.form.mpw.procurement</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_procurement_requests" type="object" class="oe_stat_button" icon="fa-shopping-basket" invisible="procurement_request_count == 0">
+                    <field name="procurement_request_count" widget="statinfo" string="Худалдан авалт"/>
+                </button>
+            </xpath>
+            <xpath expr="//page[@name='description_page']" position="after">
+                <page string="Худалдан авалт">
+                    <field name="procurement_request_ids" nolabel="1" context="{'default_task_id': id, 'default_project_id': project_id}">
+                        <list open_form_view="True">
+                            <field name="name"/>
+                            <field name="title"/>
+                            <field name="responsible_storekeeper_user_id"/>
+                            <field name="state" widget="badge"/>
+                            <field name="flow_type" widget="badge"/>
+                            <field name="selected_supplier_total"/>
+                            <field name="required_date"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

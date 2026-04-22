@@ -65,10 +65,7 @@ function StagePill({ label, bucket }: { label: string; bucket: string }) {
   );
 }
 
-function formatQuantityLabel(value: number, unit: string, quantityOptional: boolean) {
-  if (quantityOptional && value <= 0) {
-    return "Бүртгээгүй";
-  }
+function formatQuantityLabel(value: number, unit: string) {
   return `${value} ${unit}`.trim();
 }
 
@@ -158,11 +155,7 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
   }
 
   const canWriteReport = !task.reportsLocked && hasCapability(session, "write_workspace_reports");
-  const quantitySummary = task.quantityOptional
-    ? task.plannedQuantity > 0
-      ? `${task.completedQuantity}/${task.plannedQuantity} ${task.measurementUnit}`
-      : "Бүртгэхгүй"
-    : `${task.completedQuantity}/${task.plannedQuantity} ${task.measurementUnit}`;
+  const quantitySummary = `${task.completedQuantity}/${task.plannedQuantity} ${task.measurementUnit}`;
   const primaryActionLabel = task.canMarkDone
     ? "Ажилбарыг дуусгах"
     : task.canSubmitForReview
@@ -291,7 +284,6 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                         {formatQuantityLabel(
                           task.plannedQuantity,
                           task.measurementUnit,
-                          task.quantityOptional,
                         )}
                       </strong>
                     </article>
@@ -301,7 +293,6 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                         {formatQuantityLabel(
                           task.completedQuantity,
                           task.measurementUnit,
-                          task.quantityOptional,
                         )}
                       </strong>
                     </article>
@@ -311,7 +302,6 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                         {formatQuantityLabel(
                           task.remainingQuantity,
                           task.measurementUnit,
-                          task.quantityOptional,
                         )}
                       </strong>
                     </article>
@@ -378,7 +368,6 @@ export default async function TaskDetailPage({ params, searchParams }: PageProps
                               label={formatQuantityLabel(
                                 report.quantity,
                                 task.measurementUnit,
-                                task.quantityOptional,
                               )}
                               bucket="progress"
                             />

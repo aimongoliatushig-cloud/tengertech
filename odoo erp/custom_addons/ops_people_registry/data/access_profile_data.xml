@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="access_profile_admin" model="ops.access.profile">
+        <field name="name">Администратор</field>
+        <field name="code">admin</field>
+        <field name="sequence">10</field>
+        <field name="legacy_user_type">system_admin</field>
+        <field name="description">ERP болон workforce registry-ийн бүрэн удирдлагын эрх.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_admin')])]"/>
+    </record>
+    <record id="access_profile_director" model="ops.access.profile">
+        <field name="name">Захирал</field>
+        <field name="code">director</field>
+        <field name="sequence">20</field>
+        <field name="legacy_user_type">director</field>
+        <field name="description">Бүх ажилтан, төсөл, хэлтсийн хураангуй түвшний эрх.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_director')])]"/>
+    </record>
+    <record id="access_profile_general_manager" model="ops.access.profile">
+        <field name="name">Ерөнхий менежер</field>
+        <field name="code">general_manager</field>
+        <field name="sequence">30</field>
+        <field name="legacy_user_type">general_manager</field>
+        <field name="description">Бүх нэгжийн гүйцэтгэлийг хянах менежментийн эрх.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_general_manager')])]"/>
+    </record>
+    <record id="access_profile_department_head" model="ops.access.profile">
+        <field name="name">Хэлтсийн дарга</field>
+        <field name="code">department_head</field>
+        <field name="sequence">40</field>
+        <field name="legacy_user_type">project_manager</field>
+        <field name="description">Өөрийн алба нэгжийн ажилтан, төсөл, даалгаврыг удирдана.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_department_head')])]"/>
+    </record>
+    <record id="access_profile_senior_master" model="ops.access.profile">
+        <field name="name">Ахлах мастер</field>
+        <field name="code">senior_master</field>
+        <field name="sequence">50</field>
+        <field name="legacy_user_type">senior_master</field>
+        <field name="description">Талбайн мастер, багийн өдөр тутмын урсгалыг удирдана.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_senior_master')])]"/>
+    </record>
+    <record id="access_profile_master" model="ops.access.profile">
+        <field name="name">Мастер</field>
+        <field name="code">master</field>
+        <field name="sequence">60</field>
+        <field name="legacy_user_type">team_leader</field>
+        <field name="description">Өөрийн багийн даалгавар, хуваарилалт, тайланг удирдана.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_master')])]"/>
+    </record>
+    <record id="access_profile_specialist" model="ops.access.profile">
+        <field name="name">Мэргэжилтэн</field>
+        <field name="code">specialist</field>
+        <field name="sequence">70</field>
+        <field name="legacy_user_type">worker</field>
+        <field name="description">Өөрийн ажилтан мэдээлэл болон хамаарах ажлуудыг ашиглана.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_specialist')])]"/>
+    </record>
+    <record id="access_profile_worker" model="ops.access.profile">
+        <field name="name">Ажилтан</field>
+        <field name="code">worker</field>
+        <field name="sequence">80</field>
+        <field name="legacy_user_type">worker</field>
+        <field name="description">Өөрийн хуваарилсан ажил, статуст төвлөрсөн үндсэн эрх.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_worker')])]"/>
+    </record>
+    <record id="access_profile_finance" model="ops.access.profile">
+        <field name="name">Санхүү</field>
+        <field name="code">finance</field>
+        <field name="sequence">90</field>
+        <field name="legacy_user_type">worker</field>
+        <field name="description">Санхүүгийн ажилтанд зориулсан профайл.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_finance')])]"/>
+    </record>
+    <record id="access_profile_hr" model="ops.access.profile">
+        <field name="name">Хүний нөөц</field>
+        <field name="code">hr</field>
+        <field name="sequence">100</field>
+        <field name="legacy_user_type">worker</field>
+        <field name="description">Хүний нөөцийн ажилтанд зориулсан профайл.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_hr')])]"/>
+    </record>
+    <record id="access_profile_storekeeper" model="ops.access.profile">
+        <field name="name">Нярав</field>
+        <field name="code">storekeeper</field>
+        <field name="sequence">110</field>
+        <field name="legacy_user_type">worker</field>
+        <field name="description">Няравын өдөр тутмын хэрэглээнд зориулсан профайл.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_storekeeper')])]"/>
+    </record>
+    <record id="access_profile_mechanic" model="ops.access.profile">
+        <field name="name">Механик</field>
+        <field name="code">mechanic</field>
+        <field name="sequence">120</field>
+        <field name="legacy_user_type">worker</field>
+        <field name="description">Техник, засвар, механикийн ажилтанд зориулсан профайл.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_mechanic')])]"/>
+    </record>
+    <record id="access_profile_control" model="ops.access.profile">
+        <field name="name">Хяналт</field>
+        <field name="code">control</field>
+        <field name="sequence">130</field>
+        <field name="legacy_user_type">worker</field>
+        <field name="description">Дотоод болон үйл ажиллагааны хяналтын ажилтанд зориулсан профайл.</field>
+        <field name="group_ids" eval="[(6, 0, [ref('ops_people_registry.group_ops_profile_control')])]"/>
+    </record>
+</odoo>

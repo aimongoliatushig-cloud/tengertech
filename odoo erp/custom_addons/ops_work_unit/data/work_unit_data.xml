@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="unit_pcs" model="ops.work.unit">
+        <field name="name">Ширхэг</field>
+        <field name="code">pcs</field>
+        <field name="category">count</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="unit_kg" model="ops.work.unit">
+        <field name="name">Кг</field>
+        <field name="code">kg</field>
+        <field name="category">weight</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="unit_tn" model="ops.work.unit">
+        <field name="name">Тн</field>
+        <field name="code">tn</field>
+        <field name="category">weight</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="unit_m" model="ops.work.unit">
+        <field name="name">Метр</field>
+        <field name="code">m</field>
+        <field name="category">distance</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="unit_km" model="ops.work.unit">
+        <field name="name">Км</field>
+        <field name="code">km</field>
+        <field name="category">distance</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="unit_m2" model="ops.work.unit">
+        <field name="name">М²</field>
+        <field name="code">m2</field>
+        <field name="category">area</field>
+        <field name="sequence">60</field>
+    </record>
+    <record id="unit_m3" model="ops.work.unit">
+        <field name="name">М³</field>
+        <field name="code">m3</field>
+        <field name="category">volume</field>
+        <field name="sequence">70</field>
+    </record>
+    <record id="unit_liter" model="ops.work.unit">
+        <field name="name">Литр</field>
+        <field name="code">liter</field>
+        <field name="category">volume</field>
+        <field name="sequence">80</field>
+    </record>
+    <record id="unit_times" model="ops.work.unit">
+        <field name="name">Удаа</field>
+        <field name="code">times</field>
+        <field name="category">trip</field>
+        <field name="sequence">90</field>
+    </record>
+    <record id="unit_point" model="ops.work.unit">
+        <field name="name">Цэг</field>
+        <field name="code">point</field>
+        <field name="category">point</field>
+        <field name="sequence">100</field>
+    </record>
+    <record id="unit_vehicle" model="ops.work.unit">
+        <field name="name">Машин</field>
+        <field name="code">vehicle</field>
+        <field name="category">vehicle</field>
+        <field name="sequence">110</field>
+    </record>
+    <record id="unit_tree" model="ops.work.unit">
+        <field name="name">Мод</field>
+        <field name="code">tree</field>
+        <field name="category">tree</field>
+        <field name="sequence">120</field>
+    </record>
+
+    <record id="work_type_garbage" model="ops.work.type">
+        <field name="name">Хог цуглуулалт</field>
+        <field name="operation_type">garbage</field>
+        <field name="sequence">10</field>
+        <field name="allowed_unit_ids" eval="[
+            (6, 0, [
+                ref('ops_work_unit.unit_point'),
+                ref('ops_work_unit.unit_vehicle'),
+                ref('ops_work_unit.unit_times'),
+                ref('ops_work_unit.unit_km'),
+                ref('ops_work_unit.unit_m3')
+            ])
+        ]"/>
+        <field name="default_unit_id" ref="ops_work_unit.unit_point"/>
+    </record>
+    <record id="work_type_street_cleaning" model="ops.work.type">
+        <field name="name">Гудамж цэвэрлэгээ</field>
+        <field name="operation_type">street_cleaning</field>
+        <field name="sequence">20</field>
+        <field name="allowed_unit_ids" eval="[
+            (6, 0, [
+                ref('ops_work_unit.unit_m'),
+                ref('ops_work_unit.unit_km'),
+                ref('ops_work_unit.unit_m2'),
+                ref('ops_work_unit.unit_m3'),
+                ref('ops_work_unit.unit_times'),
+                ref('ops_work_unit.unit_point'),
+                ref('ops_work_unit.unit_vehicle')
+            ])
+        ]"/>
+        <field name="default_unit_id" ref="ops_work_unit.unit_km"/>
+    </record>
+    <record id="work_type_green_maintenance" model="ops.work.type">
+        <field name="name">Ногоон байгууламж</field>
+        <field name="operation_type">green_maintenance</field>
+        <field name="sequence">30</field>
+        <field name="allowed_unit_ids" eval="[
+            (6, 0, [
+                ref('ops_work_unit.unit_pcs'),
+                ref('ops_work_unit.unit_kg'),
+                ref('ops_work_unit.unit_m'),
+                ref('ops_work_unit.unit_m2'),
+                ref('ops_work_unit.unit_m3'),
+                ref('ops_work_unit.unit_liter'),
+                ref('ops_work_unit.unit_times'),
+                ref('ops_work_unit.unit_tree')
+            ])
+        ]"/>
+        <field name="default_unit_id" ref="ops_work_unit.unit_pcs"/>
+    </record>
+</odoo>

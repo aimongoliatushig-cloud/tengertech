@@ -1,0 +1,23 @@
+{
+  "run_name": "Ажилтан бүртгэлийн аудит 2026-04-22 07:37:20",
+  "source_label": "Суурь утасны жагсаалт",
+  "state": "done",
+  "summary": {
+    "total_rows": 136,
+    "updated_users": 24,
+    "linked_employees": 0,
+    "created_employees": 0,
+    "created_departments": 0,
+    "created_jobs": 0,
+    "unresolved_count": 1
+  },
+  "issues": [
+    {
+      "severity": "warning",
+      "issue_type": "duplicate_employee",
+      "raw_value": "б эрдэнэбат",
+      "normalized_value": "",
+      "note": "2 ижил нэршилтэй бичлэг илэрлээ."
+    }
+  ]
+}

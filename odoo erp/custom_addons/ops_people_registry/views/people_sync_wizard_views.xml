@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ops_people_sync_wizard_form" model="ir.ui.view">
+        <field name="name">ops.people.sync.wizard.form</field>
+        <field name="model">ops.people.sync.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Суурь өгөгдлөөр синк хийх">
+                <group>
+                    <field name="create_missing_departments"/>
+                    <field name="create_missing_jobs"/>
+                    <field name="create_missing_users"/>
+                    <field name="generate_missing_codes"/>
+                </group>
+                <footer>
+                    <button name="action_run_sync" type="object" string="Синк эхлүүлэх" class="btn-primary"/>
+                    <button string="Болих" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ops_people_sync_wizard" model="ir.actions.act_window">
+        <field name="name">Суурь синк хийх</field>
+        <field name="res_model">ops.people.sync.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

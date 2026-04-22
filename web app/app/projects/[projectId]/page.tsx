@@ -15,6 +15,7 @@ import {
 } from "@/lib/auth";
 import { loadProjectDetail } from "@/lib/workspace";
 
+import { ProjectTaskCreateForm } from "./project-task-create-form";
 import { ProjectTaskCreateModal } from "./project-task-create-modal";
 
 type PageProps = {
@@ -398,6 +399,9 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                       deadline={project.deadline}
                       masterMode={masterMode}
                       teamLeaderOptions={project.teamLeaderOptions}
+                      allowedUnits={project.allowedUnits}
+                      defaultUnitId={project.defaultUnitId}
+                      allowedUnitSummary={project.allowedUnitSummary}
                       defaultOpen={Boolean(errorMessage) || quickActionMode === "task"}
                     />
                   ) : (
@@ -497,79 +501,18 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                     </div>
                   </div>
 
-                  <form action={createTaskAction} className={styles.form}>
-                    <input type="hidden" name="project_id" value={project.id} />
-
-                    <div className={styles.field}>
-                      <label htmlFor="task-name">Ажилбарын нэр</label>
-                      <input
-                        id="task-name"
-                        name="name"
-                        type="text"
-                        placeholder="Жишээ: Хогийн савны тойргийн цэвэрлэгээ"
-                        required
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="task-team-leader">Хариуцсан мастер</label>
-                      <select id="task-team-leader" name="team_leader_id" defaultValue="">
-                        <option value="">Сонгоогүй</option>
-                        {project.teamLeaderOptions.map((option) => (
-                          <option key={option.id} value={option.id}>
-                            {option.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="task-deadline">Хугацаа</label>
-                      <input
-                        id="task-deadline"
-                        name="deadline"
-                        type="date"
-                        defaultValue={project.deadline}
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="task-planned-quantity">Төлөвлөсөн хэмжээ</label>
-                      <input
-                        id="task-planned-quantity"
-                        name="planned_quantity"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0"
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="task-measurement-unit">Хэмжих нэгж</label>
-                      <input
-                        id="task-measurement-unit"
-                        name="measurement_unit"
-                        type="text"
-                        placeholder="ш, м.кв, рейс"
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="task-description">Товч тайлбар</label>
-                      <textarea
-                        id="task-description"
-                        name="description"
-                        placeholder="Өнөөдөр хийх ажлын хүрээ, байршил, онцгой зааврыг товч бичнэ."
-                      />
-                    </div>
-
-                    <div className={styles.buttonRow}>
-                      <button type="submit" className={styles.primaryButton}>
-                        Ажилбар үүсгэх
-                      </button>
-                    </div>
-                  </form>
+                  <ProjectTaskCreateForm
+                    action={createTaskAction}
+                    className={styles.form}
+                    footerClassName={styles.buttonRow}
+                    projectId={project.id}
+                    deadline={project.deadline}
+                    masterMode={masterMode}
+                    teamLeaderOptions={project.teamLeaderOptions}
+                    allowedUnits={project.allowedUnits}
+                    defaultUnitId={project.defaultUnitId}
+                    allowedUnitSummary={project.allowedUnitSummary}
+                  />
                 </aside>
               ) : null}
             </section>

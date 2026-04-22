@@ -2,15 +2,18 @@
 
 import { useMemo, useState } from "react";
 
+import { SearchableSelect, type SearchableSelectOption } from "@/app/_components/searchable-select";
 import styles from "@/app/workspace.module.css";
 import type {
   DepartmentOption,
   GarbageRouteOption,
   GarbageVehicleOption,
   SelectOption,
+  WorkTypeOption,
 } from "@/lib/workspace";
 
-const COMBINED_DEPARTMENT_NAME = "Авто бааз, хог тээвэрлэлтийн хэлтэс";
+const GARBAGE_TRANSPORT_KEYWORD = "хог тээвэрлэлтийн";
+const AUTO_BASE_KEYWORD = "авто бааз";
 
 type Props = {
   action: (formData: FormData) => void | Promise<void>;
@@ -18,6 +21,7 @@ type Props = {
   managerOptions: SelectOption[];
   garbageVehicleOptions: GarbageVehicleOption[];
   garbageRouteOptions: GarbageRouteOption[];
+  workTypeOptions: WorkTypeOption[];
   lockedDepartmentId?: string;
   lockedDepartmentLabel?: string;
 };
@@ -58,12 +62,51 @@ function formatDateLabel(value: string) {
   }).format(parsed);
 }
 
+function buildUnitOptions(workType: WorkTypeOption | null): SearchableSelectOption[] {
+  return (workType?.allowedUnits ?? []).map((unit) => ({
+    id: unit.id,
+    label: unit.name,
+    meta: `${unit.code} · ${unit.categoryLabel}`,
+    keywords: [unit.name, unit.code, unit.categoryLabel],
+  }));
+}
+
+function normalizeDepartmentValue(value?: string | null) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function departmentContains(
+  department: Pick<DepartmentOption, "name" | "label"> | null | undefined,
+  keyword: string,
+) {
+  const normalizedKeyword = normalizeDepartmentValue(keyword);
+  return [department?.name, department?.label].some((value) =>
+    normalizeDepartmentValue(value).includes(normalizedKeyword),
+  );
+}
+
+function isGarbageTransportDepartment(
+  department: Pick<DepartmentOption, "name" | "label"> | null | undefined,
+) {
+  return departmentContains(department, GARBAGE_TRANSPORT_KEYWORD);
+}
+
+function isCombinedOperationsDepartment(
+  department: Pick<DepartmentOption, "name" | "label"> | null | undefined,
+) {
+  return (
+    departmentContains(department, GARBAGE_TRANSPORT_KEYWORD) &&
+    departmentContains(department, AUTO_BASE_KEYWORD)
+  );
+}
+
 export function NewWorkForm({
   action,
   departmentOptions,
   managerOptions,
   garbageVehicleOptions,
   garbageRouteOptions,
+  workTypeOptions,
   lockedDepartmentId,
   lockedDepartmentLabel,
 }: Props) {
@@ -73,13 +116,16 @@ export function NewWorkForm({
       (option) => String(option.id) === (lockedDepartmentId ?? ""),
     );
 
-    return initialDepartment?.name === COMBINED_DEPARTMENT_NAME
+    return isGarbageTransportDepartment(initialDepartment)
       ? "garbage_transport"
       : "standard";
   });
   const [vehicleId, setVehicleId] = useState("");
   const [routeId, setRouteId] = useState("");
   const [shiftDate, setShiftDate] = useState(getTodayValue());
+  const [trackQuantity, setTrackQuantity] = useState(false);
+  const [operationType, setOperationType] = useState("");
+  const [selectedUnitOverrideId, setSelectedUnitOverrideId] = useState<number | null>(null);
 
   const selectedDepartment = useMemo(
     () => departmentOptions.find((option) => String(option.id) === departmentId) ?? null,
@@ -93,9 +139,31 @@ export function NewWorkForm({
     () => garbageRouteOptions.find((option) => String(option.id) === routeId) ?? null,
     [garbageRouteOptions, routeId],
   );
+  const selectedWorkType = useMemo(
+    () => workTypeOptions.find((option) => option.operationType === operationType) ?? null,
+    [operationType, workTypeOptions],
+  );
+  const unitOptions = useMemo(() => buildUnitOptions(selectedWorkType), [selectedWorkType]);
+  const selectedUnitId = useMemo(() => {
+    if (!selectedWorkType) {
+      return null;
+    }
 
-  const isCombinedDepartment = selectedDepartment?.name === COMBINED_DEPARTMENT_NAME;
-  const isGarbageTransport = isCombinedDepartment && operationUnit === "garbage_transport";
+    if (
+      selectedUnitOverrideId &&
+      selectedWorkType.allowedUnits.some((unit) => unit.id === selectedUnitOverrideId)
+    ) {
+      return selectedUnitOverrideId;
+    }
+
+    return selectedWorkType.defaultUnitId ?? selectedWorkType.allowedUnits[0]?.id ?? null;
+  }, [selectedUnitOverrideId, selectedWorkType]);
+
+  const isCombinedDepartment = isCombinedOperationsDepartment(selectedDepartment);
+  const supportsGarbageTransport = isGarbageTransportDepartment(selectedDepartment);
+  const isGarbageTransport =
+    supportsGarbageTransport &&
+    (isCombinedDepartment ? operationUnit === "garbage_transport" : true);
   const isDepartmentLocked = Boolean(lockedDepartmentId);
 
   const generatedName = useMemo(() => {
@@ -108,13 +176,17 @@ export function NewWorkForm({
     return `${vehicleLabel} - ${routeLabel} / ${shiftDate}`;
   }, [isGarbageTransport, selectedRoute, selectedVehicle, shiftDate]);
 
+  const unitHelperText = selectedWorkType
+    ? `Энэ ажилд ашиглах боломжтой нэгжүүд: ${selectedWorkType.allowedUnitSummary}`
+    : "Эхлээд ажлын төрлөө сонгоно уу.";
+
   const handleDepartmentChange = (nextDepartmentId: string) => {
     setDepartmentId(nextDepartmentId);
     const nextDepartment = departmentOptions.find(
       (option) => String(option.id) === nextDepartmentId,
     );
 
-    if (nextDepartment?.name === COMBINED_DEPARTMENT_NAME) {
+    if (isGarbageTransportDepartment(nextDepartment)) {
       setOperationUnit("garbage_transport");
       return;
     }
@@ -267,8 +339,8 @@ export function NewWorkForm({
             </div>
 
             <p className={styles.helperNote}>
-              Сонгосон машин, маршрут, огноогоор нэг ажил үүснэ. Тухайн маршрутын
-              хог ачих цэг бүр ажил дотор тусдаа ажилбар болж автоматаар үүснэ.
+              Сонгосон машин, маршрут, огноогоор нэг ажил үүснэ. Тухайн маршрутын хог ачих цэг
+              бүр ажил дотор тусдаа ажилбар болж автоматаар үүснэ.
             </p>
             <p className={styles.helperNote}>
               Огноо: <strong>{formatDateLabel(shiftDate)}</strong>
@@ -302,6 +374,31 @@ export function NewWorkForm({
             </div>
 
             <div className={styles.field}>
+              <label htmlFor="operation_type">Ажлын төрөл</label>
+              <select
+                id="operation_type"
+                name="operation_type"
+                value={operationType}
+                onChange={(event) => setOperationType(event.target.value)}
+                required
+              >
+                <option value="">Ажлын төрөл сонгоно уу</option>
+                {workTypeOptions.map((option) => (
+                  <option key={option.id} value={option.operationType}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+              <small className={styles.fieldHint}>
+                {selectedWorkType
+                  ? unitHelperText
+                  : "Ажлын төрлөө сонгосноор зөвшөөрөгдсөн хэмжих нэгжүүд харагдана."}
+              </small>
+            </div>
+          </div>
+
+          <div className={styles.fieldRow}>
+            <div className={styles.field}>
               <label htmlFor="start_date">Эхлэх огноо</label>
               <input id="start_date" name="start_date" type="date" />
             </div>
@@ -318,36 +415,50 @@ export function NewWorkForm({
               name="track_quantity"
               type="checkbox"
               value="1"
+              checked={trackQuantity}
+              onChange={(event) => setTrackQuantity(event.target.checked)}
               className={styles.optionalCheckbox}
             />
             <label htmlFor="track_quantity" className={styles.optionalToggle}>
-              <span className={styles.optionalToggleTitle}>Төлөвлөсөн хэмжээ ашиглах</span>
-              <span className={styles.optionalToggleText}>
-                Шаардлагатай үед төлөвлөсөн хэмжээ болон хэмжих нэгжийг нэмж бүртгэнэ.
+              <span>
+                <span className={styles.optionalToggleTitle}>Төлөвлөсөн хэмжээ ашиглах</span>
+                <span className={styles.optionalToggleText}>
+                  Шаардлагатай үед төлөвлөсөн хэмжээ болон хэмжих нэгжийг master-data
+                  dropdown-оос сонгож бүртгэнэ.
+                </span>
               </span>
             </label>
 
-            <div className={styles.optionalFields}>
+            <div
+              className={`${styles.optionalFields} ${
+                trackQuantity ? styles.optionalFieldsVisible : ""
+              }`}
+            >
               <div className={styles.field}>
                 <label htmlFor="planned_quantity">Төлөвлөсөн хэмжээ</label>
                 <input
                   id="planned_quantity"
                   name="planned_quantity"
                   type="number"
-                  min="0"
+                  min="0.01"
                   step="0.01"
                   placeholder="48"
                 />
               </div>
 
               <div className={styles.field}>
-                <label htmlFor="measurement_unit">Хэмжих нэгж</label>
-                <input
-                  id="measurement_unit"
-                  name="measurement_unit"
-                  type="text"
-                  placeholder="мод"
+                <label>Хэмжих нэгж</label>
+                <SearchableSelect
+                  name="unit_id"
+                  value={selectedUnitId}
+                  options={unitOptions}
+                  placeholder="Хэмжих нэгж сонгоно уу"
+                  disabled={!selectedWorkType}
+                  searchPlaceholder="Нэгж хайна уу"
+                  emptyStateLabel="Энэ ажлын төрөлд тохирох нэгж алга."
+                  onChange={setSelectedUnitOverrideId}
                 />
+                <small className={styles.fieldHint}>{unitHelperText}</small>
               </div>
             </div>
           </div>

@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ops_work_unit_user,ажлын нэгж дотоод хэрэглэгч,model_ops_work_unit,base.group_user,1,0,0,0
+access_ops_work_unit_master,ажлын нэгж лавлах хариуцагч,model_ops_work_unit,ops_work_unit.group_ops_work_unit_master,1,1,1,1
+access_ops_work_unit_ops_system_admin,ажлын нэгж системийн админ,model_ops_work_unit,ops_role_security.group_ops_system_admin,1,1,1,1
+access_ops_work_type_user,ажлын төрлийн профайл дотоод хэрэглэгч,model_ops_work_type,base.group_user,1,0,0,0
+access_ops_work_type_master,ажлын төрлийн профайл лавлах хариуцагч,model_ops_work_type,ops_work_unit.group_ops_work_unit_master,1,1,1,1
+access_ops_work_type_ops_system_admin,ажлын төрлийн профайл системийн админ,model_ops_work_type,ops_role_security.group_ops_system_admin,1,1,1,1
+access_ops_work_unit_review_master,ажлын нэгж migration шалгалт лавлах хариуцагч,model_ops_work_unit_review,ops_work_unit.group_ops_work_unit_master,1,1,1,1
+access_ops_work_unit_review_ops_system_admin,ажлын нэгж migration шалгалт системийн админ,model_ops_work_unit_review,ops_role_security.group_ops_system_admin,1,1,1,1

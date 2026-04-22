@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ops_access_profile_list" model="ir.ui.view">
+        <field name="name">ops.access.profile.list</field>
+        <field name="model">ops.access.profile</field>
+        <field name="arch" type="xml">
+            <list string="Системийн эрхийн профайл">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="legacy_user_type"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ops_access_profile_form" model="ir.ui.view">
+        <field name="name">ops.access.profile.form</field>
+        <field name="model">ops.access.profile</field>
+        <field name="arch" type="xml">
+            <form string="Системийн эрхийн профайл">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_users" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="user_count" string="Хэрэглэгч" widget="statinfo"/>
+                        </button>
+                        <button name="action_open_employees" type="object" class="oe_stat_button" icon="fa-id-card">
+                            <field name="employee_count" string="Ажилтан" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="legacy_user_type"/>
+                            <field name="group_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                    <group string="Тайлбар">
+                        <field name="description" nolabel="1" placeholder="Энэ профайлыг ямар ажилтанд ашиглахыг товч тайлбарлана уу."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ops_access_profile" model="ir.actions.act_window">
+        <field name="name">Системийн эрхийн профайл</field>
+        <field name="res_model">ops.access.profile</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

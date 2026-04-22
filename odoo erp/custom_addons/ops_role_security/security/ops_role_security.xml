@@ -134,4 +134,14 @@
         <field name="domain_force">[('project_id.user_id', '=', user.id)]</field>
         <field name="groups" eval="[(4, ref('ops_role_security.group_ops_project_leader'))]"/>
     </record>
+
+    <record id="rule_ops_hr_employee_all_general_manager" model="ir.rule">
+        <field name="name">Хотын ажиллагаа: ерөнхий менежер бүх ажилтныг харах</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('ops_role_security.group_ops_general_manager'))]"/>
+    </record>
 </odoo>

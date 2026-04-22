@@ -47,7 +47,10 @@ class HrDepartment(models.Model):
             linked_users = department.ops_project_manager_user_id.sudo()
 
             users_with_department = self.env["res.users"].sudo().search(
-                [("ops_project_department_ids", "in", department.id)]
+                [
+                    ("ops_user_type", "=", "project_manager"),
+                    ("ops_project_department_ids", "in", department.id),
+                ]
             )
 
             if not linked_users:

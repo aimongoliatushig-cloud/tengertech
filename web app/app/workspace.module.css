@@ -1403,6 +1403,12 @@
   color: var(--ink-900);
 }
 
+.fieldHint {
+  color: var(--ink-600);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
 .field input,
 .field select,
 .field textarea {
@@ -1419,6 +1425,131 @@
 .field textarea {
   min-height: 120px;
   resize: vertical;
+}
+
+.searchableSelect {
+  position: relative;
+}
+
+.searchableSelectButton {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink-900);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.searchableSelectButton:hover {
+  border-color: rgba(74, 154, 93, 0.32);
+  box-shadow: 0 10px 22px rgba(25, 54, 31, 0.08);
+  transform: translateY(-1px);
+}
+
+.searchableSelectButtonDisabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+  transform: none;
+}
+
+.searchableSelectLabel {
+  font-weight: 600;
+}
+
+.searchableSelectMeta {
+  color: var(--ink-600);
+  font-size: 0.84rem;
+}
+
+.searchableSelectPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(74, 154, 93, 0.18);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 40px rgba(25, 54, 31, 0.14);
+}
+
+.searchableSelectSearch {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: rgba(245, 249, 244, 0.96);
+  color: var(--ink-900);
+  font: inherit;
+}
+
+.searchableSelectList {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.searchableSelectOption {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(74, 154, 93, 0.12);
+  border-radius: 16px;
+  background: rgba(244, 250, 243, 0.68);
+  color: var(--ink-900);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.searchableSelectOption:hover {
+  border-color: rgba(74, 154, 93, 0.28);
+  background: rgba(236, 247, 234, 0.95);
+  transform: translateY(-1px);
+}
+
+.searchableSelectOptionActive {
+  border-color: rgba(53, 112, 67, 0.36);
+  background: rgba(226, 242, 224, 0.96);
+}
+
+.searchableSelectOptionLabel {
+  font-weight: 700;
+}
+
+.searchableSelectOptionMeta {
+  color: var(--ink-600);
+  font-size: 0.82rem;
+}
+
+.searchableSelectEmpty {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(243, 247, 241, 0.92);
+  color: var(--ink-700);
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 .lockedFieldValue {
@@ -1570,6 +1701,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   padding-top: 4px;
+}
+
+.optionalFieldsVisible {
+  display: grid;
 }
 
 .optionalCheckbox:checked ~ .optionalFields {

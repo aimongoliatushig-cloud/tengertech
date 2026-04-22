@@ -1,0 +1,25 @@
+{
+    "name": "Хотын ажиллагаа: Хэмжих нэгжийн лавлах",
+    "summary": "Хэмжих нэгжийг master-data лавлах, ажлын төрлийн профайл, unit migration-тайгаар удирдана.",
+    "version": "19.0.1.0.0",
+    "category": "Төсөл",
+    "author": "OpenAI",
+    "license": "LGPL-3",
+    "depends": [
+        "ops_project_defaults",
+        "ops_field_reporting",
+        "municipal_field_ops",
+        "ops_role_security",
+    ],
+    "data": [
+        "security/work_unit_security.xml",
+        "security/ir.model.access.csv",
+        "data/work_unit_data.xml",
+        "views/work_unit_views.xml",
+        "views/project_project_views.xml",
+        "views/project_task_views.xml",
+    ],
+    "post_init_hook": "post_init_hook",
+    "installable": True,
+    "application": False,
+}

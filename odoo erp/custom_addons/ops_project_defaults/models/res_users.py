@@ -4,9 +4,15 @@ from odoo import api, fields, models
 class ResUsers(models.Model):
     _inherit = "res.users"
 
+    ops_department_id = fields.Many2one(
+        "hr.department",
+        string="Харьяалагдах алба нэгж",
+        domain="[('active', '=', True)]",
+        help="Хэрэглэгчийн үндсэн харьяалагдах алба нэгжийг заана.",
+    )
     ops_project_department_id = fields.Many2one(
         "hr.department",
-        string="Хуучин хариуцах алба нэгж",
+        string="Хариуцах үндсэн алба нэгж",
         compute="_compute_ops_project_department_id",
         inverse="_inverse_ops_project_department_id",
         store=True,
@@ -18,7 +24,7 @@ class ResUsers(models.Model):
         "department_id",
         string="Хариуцах алба нэгж",
         domain="[('active', '=', True)]",
-        help="Хэлтсийн дарга эдгээр алба нэгжийн төслүүдийг хариуцна.",
+        help="Төслийн менежер хариуцах алба нэгжээ сонгоно.",
     )
 
     @api.depends("ops_project_department_ids")
@@ -45,6 +51,19 @@ class ResUsers(models.Model):
         Department = self.env["hr.department"].sudo()
 
         for user in self.sudo():
+            if user.ops_user_type != "project_manager":
+                if user.ops_project_department_ids:
+                    user.with_context(skip_ops_project_department_sync=True).write(
+                        {"ops_project_department_ids": [fields.Command.clear()]}
+                    )
+
+                departments_for_user = Department.search(
+                    [("ops_project_manager_user_id", "=", user.id)]
+                )
+                if departments_for_user:
+                    departments_for_user.write({"ops_project_manager_user_id": False})
+                continue
+
             departments_for_user = Department.search(
                 [("ops_project_manager_user_id", "=", user.id)]
             )
@@ -77,9 +96,19 @@ class ResUsers(models.Model):
                 if department.ops_project_manager_user_id.id != user.id:
                     department.write({"ops_project_manager_user_id": user.id})
 
+    def _sync_ops_department_defaults(self):
+        for user in self:
+            if (
+                user.ops_user_type == "project_manager"
+                and not user.ops_department_id
+                and user.ops_project_department_ids
+            ):
+                user.ops_department_id = user.ops_project_department_ids[:1]
+
     @api.model_create_multi
     def create(self, vals_list):
         users = super().create(vals_list)
+        users._sync_ops_department_defaults()
         users._sync_ops_project_department_links()
         return users
 
@@ -95,9 +124,11 @@ class ResUsers(models.Model):
 
         result = super().write(vals)
         if {
+            "ops_department_id",
             "ops_project_department_ids",
             "ops_project_department_id",
             "ops_user_type",
         } & set(vals):
+            self._sync_ops_department_defaults()
             self._sync_ops_project_department_links()
         return result

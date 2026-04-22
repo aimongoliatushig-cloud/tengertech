@@ -11,6 +11,11 @@ type ProjectRecord = {
   ops_department_id: Relation;
   date_start: string | false;
   date: string | false;
+  mfo_operation_type?: string | false;
+  ops_allowed_unit_ids?: number[];
+  ops_default_unit_id?: Relation;
+  ops_measurement_unit_id?: Relation;
+  ops_allowed_unit_summary?: string | false;
 };
 
 type TaskRecord = {
@@ -27,6 +32,11 @@ type TaskRecord = {
   ops_remaining_quantity: number;
   ops_progress_percent: number;
   ops_measurement_unit: string | false;
+  ops_measurement_unit_id?: Relation;
+  ops_measurement_unit_code?: string | false;
+  ops_allowed_unit_ids?: number[];
+  ops_default_unit_id?: Relation;
+  ops_allowed_unit_summary?: string | false;
   priority: string;
   date_deadline: string | false;
   state: string;
@@ -48,6 +58,8 @@ type ReportRecord = {
   audio_count: number;
   image_attachment_ids: number[];
   audio_attachment_ids: number[];
+  task_measurement_unit_id?: Relation;
+  task_measurement_unit_code?: string | false;
 };
 
 type UserRecord = {
@@ -63,6 +75,22 @@ type DepartmentRecord = {
   parent_id: Relation;
 };
 
+type WorkUnitRecord = {
+  id: number;
+  name: string;
+  code: string;
+  category: string;
+  sequence: number;
+};
+
+type WorkTypeRecord = {
+  id: number;
+  name: string;
+  operation_type: string;
+  allowed_unit_ids: number[];
+  default_unit_id: Relation;
+};
+
 export type SelectOption = {
   id: number;
   name: string;
@@ -74,6 +102,23 @@ export type DepartmentOption = {
   id: number;
   name: string;
   label: string;
+};
+
+export type WorkUnitOption = {
+  id: number;
+  name: string;
+  code: string;
+  category: string;
+  categoryLabel: string;
+};
+
+export type WorkTypeOption = {
+  id: number;
+  name: string;
+  operationType: string;
+  defaultUnitId: number | null;
+  allowedUnits: WorkUnitOption[];
+  allowedUnitSummary: string;
 };
 
 type GarbageVehicleRecord = {
@@ -144,6 +189,11 @@ export type ProjectDetail = {
   completion: number;
   tasks: ProjectTaskCard[];
   teamLeaderOptions: SelectOption[];
+  workTypeName: string;
+  operationType: string;
+  allowedUnits: WorkUnitOption[];
+  defaultUnitId: number | null;
+  allowedUnitSummary: string;
 };
 
 export type TaskReportFeedItem = {
@@ -153,6 +203,8 @@ export type TaskReportFeedItem = {
   summary: string;
   text: string;
   quantity: number;
+  measurementUnit: string;
+  measurementUnitCode: string;
   imageCount: number;
   audioCount: number;
   images: {
@@ -193,6 +245,7 @@ export type TaskDetail = {
   assignees: string[];
   priorityLabel: string;
   description: string;
+  measurementUnitCode: string;
   canSubmitForReview: boolean;
   canMarkDone: boolean;
   canReturnForChanges: boolean;
@@ -235,6 +288,55 @@ function relationName(relation: Relation, fallback = "Тодорхойгүй") {
 
 function relationId(relation: Relation) {
   return Array.isArray(relation) ? relation[0] : null;
+}
+
+function unitCategoryLabel(category?: string | false) {
+  switch (category) {
+    case "weight":
+      return "Жин";
+    case "distance":
+      return "Зай";
+    case "area":
+      return "Талбай";
+    case "volume":
+      return "Эзлэхүүн";
+    case "trip":
+      return "Давтамж";
+    case "point":
+      return "Цэг";
+    case "vehicle":
+      return "Тээврийн хэрэгсэл";
+    case "tree":
+      return "Мод";
+    case "count":
+      return "Тоо ширхэг";
+    default:
+      return "Бусад";
+  }
+}
+
+function buildWorkUnitOption(unit: WorkUnitRecord): WorkUnitOption {
+  return {
+    id: unit.id,
+    name: unit.name,
+    code: unit.code,
+    category: unit.category,
+    categoryLabel: unitCategoryLabel(unit.category),
+  };
+}
+
+function formatMeasurementUnit(
+  relation?: Relation,
+  legacyValue?: string | false,
+  fallback = "нэгж",
+) {
+  if (Array.isArray(relation)) {
+    return relation[1];
+  }
+  if ((legacyValue || "").trim()) {
+    return String(legacyValue).trim();
+  }
+  return fallback;
 }
 
 function normalizeStageBucket(name: string) {
@@ -366,6 +468,68 @@ export async function loadDepartmentOptions(
   }
 }
 
+export async function loadWorkUnitOptions(
+  connectionOverrides: Partial<OdooConnection> = {},
+): Promise<WorkUnitOption[]> {
+  try {
+    const units = await executeOdooKw<WorkUnitRecord[]>(
+      "ops.work.unit",
+      "search_read",
+      [[["active", "=", true]]],
+      {
+        fields: ["name", "code", "category", "sequence"],
+        order: "sequence asc, name asc",
+        limit: 120,
+      },
+      connectionOverrides,
+    );
+
+    return units.map(buildWorkUnitOption);
+  } catch {
+    return [];
+  }
+}
+
+export async function loadWorkTypeOptions(
+  connectionOverrides: Partial<OdooConnection> = {},
+): Promise<WorkTypeOption[]> {
+  try {
+    const [units, workTypes] = await Promise.all([
+      loadWorkUnitOptions(connectionOverrides),
+      executeOdooKw<WorkTypeRecord[]>(
+        "ops.work.type",
+        "search_read",
+        [[["active", "=", true]]],
+        {
+          fields: ["name", "operation_type", "allowed_unit_ids", "default_unit_id"],
+          order: "sequence asc, name asc",
+          limit: 40,
+        },
+        connectionOverrides,
+      ),
+    ]);
+
+    const unitMap = new Map(units.map((unit) => [unit.id, unit]));
+
+    return workTypes.map((workType) => {
+      const allowedUnits = (workType.allowed_unit_ids ?? [])
+        .map((unitId) => unitMap.get(unitId))
+        .filter((unit): unit is WorkUnitOption => Boolean(unit));
+
+      return {
+        id: workType.id,
+        name: workType.name,
+        operationType: workType.operation_type,
+        defaultUnitId: relationId(workType.default_unit_id),
+        allowedUnits,
+        allowedUnitSummary: allowedUnits.map((unit) => unit.name).join(", "),
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function loadGarbageVehicleOptions(
   connectionOverrides: Partial<OdooConnection> = {},
 ): Promise<GarbageVehicleOption[]> {
@@ -465,13 +629,24 @@ export async function loadProjectDetail(
   projectId: number,
   connectionOverrides: Partial<OdooConnection> = {},
 ): Promise<ProjectDetail> {
-  const [projects, tasks, teamLeaderOptions] = await Promise.all([
+  const [projects, tasks, teamLeaderOptions, workUnits, workTypes] = await Promise.all([
     executeOdooKw<ProjectRecord[]>(
       "project.project",
       "search_read",
       [[["id", "=", projectId]]],
       {
-        fields: ["name", "user_id", "ops_department_id", "date_start", "date"],
+        fields: [
+          "name",
+          "user_id",
+          "ops_department_id",
+          "date_start",
+          "date",
+          "mfo_operation_type",
+          "ops_allowed_unit_ids",
+          "ops_default_unit_id",
+          "ops_measurement_unit_id",
+          "ops_allowed_unit_summary",
+        ],
         limit: 1,
       },
       connectionOverrides,
@@ -490,6 +665,7 @@ export async function loadProjectDetail(
           "ops_completed_quantity",
           "ops_progress_percent",
           "ops_measurement_unit",
+          "ops_measurement_unit_id",
           "date_deadline",
         ],
         order: "sequence asc, create_date asc, id asc",
@@ -498,6 +674,8 @@ export async function loadProjectDetail(
       connectionOverrides,
     ),
     loadTeamLeaderOptions(connectionOverrides),
+    loadWorkUnitOptions(connectionOverrides),
+    loadWorkTypeOptions(connectionOverrides),
   ]);
 
   const project = projects[0];
@@ -511,6 +689,23 @@ export async function loadProjectDetail(
   const reviewCount = tasks.filter(
     (task) => normalizeStageBucket(relationName(task.stage_id, "")) === "review",
   ).length;
+  const unitMap = new Map(workUnits.map((unit) => [unit.id, unit]));
+  const projectAllowedUnits = (project.ops_allowed_unit_ids ?? [])
+    .map((unitId) => unitMap.get(unitId))
+    .filter((unit): unit is WorkUnitOption => Boolean(unit));
+  const workType =
+    workTypes.find((item) => item.operationType === project.mfo_operation_type) ?? null;
+  const allowedUnits =
+    projectAllowedUnits.length > 0 ? projectAllowedUnits : workType?.allowedUnits ?? [];
+  const defaultUnitId =
+    relationId(project.ops_default_unit_id ?? false) ??
+    workType?.defaultUnitId ??
+    allowedUnits[0]?.id ??
+    null;
+  const allowedUnitSummary =
+    project.ops_allowed_unit_summary ||
+    workType?.allowedUnitSummary ||
+    allowedUnits.map((unit) => unit.name).join(", ");
 
   return {
     id: project.id,
@@ -536,9 +731,17 @@ export async function loadProjectDetail(
       teamLeaderName: relationName(task.ops_team_leader_id),
       plannedQuantity: task.ops_planned_quantity ?? 0,
       completedQuantity: task.ops_completed_quantity ?? 0,
-      measurementUnit: task.ops_measurement_unit || "нэгж",
+      measurementUnit: formatMeasurementUnit(
+        task.ops_measurement_unit_id,
+        task.ops_measurement_unit,
+      ),
     })),
     teamLeaderOptions,
+    workTypeName: workType?.name ?? "",
+    operationType: project.mfo_operation_type || "",
+    allowedUnits,
+    defaultUnitId,
+    allowedUnitSummary,
   };
 }
 
@@ -563,6 +766,8 @@ export async function loadTaskDetail(
         "ops_remaining_quantity",
         "ops_progress_percent",
         "ops_measurement_unit",
+        "ops_measurement_unit_id",
+        "ops_measurement_unit_code",
         "priority",
         "date_deadline",
         "state",
@@ -593,6 +798,8 @@ export async function loadTaskDetail(
           "audio_count",
           "image_attachment_ids",
           "audio_attachment_ids",
+          "task_measurement_unit_id",
+          "task_measurement_unit_code",
         ],
         order: "report_datetime desc",
         limit: 60,
@@ -656,7 +863,11 @@ export async function loadTaskDetail(
     stageBucket: normalizeStageBucket(relationName(task.stage_id, "")),
     state: task.state,
     deadline: formatDateLabel(task.date_deadline),
-    measurementUnit: task.ops_measurement_unit || "нэгж",
+    measurementUnit: formatMeasurementUnit(
+      task.ops_measurement_unit_id,
+      task.ops_measurement_unit,
+    ),
+    measurementUnitCode: task.ops_measurement_unit_code || "",
     plannedQuantity: task.ops_planned_quantity ?? 0,
     completedQuantity: task.ops_completed_quantity ?? 0,
     remainingQuantity: task.ops_remaining_quantity ?? 0,
@@ -676,6 +887,12 @@ export async function loadTaskDetail(
       summary: report.report_summary || "Тайлбар оруулаагүй",
       text: report.report_text || "",
       quantity: report.reported_quantity ?? 0,
+      measurementUnit: formatMeasurementUnit(
+        report.task_measurement_unit_id,
+        task.ops_measurement_unit,
+      ),
+      measurementUnitCode:
+        report.task_measurement_unit_code || task.ops_measurement_unit_code || "",
       imageCount: report.image_count ?? 0,
       audioCount: report.audio_count ?? 0,
       images: (report.image_attachment_ids ?? []).map((attachmentId) => ({
@@ -697,9 +914,10 @@ export async function createWorkspaceProject(
     name: string;
     managerId?: number | null;
     departmentId?: number | null;
+    operationType?: string;
     trackQuantity?: boolean;
     plannedQuantity?: number | null;
-    measurementUnit?: string;
+    measurementUnitId?: number | null;
     startDate?: string;
     deadline?: string;
   },
@@ -715,6 +933,9 @@ export async function createWorkspaceProject(
   if (input.departmentId) {
     values.ops_department_id = input.departmentId;
   }
+  if (input.operationType) {
+    values.mfo_operation_type = input.operationType;
+  }
   if (input.trackQuantity) {
     values.ops_track_quantity = true;
     if (
@@ -723,8 +944,8 @@ export async function createWorkspaceProject(
     ) {
       values.ops_planned_quantity = input.plannedQuantity;
     }
-    if (input.measurementUnit) {
-      values.ops_measurement_unit = input.measurementUnit.trim();
+    if (input.measurementUnitId) {
+      values.ops_measurement_unit_id = input.measurementUnitId;
     }
   }
   if (input.startDate) {
@@ -772,7 +993,7 @@ export async function createWorkspaceTask(
     name: string;
     teamLeaderId?: number | null;
     deadline?: string;
-    measurementUnit?: string;
+    measurementUnitId?: number | null;
     plannedQuantity?: number | null;
     description?: string;
   },
@@ -789,8 +1010,8 @@ export async function createWorkspaceTask(
   if (input.deadline) {
     values.date_deadline = input.deadline;
   }
-  if (input.measurementUnit) {
-    values.ops_measurement_unit = input.measurementUnit.trim();
+  if (input.measurementUnitId) {
+    values.ops_measurement_unit_id = input.measurementUnitId;
   }
   if (typeof input.plannedQuantity === "number" && !Number.isNaN(input.plannedQuantity)) {
     values.ops_planned_quantity = input.plannedQuantity;

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_job_form_ops_registry" model="ir.ui.view">
+        <field name="name">hr.job.form.ops.registry</field>
+        <field name="model">hr.job</field>
+        <field name="inherit_id" ref="hr.view_hr_job_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <group groups="ops_people_registry.group_ops_people_admin,ops_people_registry.group_ops_people_hr_manager">
+                    <group>
+                        <field name="ops_registry_code"/>
+                    </group>
+                    <group>
+                        <field name="ops_is_registry_standard" readonly="1"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_hr_job_tree_ops_registry" model="ir.ui.view">
+        <field name="name">hr.job.tree.ops.registry</field>
+        <field name="model">hr.job</field>
+        <field name="inherit_id" ref="hr.view_hr_job_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='name']" position="after">
+                <field name="ops_registry_code" optional="hide"/>
+                <field name="department_id" optional="show"/>
+                <field name="active" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

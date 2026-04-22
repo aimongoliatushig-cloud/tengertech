@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="edit_project_ops_work_unit" model="ir.ui.view">
+        <field name="name">project.project.form.ops.work.unit</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="ops_project_defaults.edit_project_ops_project_defaults"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='ops_track_quantity']" position="after">
+                <field name="ops_work_type_id" readonly="1" invisible="not ops_track_quantity"/>
+            </xpath>
+            <xpath expr="//field[@name='ops_planned_quantity']" position="after">
+                <field name="ops_allowed_unit_ids"
+                       widget="many2many_tags"
+                       options="{'no_create': True, 'no_create_edit': True}"
+                       invisible="not ops_track_quantity"
+                       readonly="not ops_work_type_id"/>
+                <field name="ops_default_unit_id"
+                       domain="[('id', 'in', ops_allowed_unit_ids)]"
+                       options="{'no_create': True, 'no_open': True}"
+                       invisible="not ops_track_quantity"
+                       readonly="not ops_work_type_id"/>
+                <field name="ops_allowed_unit_summary"
+                       readonly="1"
+                       invisible="not ops_track_quantity or not ops_allowed_unit_summary"/>
+            </xpath>
+            <xpath expr="//field[@name='ops_measurement_unit']" position="replace">
+                <field name="ops_measurement_unit_id"
+                       placeholder="Хэмжих нэгж сонгоно уу"
+                       domain="[('id', 'in', ops_allowed_unit_ids)]"
+                       options="{'no_create': True, 'no_open': True}"
+                       invisible="not ops_track_quantity"
+                       readonly="not ops_work_type_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_project_view_form_simplified_ops_work_unit" model="ir.ui.view">
+        <field name="name">project.project.view.form.simplified.ops.work.unit</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="ops_project_defaults.project_project_view_form_simplified_ops_defaults"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[field[@name='ops_track_quantity']]/field[@name='ops_track_quantity']" position="after">
+                <field name="ops_work_type_id" readonly="1" invisible="not ops_track_quantity"/>
+            </xpath>
+            <xpath expr="//setting[field[@name='ops_track_quantity']]//field[@name='ops_planned_quantity']" position="after">
+                <field name="ops_allowed_unit_ids"
+                       widget="many2many_tags"
+                       options="{'no_create': True, 'no_create_edit': True}"
+                       invisible="not ops_track_quantity"/>
+                <field name="ops_default_unit_id"
+                       domain="[('id', 'in', ops_allowed_unit_ids)]"
+                       options="{'no_create': True, 'no_open': True}"
+                       invisible="not ops_track_quantity"/>
+                <field name="ops_allowed_unit_summary"
+                       readonly="1"
+                       invisible="not ops_track_quantity or not ops_allowed_unit_summary"/>
+            </xpath>
+            <xpath expr="//field[@name='ops_measurement_unit']" position="replace">
+                <field name="ops_measurement_unit_id"
+                       placeholder="Хэмжих нэгж сонгоно уу"
+                       domain="[('id', 'in', ops_allowed_unit_ids)]"
+                       options="{'no_create': True, 'no_open': True}"
+                       invisible="not ops_track_quantity"
+                       readonly="not ops_work_type_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_quick_create_form_ops_work_unit" model="ir.ui.view">
+        <field name="name">project.form.quick.create.ops.work.unit</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="ops_project_defaults.project_quick_create_form_ops_defaults"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='ops_track_quantity']" position="after">
+                <field name="ops_work_type_id" readonly="1" invisible="not ops_track_quantity"/>
+            </xpath>
+            <xpath expr="//field[@name='ops_measurement_unit']" position="replace">
+                <field name="ops_measurement_unit_id"
+                       placeholder="Хэмжих нэгж сонгоно уу"
+                       domain="[('id', 'in', ops_allowed_unit_ids)]"
+                       options="{'no_create': True, 'no_open': True}"
+                       invisible="not ops_track_quantity"/>
+            </xpath>
+            <xpath expr="//field[@name='ops_planned_quantity']" position="after">
+                <field name="ops_allowed_unit_ids"
+                       widget="many2many_tags"
+                       options="{'no_create': True, 'no_create_edit': True}"
+                       invisible="not ops_track_quantity"/>
+                <field name="ops_default_unit_id"
+                       domain="[('id', 'in', ops_allowed_unit_ids)]"
+                       options="{'no_create': True, 'no_open': True}"
+                       invisible="not ops_track_quantity"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

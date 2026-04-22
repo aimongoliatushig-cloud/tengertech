@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="mpw_demo_project" model="project.project">
+        <field name="name">Жишиг худалдан авалтын төсөл</field>
+    </record>
+
+    <record id="mpw_demo_task" model="project.task">
+        <field name="name">Жишиг худалдан авалтын ажилбар</field>
+        <field name="project_id" ref="municipal_procurement_workflow.mpw_demo_project"/>
+    </record>
+
+    <record id="mpw_demo_supplier_a" model="res.partner">
+        <field name="name">Жишиг нийлүүлэгч А</field>
+        <field name="supplier_rank">1</field>
+    </record>
+
+    <record id="mpw_demo_supplier_b" model="res.partner">
+        <field name="name">Жишиг нийлүүлэгч Б</field>
+        <field name="supplier_rank">1</field>
+    </record>
+
+    <record id="mpw_demo_supplier_c" model="res.partner">
+        <field name="name">Жишиг нийлүүлэгч В</field>
+        <field name="supplier_rank">1</field>
+    </record>
+
+    <record id="mpw_demo_request_low" model="mpw.procurement.request">
+        <field name="title">Жишиг бага үнийн хүсэлт</field>
+        <field name="project_id" ref="municipal_procurement_workflow.mpw_demo_project"/>
+        <field name="task_id" ref="municipal_procurement_workflow.mpw_demo_task"/>
+        <field name="requester_user_id" ref="base.user_admin"/>
+        <field name="responsible_storekeeper_user_id" ref="base.user_admin"/>
+        <field name="procurement_type">goods</field>
+        <field name="urgency">medium</field>
+        <field name="description">Шуурхай засварын материалын бага үнийн хүсэлт.</field>
+        <field name="required_date">2026-05-05</field>
+        <field name="state">finance_review</field>
+        <field name="date_quotation_submitted">2026-04-21 09:30:00</field>
+        <field name="line_ids" eval="[
+            (0, 0, {
+                'sequence': 10,
+                'product_name_manual': 'Гагнуурын электрод',
+                'specification': 'Засварын багт хэрэглэх',
+                'quantity': 10,
+                'uom_id': ref('uom.product_uom_unit'),
+                'approx_unit_price': 85000,
+            })
+        ]"/>
+    </record>
+
+    <record id="mpw_demo_low_quote_a" model="mpw.procurement.quotation">
+        <field name="request_id" ref="municipal_procurement_workflow.mpw_demo_request_low"/>
+        <field name="sequence">1</field>
+        <field name="supplier_id" ref="municipal_procurement_workflow.mpw_demo_supplier_a"/>
+        <field name="quotation_ref">LOW-A-001</field>
+        <field name="quotation_date">2026-04-20</field>
+        <field name="amount_total">850000</field>
+        <field name="payment_terms_text">100 хувь шилжүүлэг</field>
+    </record>
+
+    <record id="mpw_demo_low_quote_b" model="mpw.procurement.quotation">
+        <field name="request_id" ref="municipal_procurement_workflow.mpw_demo_request_low"/>
+        <field name="sequence">2</field>
+        <field name="supplier_id" ref="municipal_procurement_workflow.mpw_demo_supplier_b"/>
+        <field name="quotation_ref">LOW-B-001</field>
+        <field name="quotation_date">2026-04-20</field>
+        <field name="amount_total">910000</field>
+        <field name="payment_terms_text">7 хоногийн дотор</field>
+    </record>
+
+    <record id="mpw_demo_low_quote_c" model="mpw.procurement.quotation">
+        <field name="request_id" ref="municipal_procurement_workflow.mpw_demo_request_low"/>
+        <field name="sequence">3</field>
+        <field name="supplier_id" ref="municipal_procurement_workflow.mpw_demo_supplier_c"/>
+        <field name="quotation_ref">LOW-C-001</field>
+        <field name="quotation_date">2026-04-20</field>
+        <field name="amount_total">970000</field>
+        <field name="payment_terms_text">14 хоногийн дотор</field>
+    </record>
+
+    <record id="mpw_demo_request_low" model="mpw.procurement.request">
+        <field name="selected_quotation_id" ref="municipal_procurement_workflow.mpw_demo_low_quote_a"/>
+    </record>
+
+    <record id="mpw_demo_request_high" model="mpw.procurement.request">
+        <field name="title">Жишиг өндөр үнийн хүсэлт</field>
+        <field name="project_id" ref="municipal_procurement_workflow.mpw_demo_project"/>
+        <field name="task_id" ref="municipal_procurement_workflow.mpw_demo_task"/>
+        <field name="requester_user_id" ref="base.user_admin"/>
+        <field name="responsible_storekeeper_user_id" ref="base.user_admin"/>
+        <field name="procurement_type">service</field>
+        <field name="urgency">high</field>
+        <field name="description">Гэрэлтүүлгийн их засварын үйлчилгээний хүсэлт.</field>
+        <field name="required_date">2026-05-10</field>
+        <field name="state">director_pending</field>
+        <field name="date_quotation_submitted">2026-04-21 10:00:00</field>
+        <field name="line_ids" eval="[
+            (0, 0, {
+                'sequence': 10,
+                'product_name_manual': 'Гэрэлтүүлгийн их засвар',
+                'specification': 'Талбайн гэрэлтүүлгийн шинэчлэл',
+                'quantity': 1,
+                'uom_id': ref('uom.product_uom_unit'),
+                'approx_unit_price': 1400000,
+            })
+        ]"/>
+    </record>
+
+    <record id="mpw_demo_high_quote_a" model="mpw.procurement.quotation">
+        <field name="request_id" ref="municipal_procurement_workflow.mpw_demo_request_high"/>
+        <field name="sequence">1</field>
+        <field name="supplier_id" ref="municipal_procurement_workflow.mpw_demo_supplier_a"/>
+        <field name="quotation_ref">HIGH-A-001</field>
+        <field name="quotation_date">2026-04-21</field>
+        <field name="amount_total">1250000</field>
+        <field name="payment_terms_text">Гэрээний дагуу</field>
+    </record>
+
+    <record id="mpw_demo_high_quote_b" model="mpw.procurement.quotation">
+        <field name="request_id" ref="municipal_procurement_workflow.mpw_demo_request_high"/>
+        <field name="sequence">2</field>
+        <field name="supplier_id" ref="municipal_procurement_workflow.mpw_demo_supplier_b"/>
+        <field name="quotation_ref">HIGH-B-001</field>
+        <field name="quotation_date">2026-04-21</field>
+        <field name="amount_total">1370000</field>
+        <field name="payment_terms_text">Гэрээний дагуу</field>
+    </record>
+
+    <record id="mpw_demo_high_quote_c" model="mpw.procurement.quotation">
+        <field name="request_id" ref="municipal_procurement_workflow.mpw_demo_request_high"/>
+        <field name="sequence">3</field>
+        <field name="supplier_id" ref="municipal_procurement_workflow.mpw_demo_supplier_c"/>
+        <field name="quotation_ref">HIGH-C-001</field>
+        <field name="quotation_date">2026-04-21</field>
+        <field name="amount_total">1490000</field>
+        <field name="payment_terms_text">Гэрээний дагуу</field>
+    </record>
+
+    <record id="mpw_demo_request_high" model="mpw.procurement.request">
+        <field name="selected_quotation_id" ref="municipal_procurement_workflow.mpw_demo_high_quote_a"/>
+    </record>
+</odoo>

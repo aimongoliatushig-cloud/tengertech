@@ -494,7 +494,9 @@ export default async function Home() {
                         <p>{report.projectName}</p>
 
                         <div className={styles.reportMeta}>
-                          <span>Тоо хэмжээ: {report.reportedQuantity}</span>
+                          <span>
+                            Тоо хэмжээ: {report.reportedQuantity} {report.measurementUnit}
+                          </span>
                           <span>Зураг: {report.imageCount}</span>
                           <span>Аудио: {report.audioCount}</span>
                         </div>
@@ -1098,7 +1100,9 @@ export default async function Home() {
                       <p>{report.departmentName}</p>
 
                       <div className={styles.reportMeta}>
-                        <span>Тоо хэмжээ: {report.reportedQuantity}</span>
+                        <span>
+                          Тоо хэмжээ: {report.reportedQuantity} {report.measurementUnit}
+                        </span>
                         <span>Зураг: {report.imageCount}</span>
                         <span>Аудио: {report.audioCount}</span>
                       </div>

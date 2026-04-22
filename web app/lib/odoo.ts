@@ -27,6 +27,8 @@ type OdooTaskRecord = {
   ops_remaining_quantity?: number;
   ops_progress_percent?: number;
   ops_measurement_unit?: string | false;
+  ops_measurement_unit_id?: OdooRelation;
+  ops_measurement_unit_code?: string | false;
   priority?: string;
   date_deadline?: string | false;
   mfo_shift_date?: string | false;
@@ -49,6 +51,8 @@ type OdooReportRecord = {
   report_datetime: string;
   report_summary: string | false;
   reported_quantity: number;
+  task_measurement_unit_id?: OdooRelation;
+  task_measurement_unit_code?: string | false;
   image_count?: number;
   audio_count?: number;
   image_attachment_ids?: number[];
@@ -70,6 +74,18 @@ type OdooUserRecord = {
   name: string;
   login: string;
   ops_user_type: string | false;
+};
+
+type OdooEmployeeRecord = {
+  id: number;
+  name: string;
+  department_id?: OdooRelation;
+  job_id?: OdooRelation;
+  job_title?: string | false;
+  work_phone?: string | false;
+  mobile_phone?: string | false;
+  work_email?: string | false;
+  user_id?: OdooRelation;
 };
 
 type OdooDepartmentRecord = {
@@ -165,6 +181,8 @@ type ReportFeedItem = {
   projectName: string;
   summary: string;
   reportedQuantity: number;
+  measurementUnit: string;
+  measurementUnitCode: string;
   imageCount: number;
   audioCount: number;
   submittedAt: string;
@@ -245,6 +263,45 @@ export type DashboardSnapshot = {
   teamLeaders: TeamLeaderCard[];
   odooBaseUrl: string;
   totalTasks: number;
+};
+
+export type HrEmployeeDirectoryItem = {
+  id: number;
+  name: string;
+  departmentName: string;
+  jobTitle: string;
+  workPhone: string;
+  mobilePhone: string;
+  workEmail: string;
+  userName: string;
+};
+
+type OdooFleetVehicleRecord = {
+  id: number;
+  name: string;
+  license_plate?: string | false;
+  state_id?: OdooRelation;
+  mfo_active_for_ops?: boolean;
+  latest_repair_state?: string | false;
+  vehicle_downtime_open?: boolean;
+  active?: boolean;
+};
+
+export type FleetVehicleBoardItem = {
+  id: number;
+  plate: string;
+  name: string;
+  stateLabel: string;
+  latestRepairState: string;
+  isRepair: boolean;
+};
+
+export type FleetVehicleBoard = {
+  activeVehicles: FleetVehicleBoardItem[];
+  repairVehicles: FleetVehicleBoardItem[];
+  totalVehicles: number;
+  activeCount: number;
+  repairCount: number;
 };
 
 type StageBucket = "todo" | "progress" | "review" | "done" | "unknown";
@@ -345,6 +402,8 @@ const TASK_FIELD_VARIANTS: string[][] = [
     "ops_remaining_quantity",
     "ops_progress_percent",
     "ops_measurement_unit",
+    "ops_measurement_unit_id",
+    "ops_measurement_unit_code",
     "priority",
     "date_deadline",
     "mfo_shift_date",
@@ -370,6 +429,8 @@ const TASK_FIELD_VARIANTS: string[][] = [
     "ops_remaining_quantity",
     "ops_progress_percent",
     "ops_measurement_unit",
+    "ops_measurement_unit_id",
+    "ops_measurement_unit_code",
     "priority",
     "date_deadline",
     "mfo_shift_date",
@@ -377,6 +438,24 @@ const TASK_FIELD_VARIANTS: string[][] = [
     "mfo_is_operation_project",
     "mfo_operation_type",
     "mfo_route_id",
+  ],
+  [
+    "name",
+    "project_id",
+    "stage_id",
+    "ops_team_leader_id",
+    "user_ids",
+    "ops_planned_quantity",
+    "ops_completed_quantity",
+    "ops_remaining_quantity",
+    "ops_progress_percent",
+    "ops_measurement_unit",
+    "ops_measurement_unit_id",
+    "ops_measurement_unit_code",
+    "priority",
+    "date_deadline",
+    "mfo_shift_date",
+    "state",
   ],
   [
     "name",
@@ -403,6 +482,8 @@ const REPORT_FIELD_VARIANTS: string[][] = [
     "report_datetime",
     "report_summary",
     "reported_quantity",
+    "task_measurement_unit_id",
+    "task_measurement_unit_code",
     "image_count",
     "audio_count",
     "image_attachment_ids",
@@ -414,14 +495,90 @@ const REPORT_FIELD_VARIANTS: string[][] = [
     "report_datetime",
     "report_summary",
     "reported_quantity",
+    "task_measurement_unit_id",
+    "task_measurement_unit_code",
     "image_count",
     "audio_count",
+  ],
+  [
+    "task_id",
+    "reporter_id",
+    "report_datetime",
+    "report_summary",
+    "reported_quantity",
+    "task_measurement_unit_id",
+    "task_measurement_unit_code",
   ],
   ["task_id", "reporter_id", "report_datetime", "report_summary", "reported_quantity"],
 ];
 
+const HR_EMPLOYEE_FIELD_VARIANTS: string[][] = [
+  [
+    "name",
+    "department_id",
+    "job_id",
+    "job_title",
+    "work_phone",
+    "mobile_phone",
+    "work_email",
+    "user_id",
+  ],
+  ["name", "department_id", "job_id", "work_phone", "mobile_phone", "work_email", "user_id"],
+  ["name", "department_id", "job_title", "work_phone", "mobile_phone", "work_email", "user_id"],
+  ["name", "department_id", "work_phone", "mobile_phone", "work_email", "user_id"],
+  ["name", "department_id"],
+];
+
+const FLEET_VEHICLE_FIELD_VARIANTS: string[][] = [
+  [
+    "name",
+    "license_plate",
+    "state_id",
+    "mfo_active_for_ops",
+    "latest_repair_state",
+    "vehicle_downtime_open",
+    "active",
+  ],
+  ["name", "license_plate", "state_id", "mfo_active_for_ops", "active"],
+  ["name", "license_plate", "state_id", "active"],
+  ["name", "license_plate", "active"],
+];
+
 function relationName(relation: OdooRelation, fallback = "Оноогоогүй") {
   return Array.isArray(relation) ? relation[1] : fallback;
+}
+
+function normalizeFleetStatusValue(value?: string | false) {
+  return (typeof value === "string" ? value : "").trim().toLowerCase();
+}
+
+function isRepairStatusLabel(value?: string | false) {
+  const normalized = normalizeFleetStatusValue(value);
+  if (!normalized) {
+    return false;
+  }
+
+  const resolvedTokens = [
+    "done",
+    "completed",
+    "fixed",
+    "cancel",
+    "цуцлагдсан",
+    "дууссан",
+    "баталгаажсан",
+  ];
+  if (resolvedTokens.some((token) => normalized.includes(token))) {
+    return false;
+  }
+
+  return [
+    "засагдаж",
+    "засварт",
+    "repair",
+    "waiting repair",
+    "parts received",
+    "approval",
+  ].some((token) => normalized.includes(token));
 }
 
 function formatCompactDate(value?: string | false) {
@@ -453,6 +610,145 @@ function formatSyncDate(value: Date) {
 
 function formatQuantity(value: number, unit: string) {
   return `${Math.round(value * 10) / 10} ${unit}`.trim();
+}
+
+const STANDARD_UNIT_LABELS: Record<string, string> = {
+  pcs: "Ширхэг",
+  kg: "Кг",
+  tn: "Тн",
+  m: "Метр",
+  km: "Км",
+  m2: "М²",
+  m3: "М³",
+  liter: "Литр",
+  times: "Удаа",
+  point: "Цэг",
+  vehicle: "Машин",
+  tree: "Мод",
+};
+
+const UNIT_CODE_ALIASES: Record<string, string> = {
+  "ширхэг": "pcs",
+  "ш": "pcs",
+  pcs: "pcs",
+  piece: "pcs",
+  pieces: "pcs",
+  "кг": "kg",
+  kg: "kg",
+  kilogram: "kg",
+  "тн": "tn",
+  tn: "tn",
+  ton: "tn",
+  "метр": "m",
+  "м": "m",
+  m: "m",
+  "км": "km",
+  km: "km",
+  "м2": "m2",
+  "м²": "m2",
+  sqm: "m2",
+  "м3": "m3",
+  "м³": "m3",
+  "мкуб": "m3",
+  m3: "m3",
+  "литр": "liter",
+  "л": "liter",
+  liter: "liter",
+  "удаа": "times",
+  "рейс": "times",
+  times: "times",
+  "цэг": "point",
+  point: "point",
+  "машин": "vehicle",
+  vehicle: "vehicle",
+  "мод": "tree",
+  tree: "tree",
+};
+
+function normalizeUnitValue(value?: string | false) {
+  const rawValue = typeof value === "string" ? value : "";
+  return rawValue
+    .trim()
+    .toLowerCase()
+    .replace(/[.\s_-]+/g, "")
+    .replace("²", "2")
+    .replace("³", "3");
+}
+
+function resolveUnitCodeFromText(value?: string | false) {
+  if (!value) {
+    return "";
+  }
+
+  const normalized = normalizeUnitValue(value);
+  return UNIT_CODE_ALIASES[normalized] ?? normalized;
+}
+
+function resolveUnitLabel(
+  relation?: OdooRelation,
+  code?: string | false,
+  legacyValue?: string | false,
+  fallback = "нэгж",
+) {
+  if (Array.isArray(relation)) {
+    return relation[1];
+  }
+
+  if (code && STANDARD_UNIT_LABELS[code]) {
+    return STANDARD_UNIT_LABELS[code];
+  }
+
+  const rawLegacyValue = typeof legacyValue === "string" ? legacyValue.trim() : "";
+  if (rawLegacyValue) {
+    return rawLegacyValue;
+  }
+
+  return fallback;
+}
+
+function resolveTaskMeasurementUnit(task: OdooTaskRecord, fallback = "нэгж") {
+  return resolveUnitLabel(
+    task.ops_measurement_unit_id,
+    task.ops_measurement_unit_code,
+    task.ops_measurement_unit,
+    fallback,
+  );
+}
+
+function resolveTaskMeasurementCode(task: OdooTaskRecord) {
+  return task.ops_measurement_unit_code || resolveUnitCodeFromText(task.ops_measurement_unit);
+}
+
+function buildQuantityMetricSummary(tasks: OdooTaskRecord[]) {
+  const totals = new Map<string, { label: string; value: number }>();
+
+  for (const task of tasks) {
+    const quantity = task.ops_completed_quantity ?? 0;
+    if (quantity <= 0) {
+      continue;
+    }
+
+    const code = resolveTaskMeasurementCode(task) || "other";
+    const label = resolveTaskMeasurementUnit(task);
+    const current = totals.get(code) ?? { label, value: 0 };
+    current.value += quantity;
+    totals.set(code, current);
+  }
+
+  const orderedTotals = Array.from(totals.values())
+    .filter((item) => item.value > 0)
+    .sort((left, right) => right.value - left.value);
+
+  if (!orderedTotals.length) {
+    return "0";
+  }
+
+  const visible = orderedTotals.slice(0, 3).map((item) => formatQuantity(item.value, item.label));
+  if (orderedTotals.length <= 3) {
+    return visible.join(", ");
+  }
+
+  return `${visible.join(", ")} +${orderedTotals.length - 3}`;
 }
 
 function inferDepartmentUnitFromText(text: string) {
@@ -957,6 +1253,109 @@ async function searchReadAllWithFieldFallback<T>(
   throw lastError instanceof Error ? lastError : new Error(`${model} өгөгдөл уншихад алдаа гарлаа.`);
 }
 
+export async function loadHrEmployeeDirectory(
+  connectionOverrides: Partial<OdooConnection> = {},
+) {
+  const connection = createOdooConnection(connectionOverrides);
+  const uid = await authenticate(connection);
+
+  if (!uid) {
+    throw new Error("Odoo authentication failed");
+  }
+
+  const employees = await searchReadAllWithFieldFallback<OdooEmployeeRecord>(
+    uid,
+    "hr.employee",
+    [["active", "=", true]],
+    HR_EMPLOYEE_FIELD_VARIANTS,
+    {
+      order: "name asc",
+    },
+    connection,
+  );
+
+  return employees
+    .map((employee) => ({
+      id: employee.id,
+      name: employee.name,
+      departmentName: relationName(employee.department_id ?? false, UNKNOWN_DEPARTMENT),
+      jobTitle:
+        relationName(employee.job_id ?? false, "") ||
+        employee.job_title ||
+        "Албан тушаал бүртгээгүй",
+      workPhone: employee.work_phone || "",
+      mobilePhone: employee.mobile_phone || "",
+      workEmail: employee.work_email || "",
+      userName: relationName(employee.user_id ?? false, ""),
+    }))
+    .sort((left, right) => {
+      const departmentOrder = left.departmentName.localeCompare(right.departmentName, "mn");
+      if (departmentOrder !== 0) {
+        return departmentOrder;
+      }
+      return left.name.localeCompare(right.name, "mn");
+    });
+}
+
+export async function loadFleetVehicleBoard(
+  connectionOverrides: Partial<OdooConnection> = {},
+): Promise<FleetVehicleBoard> {
+  const connection = createOdooConnection(connectionOverrides);
+  const uid = await authenticate(connection);
+
+  if (!uid) {
+    throw new Error("Odoo authentication failed");
+  }
+
+  const vehicles = await searchReadAllWithFieldFallback<OdooFleetVehicleRecord>(
+    uid,
+    "fleet.vehicle",
+    [["active", "=", true]],
+    FLEET_VEHICLE_FIELD_VARIANTS,
+    {
+      order: "license_plate asc, name asc",
+    },
+    connection,
+  );
+
+  const normalizedVehicles = vehicles
+    .map((vehicle) => {
+      const stateLabel = relationName(vehicle.state_id ?? false, "");
+      const latestRepairState = vehicle.latest_repair_state || "";
+      const isRepair =
+        Boolean(vehicle.vehicle_downtime_open) ||
+        isRepairStatusLabel(stateLabel) ||
+        isRepairStatusLabel(latestRepairState);
+      const isOperational = Boolean(vehicle.mfo_active_for_ops);
+
+      if (!isOperational && !isRepair) {
+        return null;
+      }
+
+      return {
+        id: vehicle.id,
+        plate: vehicle.license_plate || vehicle.name || `Машин #${vehicle.id}`,
+        name: vehicle.name || vehicle.license_plate || `Машин #${vehicle.id}`,
+        stateLabel: stateLabel || (isRepair ? "Засагдаж буй машин" : "Идэвхтэй машин"),
+        latestRepairState,
+        isRepair,
+      } satisfies FleetVehicleBoardItem;
+    })
+    .filter((vehicle): vehicle is FleetVehicleBoardItem => Boolean(vehicle))
+    .sort((left, right) => left.plate.localeCompare(right.plate, "mn"));
+
+  const activeVehicles = normalizedVehicles.filter((vehicle) => !vehicle.isRepair);
+  const repairVehicles = normalizedVehicles.filter((vehicle) => vehicle.isRepair);
+
+  return {
+    activeVehicles,
+    repairVehicles,
+    totalVehicles: normalizedVehicles.length,
+    activeCount: activeVehicles.length,
+    repairCount: repairVehicles.length,
+  };
+}
+
 export async function executeOdooKw<T>(
   model: string,
   method: string,
@@ -1231,7 +1630,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
         plannedQuantity: task.ops_planned_quantity ?? 0,
         completedQuantity: task.ops_completed_quantity ?? 0,
         remainingQuantity: task.ops_remaining_quantity ?? 0,
-        measurementUnit: task.ops_measurement_unit || "ш",
+        measurementUnit: resolveTaskMeasurementUnit(task),
         operationTypeLabel: operationTypeLabel(task.mfo_operation_type),
         issueFlag: statusKey === "problem",
         assigneeIds: task.user_ids ?? [],
@@ -1267,7 +1666,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     plannedQuantity: task.ops_planned_quantity ?? 0,
     completedQuantity: task.ops_completed_quantity ?? 0,
     remainingQuantity: task.ops_remaining_quantity ?? 0,
-    measurementUnit: task.ops_measurement_unit || "ш",
+    measurementUnit: resolveTaskMeasurementUnit(task),
     leaderName: relationName(task.ops_team_leader_id ?? false),
     priorityLabel: priorityLabel(task.priority || ""),
     progress: Math.round(task.ops_progress_percent ?? 0),
@@ -1349,6 +1748,13 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       projectName: task ? relationName(task.project_id) : "Ажилгүй",
       summary: report.report_summary || "Тайлбар оруулаагүй",
       reportedQuantity: report.reported_quantity ?? 0,
+      measurementUnit: resolveUnitLabel(
+        report.task_measurement_unit_id,
+        report.task_measurement_unit_code,
+        task?.ops_measurement_unit,
+      ),
+      measurementUnitCode:
+        report.task_measurement_unit_code || (task ? resolveTaskMeasurementCode(task) : ""),
       imageCount: report.image_count ?? 0,
       audioCount: report.audio_count ?? 0,
       submittedAt: formatCompactDate(report.report_datetime),
@@ -1430,10 +1836,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     .slice(0, 12);
 
   const completionRate = totalTasks ? Math.round((doneTasks.length / totalTasks) * 100) : 0;
-  const completedQuantity = tasks.reduce(
-    (sum, task) => sum + (task.ops_completed_quantity ?? 0),
-    0,
-  );
+  const completedQuantitySummary = buildQuantityMetricSummary(tasks);
 
   return {
     source: "live",
@@ -1461,8 +1864,8 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       },
       {
         label: "Хэмжээний биелэлт",
-        value: formatQuantity(completedQuantity, "нэгж"),
-        note: "Талбарын тайлангаас автоматаар тооцсон",
+        value: completedQuantitySummary,
+        note: "Стандарт нэгжийн кодоор нэгтгэсэн",
         tone: "slate",
       },
     ],
@@ -1825,6 +2228,8 @@ function fallbackSnapshot(): DashboardSnapshot {
         projectName: "2026 Мод хэлбэржүүлэлтийн хуваарь",
         summary: "21 мод хэлбэржүүлж, 1 зураг, 1 аудио тайлан хавсаргасан.",
         reportedQuantity: 21,
+        measurementUnit: "мод",
+        measurementUnitCode: "tree",
         imageCount: 1,
         audioCount: 1,
         images: [],
@@ -1839,6 +2244,8 @@ function fallbackSnapshot(): DashboardSnapshot {
         projectName: "Хог тээвэрлэлтийн өглөөний маршрут",
         summary: "Маршрут дууссан, дахин ачилт 18:00-д эхэлнэ.",
         reportedQuantity: 4,
+        measurementUnit: "удаа",
+        measurementUnitCode: "times",
         imageCount: 2,
         audioCount: 0,
         images: [],

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_mpw_request_requester_scope" model="ir.rule">
+        <field name="name">MPW request requester visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_request"/>
+        <field name="domain_force">['|', '|', '|', ('requester_user_id', '=', user.id), ('project_id.user_id', '=', user.id), ('task_id.user_ids', 'in', user.id), ('department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_requester'))]"/>
+    </record>
+
+    <record id="rule_mpw_request_storekeeper_scope" model="ir.rule">
+        <field name="name">MPW request storekeeper visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_request"/>
+        <field name="domain_force">[('responsible_storekeeper_user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_storekeeper'))]"/>
+    </record>
+
+    <record id="rule_mpw_request_broad_visibility" model="ir.rule">
+        <field name="name">MPW request broad visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_request"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[
+            (4, ref('municipal_procurement_workflow.group_mpw_finance')),
+            (4, ref('municipal_procurement_workflow.group_mpw_office_clerk')),
+            (4, ref('municipal_procurement_workflow.group_mpw_contract_officer')),
+            (4, ref('municipal_procurement_workflow.group_mpw_director')),
+            (4, ref('municipal_procurement_workflow.group_mpw_general_manager')),
+            (4, ref('municipal_procurement_workflow.group_mpw_admin'))
+        ]"/>
+    </record>
+
+    <record id="rule_mpw_line_requester_scope" model="ir.rule">
+        <field name="name">MPW line requester visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_request_line"/>
+        <field name="domain_force">['|', '|', '|', ('request_id.requester_user_id', '=', user.id), ('request_id.project_id.user_id', '=', user.id), ('request_id.task_id.user_ids', 'in', user.id), ('request_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_requester'))]"/>
+    </record>
+
+    <record id="rule_mpw_line_storekeeper_scope" model="ir.rule">
+        <field name="name">MPW line storekeeper visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_request_line"/>
+        <field name="domain_force">[('request_id.responsible_storekeeper_user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_storekeeper'))]"/>
+    </record>
+
+    <record id="rule_mpw_line_broad_visibility" model="ir.rule">
+        <field name="name">MPW line broad visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_request_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[
+            (4, ref('municipal_procurement_workflow.group_mpw_finance')),
+            (4, ref('municipal_procurement_workflow.group_mpw_office_clerk')),
+            (4, ref('municipal_procurement_workflow.group_mpw_contract_officer')),
+            (4, ref('municipal_procurement_workflow.group_mpw_director')),
+            (4, ref('municipal_procurement_workflow.group_mpw_general_manager')),
+            (4, ref('municipal_procurement_workflow.group_mpw_admin'))
+        ]"/>
+    </record>
+
+    <record id="rule_mpw_child_requester_scope" model="ir.rule">
+        <field name="name">MPW child requester visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_quotation"/>
+        <field name="domain_force">['|', '|', '|', ('request_id.requester_user_id', '=', user.id), ('request_id.project_id.user_id', '=', user.id), ('request_id.task_id.user_ids', 'in', user.id), ('request_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_requester'))]"/>
+    </record>
+
+    <record id="rule_mpw_child_storekeeper_scope" model="ir.rule">
+        <field name="name">MPW child storekeeper visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_quotation"/>
+        <field name="domain_force">[('request_id.responsible_storekeeper_user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_storekeeper'))]"/>
+    </record>
+
+    <record id="rule_mpw_child_broad_visibility" model="ir.rule">
+        <field name="name">MPW quotation broad visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_quotation"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[
+            (4, ref('municipal_procurement_workflow.group_mpw_finance')),
+            (4, ref('municipal_procurement_workflow.group_mpw_office_clerk')),
+            (4, ref('municipal_procurement_workflow.group_mpw_contract_officer')),
+            (4, ref('municipal_procurement_workflow.group_mpw_director')),
+            (4, ref('municipal_procurement_workflow.group_mpw_general_manager')),
+            (4, ref('municipal_procurement_workflow.group_mpw_admin'))
+        ]"/>
+    </record>
+
+    <record id="rule_mpw_document_requester_scope" model="ir.rule">
+        <field name="name">MPW document requester visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_document"/>
+        <field name="domain_force">['|', '|', '|', ('request_id.requester_user_id', '=', user.id), ('request_id.project_id.user_id', '=', user.id), ('request_id.task_id.user_ids', 'in', user.id), ('request_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_requester'))]"/>
+    </record>
+
+    <record id="rule_mpw_document_storekeeper_scope" model="ir.rule">
+        <field name="name">MPW document storekeeper visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_document"/>
+        <field name="domain_force">[('request_id.responsible_storekeeper_user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_storekeeper'))]"/>
+    </record>
+
+    <record id="rule_mpw_document_broad_visibility" model="ir.rule">
+        <field name="name">MPW document broad visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_document"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[
+            (4, ref('municipal_procurement_workflow.group_mpw_finance')),
+            (4, ref('municipal_procurement_workflow.group_mpw_office_clerk')),
+            (4, ref('municipal_procurement_workflow.group_mpw_contract_officer')),
+            (4, ref('municipal_procurement_workflow.group_mpw_director')),
+            (4, ref('municipal_procurement_workflow.group_mpw_general_manager')),
+            (4, ref('municipal_procurement_workflow.group_mpw_admin'))
+        ]"/>
+    </record>
+
+    <record id="rule_mpw_audit_requester_scope" model="ir.rule">
+        <field name="name">MPW audit requester visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_audit"/>
+        <field name="domain_force">['|', '|', '|', ('request_id.requester_user_id', '=', user.id), ('request_id.project_id.user_id', '=', user.id), ('request_id.task_id.user_ids', 'in', user.id), ('request_id.department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_requester'))]"/>
+    </record>
+
+    <record id="rule_mpw_audit_storekeeper_scope" model="ir.rule">
+        <field name="name">MPW audit storekeeper visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_audit"/>
+        <field name="domain_force">[('request_id.responsible_storekeeper_user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_procurement_workflow.group_mpw_storekeeper'))]"/>
+    </record>
+
+    <record id="rule_mpw_audit_broad_visibility" model="ir.rule">
+        <field name="name">MPW audit broad visibility</field>
+        <field name="model_id" ref="model_mpw_procurement_audit"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[
+            (4, ref('municipal_procurement_workflow.group_mpw_finance')),
+            (4, ref('municipal_procurement_workflow.group_mpw_office_clerk')),
+            (4, ref('municipal_procurement_workflow.group_mpw_contract_officer')),
+            (4, ref('municipal_procurement_workflow.group_mpw_director')),
+            (4, ref('municipal_procurement_workflow.group_mpw_general_manager')),
+            (4, ref('municipal_procurement_workflow.group_mpw_admin'))
+        ]"/>
+    </record>
+</odoo>

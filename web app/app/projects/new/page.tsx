@@ -18,6 +18,7 @@ import {
   loadGarbageRouteOptions,
   loadGarbageVehicleOptions,
   loadProjectManagerOptions,
+  loadWorkTypeOptions,
 } from "@/lib/workspace";
 
 import { NewWorkForm } from "@/app/projects/new/new-work-form";
@@ -53,6 +54,7 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
     departmentOptions,
     garbageVehicleOptions,
     garbageRouteOptions,
+    workTypeOptions,
     masterSnapshot,
   ] = await Promise.all([
     loadProjectManagerOptions({
@@ -68,6 +70,10 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
       password: session.password,
     }),
     loadGarbageRouteOptions({
+      login: session.login,
+      password: session.password,
+    }),
+    loadWorkTypeOptions({
       login: session.login,
       password: session.password,
     }),
@@ -165,6 +171,7 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
                   managerOptions={managerOptions}
                   garbageVehicleOptions={garbageVehicleOptions}
                   garbageRouteOptions={garbageRouteOptions}
+                  workTypeOptions={workTypeOptions}
                   lockedDepartmentId={
                     lockedDepartmentOption ? String(lockedDepartmentOption.id) : undefined
                   }

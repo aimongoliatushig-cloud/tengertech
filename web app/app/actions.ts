@@ -28,8 +28,10 @@ import {
   createWorkspaceProject,
   createWorkspaceTask,
   createWorkspaceTaskReport,
+  loadProjectDetail,
   markWorkspaceTaskDone,
   loadDepartmentOptions,
+  loadWorkTypeOptions,
   returnWorkspaceTaskForChanges,
   submitWorkspaceTaskForReview,
 } from "@/lib/workspace";
@@ -171,9 +173,10 @@ export async function createProjectAction(formData: FormData) {
   const managerIdRaw = String(formData.get("manager_id") ?? "").trim();
   const departmentIdRaw = String(formData.get("department_id") ?? "").trim();
   const operationUnit = String(formData.get("operation_unit") ?? "").trim();
+  const operationType = String(formData.get("operation_type") ?? "").trim();
   const trackQuantity = String(formData.get("track_quantity") ?? "").trim() === "1";
   const plannedQuantityRaw = String(formData.get("planned_quantity") ?? "").trim();
-  const measurementUnit = String(formData.get("measurement_unit") ?? "").trim();
+  const unitIdRaw = String(formData.get("unit_id") ?? "").trim();
   const startDate = String(formData.get("start_date") ?? "").trim();
   const deadline = String(formData.get("deadline") ?? "").trim();
   const garbageVehicleIdRaw = String(formData.get("garbage_vehicle_id") ?? "").trim();
@@ -274,6 +277,22 @@ export async function createProjectAction(formData: FormData) {
     );
   }
 
+  const selectedWorkType =
+    operationUnit !== "garbage_transport"
+      ? (await loadWorkTypeOptions(connectionOverrides)).find(
+          (option) => option.operationType === operationType,
+        ) ?? null
+      : null;
+  const allowedUnitIds = new Set(selectedWorkType?.allowedUnits.map((unit) => unit.id) ?? []);
+  const measurementUnitId =
+    unitIdRaw && Number.isFinite(Number(unitIdRaw))
+      ? Number(unitIdRaw)
+      : selectedWorkType?.defaultUnitId ?? selectedWorkType?.allowedUnits[0]?.id ?? null;
+
+  if (operationUnit !== "garbage_transport" && !selectedWorkType) {
+    redirectWithMessage("/projects/new", "error", "Ажлын төрлөө сонгоно уу.");
+  }
+
   if (trackQuantity) {
     const plannedQuantity = Number(plannedQuantityRaw);
     if (!plannedQuantityRaw || Number.isNaN(plannedQuantity) || plannedQuantity <= 0) {
@@ -284,7 +303,7 @@ export async function createProjectAction(formData: FormData) {
       );
     }
 
-    if (!measurementUnit) {
+    if (!measurementUnitId) {
       redirectWithMessage(
         "/projects/new",
         "error",
@@ -293,16 +312,30 @@ export async function createProjectAction(formData: FormData) {
     }
   }
 
+  if (
+    operationUnit !== "garbage_transport" &&
+    measurementUnitId &&
+    allowedUnitIds.size &&
+    !allowedUnitIds.has(measurementUnitId)
+  ) {
+    redirectWithMessage(
+      "/projects/new",
+      "error",
+      "Сонгосон хэмжих нэгж энэ ажлын төрөлд зөвшөөрөгдөөгүй байна.",
+    );
+  }
+
   try {
     const projectId = await createWorkspaceProject(
       {
         name,
         managerId: managerIdRaw ? Number(managerIdRaw) : null,
         departmentId: effectiveDepartmentIdRaw ? Number(effectiveDepartmentIdRaw) : null,
+        operationType: operationType || undefined,
         trackQuantity,
         plannedQuantity:
           trackQuantity && plannedQuantityRaw ? Number(plannedQuantityRaw) : null,
-        measurementUnit: trackQuantity ? measurementUnit : undefined,
+        measurementUnitId: trackQuantity ? measurementUnitId : null,
         startDate: startDate || undefined,
         deadline: deadline || undefined,
       },
@@ -326,7 +359,7 @@ export async function createTaskAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const teamLeaderIdRaw = String(formData.get("team_leader_id") ?? "").trim();
   const deadline = String(formData.get("deadline") ?? "").trim();
-  const measurementUnit = String(formData.get("measurement_unit") ?? "").trim();
+  const unitIdRaw = String(formData.get("unit_id") ?? "").trim();
   const plannedQuantityRaw = String(formData.get("planned_quantity") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
 
@@ -354,6 +387,54 @@ export async function createTaskAction(formData: FormData) {
       login: session.login,
       password: session.password,
     };
+    const project = await loadProjectDetail(projectId, connectionOverrides);
+    const allowedUnitIds = new Set(project.allowedUnits.map((unit) => unit.id));
+    const measurementUnitId =
+      unitIdRaw && Number.isFinite(Number(unitIdRaw))
+        ? Number(unitIdRaw)
+        : project.defaultUnitId ?? project.allowedUnits[0]?.id ?? null;
+
+    if (!project.allowedUnits.length) {
+      redirectWithMessage(
+        `/projects/${projectId}`,
+        "error",
+        "Энэ ажил дээр ажлын төрөл ба хэмжих нэгжийн профайл тохируулаагүй байна.",
+        "#task-create-form",
+      );
+    }
+
+    if (
+      measurementUnitId &&
+      allowedUnitIds.size &&
+      !allowedUnitIds.has(measurementUnitId)
+    ) {
+      redirectWithMessage(
+        `/projects/${projectId}`,
+        "error",
+        "Сонгосон хэмжих нэгж энэ ажилд зөвшөөрөгдөөгүй байна.",
+        "#task-create-form",
+      );
+    }
+
+    const plannedQuantity = plannedQuantityRaw ? Number(plannedQuantityRaw) : null;
+    if (plannedQuantityRaw && (plannedQuantity === null || Number.isNaN(plannedQuantity) || plannedQuantity <= 0)) {
+      redirectWithMessage(
+        `/projects/${projectId}`,
+        "error",
+        "Төлөвлөсөн хэмжээ 0-ээс их байх ёстой.",
+        "#task-create-form",
+      );
+    }
+
+    if (!measurementUnitId) {
+      redirectWithMessage(
+        `/projects/${projectId}`,
+        "error",
+        "Хэмжих нэгж сонгоно уу.",
+        "#task-create-form",
+      );
+    }
+
     const defaultTeamLeaderId = isMasterRole(session.role) ? session.uid : null;
     const taskId = await createWorkspaceTask(
       {
@@ -361,8 +442,8 @@ export async function createTaskAction(formData: FormData) {
         name,
         teamLeaderId: teamLeaderIdRaw ? Number(teamLeaderIdRaw) : defaultTeamLeaderId,
         deadline: deadline || undefined,
-        measurementUnit: measurementUnit || undefined,
-        plannedQuantity: plannedQuantityRaw ? Number(plannedQuantityRaw) : null,
+        measurementUnitId,
+        plannedQuantity,
         description: description || undefined,
       },
       connectionOverrides,
@@ -392,6 +473,12 @@ export async function createTaskReportAction(formData: FormData) {
 
   if (!taskId || !reportText) {
     redirect(`${reportPath}?error=${encodeURIComponent("Тайлангийн текстээ оруулна уу.")}&composer=report`);
+  }
+
+  if (!quantityRaw || Number.isNaN(reportedQuantity) || reportedQuantity <= 0) {
+    redirect(
+      `${reportPath}?error=${encodeURIComponent("Гүйцэтгэсэн хэмжээ 0-ээс их байх ёстой.")}&composer=report`,
+    );
   }
 
   if (imageFiles.some((file) => file.type && !file.type.startsWith("image/"))) {

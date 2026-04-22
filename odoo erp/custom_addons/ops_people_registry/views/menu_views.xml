@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_ops_people_registry_root"
+        name="Ажилтан бүртгэл"
+        parent="hr.menu_human_resources_configuration"
+        sequence="60"
+        groups="ops_people_registry.group_ops_people_admin,ops_people_registry.group_ops_people_hr_manager"/>
+
+    <menuitem
+        id="menu_ops_access_profile"
+        name="Системийн эрхийн профайл"
+        parent="ops_people_registry.menu_ops_people_registry_root"
+        action="ops_people_registry.action_ops_access_profile"
+        sequence="10"
+        groups="ops_people_registry.group_ops_people_admin,ops_people_registry.group_ops_people_hr_manager"/>
+
+    <menuitem
+        id="menu_ops_people_sync_wizard"
+        name="Суурь синк хийх"
+        parent="ops_people_registry.menu_ops_people_registry_root"
+        action="ops_people_registry.action_ops_people_sync_wizard"
+        sequence="20"
+        groups="ops_people_registry.group_ops_people_admin,ops_people_registry.group_ops_people_hr_manager"/>
+
+    <menuitem
+        id="menu_ops_people_import_wizard"
+        name="CSV импорт хийх"
+        parent="ops_people_registry.menu_ops_people_registry_root"
+        action="ops_people_registry.action_ops_people_import_wizard"
+        sequence="30"
+        groups="ops_people_registry.group_ops_people_admin,ops_people_registry.group_ops_people_hr_manager"/>
+
+    <menuitem
+        id="menu_ops_people_audit_run"
+        name="Аудитын тайлан"
+        parent="ops_people_registry.menu_ops_people_registry_root"
+        action="ops_people_registry.action_ops_people_audit_run"
+        sequence="40"
+        groups="ops_people_registry.group_ops_people_admin,ops_people_registry.group_ops_people_hr_manager"/>
+</odoo>

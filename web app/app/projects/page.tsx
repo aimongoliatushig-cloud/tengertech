@@ -187,6 +187,8 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
         : selectedGroup && availableUnits.length > 1
           ? (availableUnits[0] ?? "")
           : "";
+  const isAutoBaseView =
+    !masterMode && (requestedDepartment === "Авто бааз" || requestedUnit === "Авто бааз");
 
   const scopedProjects = (masterMode
     ? filterByDepartment(snapshot.projects, masterDepartmentName)
@@ -467,7 +469,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
         <div className={styles.contentWithMenu}>
           <aside className={styles.menuColumn}>
             <AppMenu
-              active={masterMode ? "dashboard" : "projects"}
+              active={masterMode ? "dashboard" : isAutoBaseView ? "auto-base" : "projects"}
               canCreateProject={canCreateProject}
               canCreateTasks={canCreateTasks}
               canWriteReports={canWriteReports}
