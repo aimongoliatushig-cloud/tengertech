@@ -3,7 +3,9 @@ from . import fleet_vehicle
 from . import hr_employee
 from . import mfo_master_data
 from . import mfo_planning
+from . import mfo_sync_log_extension
 from . import mfo_daily_weight_total
 from . import project_project
 from . import project_task
+from . import project_task_weight_sync
 from . import project_task_type

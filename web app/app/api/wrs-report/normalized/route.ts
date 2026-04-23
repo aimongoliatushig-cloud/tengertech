@@ -9,6 +9,15 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 180;
 
+function isLocalDevelopmentRequest(request: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
+
+  const hostname = new URL(request.url).hostname;
+  return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1";
+}
+
 function hasBearerAccess(request: Request) {
   const configuredToken = process.env.WRS_SYNC_TOKEN?.trim();
   const authorization = request.headers.get("authorization") ?? "";
@@ -30,6 +39,10 @@ function hasBearerAccess(request: Request) {
 
 async function authorizeRequest(request: Request) {
   if (hasBearerAccess(request)) {
+    return true;
+  }
+
+  if (isLocalDevelopmentRequest(request)) {
     return true;
   }
 

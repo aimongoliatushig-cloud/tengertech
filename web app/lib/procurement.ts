@@ -197,6 +197,9 @@ type ApiEnvelope<T> = {
 
 type ConnectionOverrides = Partial<OdooConnection>;
 
+const PROCUREMENT_API_SETUP_ERROR =
+  "Худалдан авалтын API олдсонгүй. Odoo дээр municipal_procurement_workflow модуль суусан эсэх болон addons_path-д энэ repo-ийн custom_addons орсон эсэхийг шалгана уу.";
+
 function getCookieHeaderValue(setCookieHeader: string | null) {
   if (!setCookieHeader) {
     throw new Error("Odoo session cookie олдсонгүй.");
@@ -205,8 +208,28 @@ function getCookieHeaderValue(setCookieHeader: string | null) {
   return setCookieHeader.split(",").map((part) => part.split(";")[0].trim()).join("; ");
 }
 
+async function readApiEnvelope<T>(response: Response, path: string) {
+  const rawText = await response.text();
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!rawText.trim()) {
+    throw new Error(`Худалдан авалтын API хоосон хариу буцаалаа: ${path}`);
+  }
+
+  try {
+    return JSON.parse(rawText) as ApiEnvelope<T>;
+  } catch {
+    if (response.status === 404 || contentType.includes("text/html") || rawText.trim().startsWith("<")) {
+      throw new Error(`${PROCUREMENT_API_SETUP_ERROR} (${path})`);
+    }
+
+    throw new Error(`Худалдан авалтын API JSON бус хариу буцаалаа: ${path}`);
+  }
+}
+
 async function loginToProcurementApi(connectionOverrides: ConnectionOverrides = {}) {
   const connection = createOdooConnection(connectionOverrides);
+  const loginPath = "/mpw/api/login";
   const response = await fetch(`${connection.url}/mpw/api/login`, {
     method: "POST",
     headers: {
@@ -221,7 +244,7 @@ async function loginToProcurementApi(connectionOverrides: ConnectionOverrides = 
     }),
   });
 
-  const payload = (await response.json()) as ApiEnvelope<never>;
+  const payload = await readApiEnvelope<never>(response, loginPath);
   if (!response.ok || !payload.ok) {
     throw new Error(payload.error?.message || "Procurement API нэвтрэлт амжилтгүй боллоо.");
   }
@@ -253,7 +276,7 @@ async function procurementFetch<T>(
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
-  const payload = (await response.json()) as ApiEnvelope<T>;
+  const payload = await readApiEnvelope<T>(response, path);
   if (!response.ok || !payload.ok) {
     throw new Error(payload.error?.message || "Procurement API хүсэлт амжилтгүй боллоо.");
   }

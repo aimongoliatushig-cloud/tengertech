@@ -313,6 +313,11 @@ const DEFAULT_CONNECTION: OdooConnection = {
   password: process.env.ODOO_PASSWORD ?? "admin",
 };
 
+type OdooAuthSession = {
+  uid: number;
+  connection: OdooConnection;
+};
+
 export function createOdooConnection(
   overrides: Partial<OdooConnection> = {},
 ): OdooConnection {
@@ -320,6 +325,42 @@ export function createOdooConnection(
     ...DEFAULT_CONNECTION,
     ...overrides,
   };
+}
+
+function normalizeOdooBaseUrl(url: string) {
+  return url.trim().replace(/\/+$/, "");
+}
+
+function isLocalOdooHost(hostname: string) {
+  return hostname === "127.0.0.1" || hostname === "localhost";
+}
+
+function buildOdooConnectionCandidates(connection: OdooConnection) {
+  const candidateUrls: string[] = [normalizeOdooBaseUrl(connection.url)];
+  const configuredFallbacks = (process.env.ODOO_FALLBACK_URLS ?? "")
+    .split(",")
+    .map((item) => normalizeOdooBaseUrl(item))
+    .filter(Boolean);
+
+  candidateUrls.push(...configuredFallbacks);
+
+  try {
+    const currentUrl = new URL(connection.url);
+    if (isLocalOdooHost(currentUrl.hostname)) {
+      for (const hostname of ["127.0.0.1", "localhost"]) {
+        for (const port of ["8071", "8069"]) {
+          candidateUrls.push(`${currentUrl.protocol}//${hostname}:${port}`);
+        }
+      }
+    }
+  } catch {
+    // Invalid URL values will fail later when the JSON-RPC request runs.
+  }
+
+  return Array.from(new Set(candidateUrls)).map((url) => ({
+    ...connection,
+    url,
+  }));
 }
 
 const DEPARTMENT_ORDER = [
@@ -1037,16 +1078,41 @@ async function authenticate(connection: OdooConnection) {
   );
 }
 
+async function authenticateWithFallback(
+  connection: OdooConnection,
+): Promise<OdooAuthSession | null> {
+  let lastError: unknown = null;
+
+  for (const candidate of buildOdooConnectionCandidates(connection)) {
+    try {
+      const uid = await authenticate(candidate);
+      if (uid) {
+        return {
+          uid,
+          connection: candidate,
+        };
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  return null;
+}
+
 export async function authenticateOdooUser(
   login: string,
   password: string,
 ): Promise<AuthenticatedOdooUser | null> {
-  const connection = createOdooConnection({ login, password });
-  const uid = await authenticate(connection);
-
-  if (!uid) {
+  const auth = await authenticateWithFallback(createOdooConnection({ login, password }));
+  if (!auth) {
     return null;
   }
+  const { uid, connection } = auth;
 
   const users = await executeKw<OdooUserRecord[]>(
     uid,
@@ -1256,12 +1322,11 @@ async function searchReadAllWithFieldFallback<T>(
 export async function loadHrEmployeeDirectory(
   connectionOverrides: Partial<OdooConnection> = {},
 ) {
-  const connection = createOdooConnection(connectionOverrides);
-  const uid = await authenticate(connection);
-
-  if (!uid) {
+  const auth = await authenticateWithFallback(createOdooConnection(connectionOverrides));
+  if (!auth) {
     throw new Error("Odoo authentication failed");
   }
+  const { uid, connection } = auth;
 
   const employees = await searchReadAllWithFieldFallback<OdooEmployeeRecord>(
     uid,
@@ -1300,12 +1365,11 @@ export async function loadHrEmployeeDirectory(
 export async function loadFleetVehicleBoard(
   connectionOverrides: Partial<OdooConnection> = {},
 ): Promise<FleetVehicleBoard> {
-  const connection = createOdooConnection(connectionOverrides);
-  const uid = await authenticate(connection);
-
-  if (!uid) {
+  const auth = await authenticateWithFallback(createOdooConnection(connectionOverrides));
+  if (!auth) {
     throw new Error("Odoo authentication failed");
   }
+  const { uid, connection } = auth;
 
   const vehicles = await searchReadAllWithFieldFallback<OdooFleetVehicleRecord>(
     uid,
@@ -1363,12 +1427,11 @@ export async function executeOdooKw<T>(
   kwargs: Record<string, unknown> = {},
   connectionOverrides: Partial<OdooConnection> = {},
 ) {
-  const connection = createOdooConnection(connectionOverrides);
-  const uid = await authenticate(connection);
-
-  if (!uid) {
+  const auth = await authenticateWithFallback(createOdooConnection(connectionOverrides));
+  if (!auth) {
     throw new Error("Odoo authentication failed");
   }
+  const { uid, connection } = auth;
 
   return executeKw<T>(uid, model, method, methodArgs, kwargs, connection);
 }
@@ -1378,11 +1441,11 @@ export async function fetchOdooAttachmentContent(
   connectionOverrides: Partial<OdooConnection> = {},
 ) {
   const attemptRead = async (connection: OdooConnection) => {
-    const uid = await authenticate(connection);
-
-    if (!uid) {
+    const auth = await authenticateWithFallback(connection);
+    if (!auth) {
       throw new Error("Odoo authentication failed");
     }
+    const { uid, connection: resolvedConnection } = auth;
 
     const attachments = await executeKw<OdooAttachmentBinaryRecord[]>(
       uid,
@@ -1393,7 +1456,7 @@ export async function fetchOdooAttachmentContent(
         fields: ["name", "mimetype", "datas"],
         limit: 1,
       },
-      connection,
+      resolvedConnection,
     );
 
     const attachment = attachments[0];
@@ -1430,10 +1493,11 @@ export async function fetchOdooAttachmentContent(
 }
 
 async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardSnapshot> {
-  const uid = await authenticate(connection);
-  if (!uid) {
+  const auth = await authenticateWithFallback(connection);
+  if (!auth) {
     throw new Error("Odoo authentication failed");
   }
+  const { uid, connection: resolvedConnection } = auth;
 
   const [projects, tasks, departmentsFromOdoo] = await Promise.all([
     searchReadAll<OdooProjectRecord>(
@@ -1444,7 +1508,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
         fields: ["name", "user_id", "ops_department_id", "date_start", "date"],
         order: "create_date desc",
       },
-      connection,
+      resolvedConnection,
     ),
     searchReadAllWithFieldFallback<OdooTaskRecord>(
       uid,
@@ -1454,7 +1518,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
       {
         order: "priority desc, date_deadline asc, create_date desc",
       },
-      connection,
+      resolvedConnection,
     ),
     searchReadAll<OdooDepartmentRecord>(
       uid,
@@ -1464,7 +1528,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
         fields: ["name"],
         order: "name asc",
       },
-      connection,
+      resolvedConnection,
       200,
     ).catch(() => []),
   ]);
@@ -1477,7 +1541,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
     {
       order: "report_datetime desc",
     },
-    connection,
+    resolvedConnection,
     200,
   ).catch((error) => {
     console.warn("ops.task.report өгөгдөл уншихад алдаа гарлаа:", error);
@@ -1841,7 +1905,7 @@ async function fetchLiveSnapshot(connection: OdooConnection): Promise<DashboardS
   return {
     source: "live",
     generatedAt: formatSyncDate(new Date()),
-    odooBaseUrl: connection.url,
+    odooBaseUrl: resolvedConnection.url,
     totalTasks,
     metrics: [
       {

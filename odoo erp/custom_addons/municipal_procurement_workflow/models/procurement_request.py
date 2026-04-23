@@ -395,11 +395,11 @@ class MPWProcurementRequest(models.Model):
                 responsible = request.requester_user_id or request.project_id.user_id
             request.current_responsible_user_id = responsible
 
-    @api.depends("line_ids.product_id", "line_ids.product_id.detailed_type", "procurement_type")
+    @api.depends("line_ids.product_id", "line_ids.product_id.type", "procurement_type")
     def _compute_receipt_requirements(self):
         for request in self:
             stock_lines = request.line_ids.filtered(
-                lambda line: line.product_id and line.product_id.detailed_type in {"product", "consu"}
+                lambda line: line.product_id and line.product_id.type in {"product", "consu"}
             )
             request.stock_receipt_required = bool(stock_lines) or request.procurement_type in {"goods", "spare_part"}
             request.service_confirmation_only = not request.stock_receipt_required
@@ -1155,7 +1155,7 @@ class MPWProcurementRequest(models.Model):
 
     def action_view_attachments(self):
         self.ensure_one()
-        attachment_ids = self.message_attachment_ids.ids
+        attachment_ids = self._get_direct_attachment_records().ids
         attachment_ids.extend(self.quotation_ids.attachment_ids.ids)
         attachment_ids.extend(self.document_ids.attachment_ids.ids)
         return {
@@ -1165,6 +1165,16 @@ class MPWProcurementRequest(models.Model):
             "view_mode": "list,form",
             "domain": [("id", "in", list(set(attachment_ids)))],
         }
+
+    def _get_direct_attachment_records(self):
+        self.ensure_one()
+        return self.env["ir.attachment"].search(
+            [
+                ("res_model", "=", self._name),
+                ("res_id", "=", self.id),
+            ],
+            order="id desc",
+        )
 
     def action_open_project(self):
         self.ensure_one()
@@ -1285,6 +1295,7 @@ class MPWProcurementRequest(models.Model):
             "available_actions": self._get_available_action_payloads(),
         }
         if detail:
+            direct_attachments = self._get_direct_attachment_records()
             payload["lines"] = [line._prepare_api_payload() for line in self.line_ids.sorted("sequence")]
             payload["quotations"] = [quotation._prepare_api_payload() for quotation in self.quotation_ids]
             payload["documents"] = [document._prepare_api_payload() for document in self.document_ids]
@@ -1295,7 +1306,7 @@ class MPWProcurementRequest(models.Model):
                     "name": attachment.name,
                     "mimetype": attachment.mimetype,
                 }
-                for attachment in self.message_attachment_ids
+                for attachment in direct_attachments
             ]
         return payload
 

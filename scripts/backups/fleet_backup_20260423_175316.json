@@ -1,0 +1,244 @@
+{
+  "generated_at": "2026-04-23T17:53:16",
+  "vehicles": [
+    {
+      "id": 13,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2101",
+      "license_plate": "УБА 2101",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 14,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2102",
+      "license_plate": "УБА 2102",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 15,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2103",
+      "license_plate": "УБА 2103",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 16,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2104",
+      "license_plate": "УБА 2104",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 17,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2105",
+      "license_plate": "УБА 2105",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 18,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2106",
+      "license_plate": "УБА 2106",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 19,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2107",
+      "license_plate": "УБА 2107",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 20,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2108",
+      "license_plate": "УБА 2108",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 21,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2109",
+      "license_plate": "УБА 2109",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 22,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2110",
+      "license_plate": "УБА 2110",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 23,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2111",
+      "license_plate": "УБА 2111",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    },
+    {
+      "id": 24,
+      "name": "Hyundai/HD120 Хог тээвэрлэгч/УБА 2112",
+      "license_plate": "УБА 2112",
+      "model_id": [
+        2,
+        "Hyundai/HD120 Хог тээвэрлэгч"
+      ],
+      "state_id": [
+        1,
+        "New Request"
+      ],
+      "company_id": [
+        1,
+        "Хот тохижилт"
+      ],
+      "driver_id": false,
+      "future_driver_id": false
+    }
+  ],
+  "models": [
+    {
+      "id": 2,
+      "name": "HD120 Хог тээвэрлэгч",
+      "brand_id": [
+        24,
+        "Hyundai"
+      ],
+      "vehicle_type": "car"
+    }
+  ]
+}

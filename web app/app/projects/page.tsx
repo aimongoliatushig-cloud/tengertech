@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import { WorkspaceHeader } from "@/app/_components/workspace-header";
-import dashboardStyles from "@/app/page.module.css";
 import styles from "@/app/workspace.module.css";
 import {
   getRoleLabel,
@@ -78,6 +77,26 @@ function normalizeQuickAction(value: string): QuickActionMode {
 
 /* local group helpers removed in favor of shared lib helpers */
 
+function getDepartmentBadge(groupName: string, units: string[] = []) {
+  const unitBadge = units
+    .map((unit) => unit.trim()[0] ?? "")
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("");
+
+  if (unitBadge) {
+    return unitBadge.toLocaleUpperCase("mn-MN");
+  }
+
+  return groupName
+    .split(/[\s,]+/)
+    .map((part) => part.trim()[0] ?? "")
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toLocaleUpperCase("mn-MN");
+}
+
 function StagePill({
   label,
   bucket,
@@ -87,21 +106,17 @@ function StagePill({
 }) {
   const tone =
     bucket === "problem"
-      ? dashboardStyles.stageProblem
+      ? styles.stageProblem
       : bucket === "done"
-      ? dashboardStyles.stageDone
+      ? styles.stageDone
       : bucket === "review"
-        ? dashboardStyles.stageReview
+        ? styles.stageReview
         : bucket === "progress"
-          ? dashboardStyles.stageProgress
-          : dashboardStyles.stageTodo;
+          ? styles.stageProgress
+          : styles.stageTodo;
 
   return (
-    <span
-      className={`${dashboardStyles.stagePill} ${tone}`}
-      aria-label={label}
-      title={label}
-    >
+    <span className={`${styles.stagePill} ${tone}`} aria-label={label} title={label}>
       {label}
     </span>
   );
@@ -172,12 +187,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
       : null;
 
   const selectedGroup = detectedGroup;
-  const allProjectUnits = Array.from(
-    new Set(snapshot.projects.map((project) => project.departmentName)),
-  );
-  const availableUnits = selectedGroup
-    ? getAvailableUnits(selectedGroup, allProjectUnits)
-    : [];
+  const availableUnits = selectedGroup ? getAvailableUnits(selectedGroup) : [];
 
   const selectedUnit =
     requestedUnit && availableUnits.includes(requestedUnit)
@@ -364,28 +374,28 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
       label: "Нийт ажил",
       value: String(scopedProjects.length),
       note: "Энэ нэгж дээр бүртгэлтэй бүх ажил",
-      icon: "📦",
+      icon: "А",
       tone: styles.summaryCardSoft,
     },
     {
       label: "Идэвхтэй ажил",
       value: String(projectCounts.progress),
       note: "Яг одоо явж байгаа болон хяналтын шаттай ажил",
-      icon: "🟢",
+      icon: "И",
       tone: styles.summaryCardActive,
     },
     {
       label: "Хяналтад буй ажил",
       value: String(reviewProjectsCount),
       note: "Баталгаажуулалт хүлээж буй ажил",
-      icon: "🛡️",
+      icon: "Х",
       tone: styles.summaryCardReview,
     },
     {
       label: "Нийт гүйцэтгэл",
       value: `${weightedCompletion}%`,
       note: `${totalOpenTaskCount} нээлттэй ажилбарт тулгуурлан тооцсон`,
-      icon: "📈",
+      icon: "Г",
       tone: styles.summaryCardPrimary,
     },
   ] as const;
@@ -496,32 +506,29 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             />
 
             {!masterMode ? (
-              <section className={dashboardStyles.projectsSection}>
-                <div className={dashboardStyles.sectionHeader}>
+              <section className={styles.workspaceSection}>
+                <div className={styles.sectionHeader}>
                   <div>
-                    <span className={dashboardStyles.kicker}>Хэлтсийн цэс</span>
+                    <span className={styles.sectionKicker}>Хэлтсийн цэс</span>
                     <h2>Хэлтэс сонгох</h2>
-                    <small className={dashboardStyles.sectionNote}>
+                    <small className={styles.sectionNote}>
                       Эхлээд хэлтэс сонгоно. Дараа нь тухайн хэлтэс доторх ажлыг тусад нь шүүж харуулна.
                     </small>
                   </div>
                 </div>
 
-                <nav
-                  className={dashboardStyles.departmentSelector}
-                  aria-label="Хэлтэс сонгох цэс"
-                >
-                  <div className={dashboardStyles.departmentTabBar}>
+                <nav className={styles.departmentSelector} aria-label="Хэлтэс сонгох цэс">
+                  <div className={styles.departmentTabBar}>
                     <Link
                       href={allProjectsHref}
-                      className={`${dashboardStyles.departmentTab} ${
-                        !selectedGroup ? dashboardStyles.departmentTabActive : ""
+                      className={`${styles.departmentTab} ${
+                        !selectedGroup ? styles.departmentTabActive : ""
                       }`}
                       aria-current={!selectedGroup ? "page" : undefined}
                     >
-                      <span className={dashboardStyles.departmentTabLabel}>
-                        <span className={dashboardStyles.departmentTabIcon} aria-hidden>
-                          🏢
+                      <span className={styles.departmentTabLabel}>
+                        <span className={styles.departmentTabIcon} aria-hidden>
+                          Б
                         </span>
                         <span>Бүгд</span>
                       </span>
@@ -533,7 +540,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                       const departmentProjects = snapshot.projects.filter(
                         (project) => matchesDepartmentGroup(group, project.departmentName),
                       );
-                      const groupUnits = getAvailableUnits(group, allProjectUnits);
+                      const groupUnits = getAvailableUnits(group);
                       const hrefParams = new URLSearchParams();
                       hrefParams.set("department", group.name);
                       if (activeFilter !== "all") {
@@ -556,14 +563,14 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                               return params.toString();
                             })()
                           }`}
-                          className={`${dashboardStyles.departmentTab} ${
-                            isActive ? dashboardStyles.departmentTabActive : ""
+                          className={`${styles.departmentTab} ${
+                            isActive ? styles.departmentTabActive : ""
                           }`}
                           aria-current={isActive ? "page" : undefined}
                         >
-                          <span className={dashboardStyles.departmentTabLabel}>
-                            <span className={dashboardStyles.departmentTabIcon} aria-hidden>
-                              {group.icon}
+                          <span className={styles.departmentTabLabel}>
+                            <span className={styles.departmentTabIcon} aria-hidden>
+                              {getDepartmentBadge(group.name, group.units)}
                             </span>
                             <span>{group.name}</span>
                           </span>
@@ -577,12 +584,12 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             ) : null}
 
             {selectedGroup && availableUnits.length > 1 ? (
-              <section className={dashboardStyles.projectsSection}>
-                <div className={dashboardStyles.sectionHeader}>
+              <section className={styles.workspaceSection}>
+                <div className={styles.sectionHeader}>
                   <div>
-                    <span className={dashboardStyles.kicker}>Доторх нэгж</span>
+                    <span className={styles.sectionKicker}>Доторх нэгж</span>
                     <h2>{selectedGroup.name}</h2>
-                    <small className={dashboardStyles.sectionNote}>
+                    <small className={styles.sectionNote}>
                       Энэ хэлтэс доторх ажлыг нэгжээр нь салгаж харуулна.
                     </small>
                   </div>
@@ -624,14 +631,14 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
               </section>
             ) : null}
 
-            <section className={dashboardStyles.projectsSection}>
-              <div className={dashboardStyles.sectionHeader}>
+            <section className={styles.workspaceSection}>
+              <div className={styles.sectionHeader}>
                 <div>
-                  <span className={dashboardStyles.kicker}>
+                  <span className={styles.sectionKicker}>
                     {masterMode ? "Нэгжийн ажил" : "Хэлтсийн ангилал"}
                   </span>
                   <h2>{selectedDepartmentName}</h2>
-                  <small className={dashboardStyles.sectionNote}>
+                  <small className={styles.sectionNote}>
                     {sectionNote}
                   </small>
                 </div>
@@ -860,22 +867,22 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
               {activeProjects.length ? (
                 <>
                   {!masterMode ? (
-                    <div className={dashboardStyles.sectionHeader}>
+                    <div className={styles.sectionHeader}>
                       <div>
-                        <span className={dashboardStyles.kicker}>{filterTitle}</span>
+                        <span className={styles.sectionKicker}>{filterTitle}</span>
                         <h2>{selectedDepartmentName}</h2>
-                        <small className={dashboardStyles.sectionNote}>{filterNote}</small>
+                        <small className={styles.sectionNote}>{filterNote}</small>
                       </div>
                     </div>
                   ) : null}
 
                   {masterMode ? (
-                    <div className={dashboardStyles.reviewList}>
+                    <div className={styles.reviewList}>
                       {activeProjects.map((project) => (
                         <Link
                           key={project.id}
                           href={buildProjectHref(project.href)}
-                          className={dashboardStyles.reviewItem}
+                          className={styles.reviewItem}
                         >
                           <div className={styles.projectListRowMain}>
                             <div className={styles.projectListRowTop}>
@@ -891,7 +898,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                             </p>
                           </div>
 
-                          <div className={dashboardStyles.reviewMeta}>
+                          <div className={styles.reviewMeta}>
                             <strong>{project.openTasks}</strong>
                             <span>Нээлттэй ажилбар</span>
                             <span>{project.deadline}</span>
@@ -902,7 +909,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                               <strong>{project.completion}%</strong>
                             </div>
                             <div
-                              className={`${dashboardStyles.progressTrack} ${styles.projectListProgressTrack}`}
+                              className={`${styles.progressTrack} ${styles.projectListProgressTrack}`}
                               aria-hidden
                             >
                               <span style={{ width: `${project.completion}%` }} />
@@ -912,47 +919,49 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
                       ))}
                     </div>
                   ) : (
-                    <div className={dashboardStyles.projectRail}>
-                  {activeProjects.map((project) => (
-                    <Link
-                      key={project.id}
-                      href={buildProjectHref(project.href)}
-                      className={dashboardStyles.projectCard}
-                    >
-                      <div className={dashboardStyles.projectCardTop}>
-                        <span>{project.deadline}</span>
-                        <StagePill label={project.stageLabel} bucket={project.stageBucket} />
-                      </div>
+                    <div className={styles.projectRail}>
+                      {activeProjects.map((project) => (
+                        <Link
+                          key={project.id}
+                          href={buildProjectHref(project.href)}
+                          className={styles.projectCard}
+                        >
+                          <div className={styles.projectCardTop}>
+                            <span>{project.deadline}</span>
+                            <StagePill label={project.stageLabel} bucket={project.stageBucket} />
+                          </div>
 
-                      <h3>{project.name}</h3>
-                      <p>Менежер: {project.manager}</p>
+                          <h3>{project.name}</h3>
+                          <p>
+                            Алба нэгж: {project.departmentName} · Менежер: {project.manager}
+                          </p>
 
-                      <div className={dashboardStyles.projectMeta}>
-                        <div>
-                          <span>Нээлттэй ажил</span>
-                          <strong>{project.openTasks}</strong>
-                        </div>
-                        <div>
-                          <span>Гүйцэтгэл</span>
-                          <strong>{project.completion}%</strong>
-                        </div>
-                      </div>
+                          <div className={styles.projectMeta}>
+                            <div>
+                              <span>Нээлттэй ажил</span>
+                              <strong>{project.openTasks}</strong>
+                            </div>
+                            <div>
+                              <span>Гүйцэтгэл</span>
+                              <strong>{project.completion}%</strong>
+                            </div>
+                          </div>
 
-                      <div className={dashboardStyles.progressTrack}>
-                        <span style={{ width: `${project.completion}%` }} />
-                      </div>
+                          <div className={styles.progressTrack}>
+                            <span style={{ width: `${project.completion}%` }} />
+                          </div>
 
-                      <div className={dashboardStyles.cardFooter}>
-                        <span className={dashboardStyles.cardLinkLabel}>{projectCardLabel}</span>
-                        <strong aria-hidden>→</strong>
-                      </div>
-                    </Link>
-                  ))}
+                          <div className={styles.cardFooter}>
+                            <span className={styles.cardLinkLabel}>{projectCardLabel}</span>
+                            <strong aria-hidden>→</strong>
+                          </div>
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </>
               ) : (
-                <div className={dashboardStyles.emptyColumnState}>
+                <div className={styles.emptyColumnState}>
                   Одоогоор {selectedDepartmentName} дээр энэ ангиллын ажил алга байна.
                 </div>
               )}

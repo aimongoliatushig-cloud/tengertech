@@ -11,6 +11,7 @@
                 <field name="district_id"/>
                 <field name="crew_team_id"/>
                 <field name="vehicle_id"/>
+                <field name="vehicle_license_plate"/>
                 <field name="mfo_state"/>
                 <group>
                     <filter string="Огноо" name="groupby_shift_date" context="{'group_by': 'shift_date'}"/>
@@ -36,6 +37,7 @@
                 <field name="district_id"/>
                 <field name="crew_team_id"/>
                 <field name="vehicle_id"/>
+                <field name="vehicle_license_plate"/>
                 <field name="mfo_state"/>
                 <field name="stop_count" sum="Нийт"/>
                 <field name="completed_stop_count" sum="Нийт"/>
@@ -80,7 +82,7 @@
     </record>
 
     <record id="action_mfo_daily_operation_report" model="ir.actions.act_window">
-        <field name="name">Өдрийн ажиллагааны тайлан</field>
+        <field name="name">Өдрийн тайлан</field>
         <field name="res_model">mfo.daily.operation.report</field>
         <field name="view_mode">list,pivot,graph</field>
         <field name="view_id" ref="view_mfo_daily_operation_report_list"/>
@@ -95,6 +97,7 @@
                 <field name="shift_date"/>
                 <field name="task_id"/>
                 <field name="vehicle_id"/>
+                <field name="vehicle_license_plate"/>
                 <field name="route_id"/>
                 <field name="source"/>
                 <group>
@@ -114,6 +117,7 @@
                 <field name="shift_date"/>
                 <field name="task_id"/>
                 <field name="vehicle_id"/>
+                <field name="vehicle_license_plate"/>
                 <field name="route_id"/>
                 <field name="source"/>
                 <field name="net_weight_total" sum="Нийт"/>
@@ -134,6 +138,7 @@
                             <field name="task_id"/>
                             <field name="shift_date"/>
                             <field name="vehicle_id"/>
+                            <field name="vehicle_license_plate"/>
                             <field name="route_id"/>
                         </group>
                         <group>
@@ -177,7 +182,7 @@
     </record>
 
     <record id="action_mfo_daily_weight_total_report" model="ir.actions.act_window">
-        <field name="name">Өдөр тутмын жингийн нийт</field>
+        <field name="name">Машины жингийн тайлан</field>
         <field name="res_model">mfo.daily.weight.total</field>
         <field name="view_mode">list,pivot,graph,form</field>
         <field name="view_id" ref="view_mfo_daily_weight_total_list"/>

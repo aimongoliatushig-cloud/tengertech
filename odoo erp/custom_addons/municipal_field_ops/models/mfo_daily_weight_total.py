@@ -27,13 +27,19 @@ class MfoDailyWeightTotal(models.Model):
         ondelete="restrict",
         index=True,
     )
+    vehicle_license_plate = fields.Char(
+        string="Улсын дугаар",
+        related="vehicle_id.license_plate",
+        store=True,
+        readonly=True,
+    )
     route_id = fields.Many2one(
         "mfo.route",
         string="Маршрут",
         ondelete="set null",
     )
     net_weight_total = fields.Float(
-        string="Нийт цэвэр жин",
+        string="Нийт цэвэр жин (кг)",
         required=True,
     )
     source = fields.Selection(

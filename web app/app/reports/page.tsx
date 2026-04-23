@@ -26,6 +26,7 @@ import {
   getAvailableUnits,
   matchesDepartmentGroup,
 } from "@/lib/department-groups";
+import { loadGarbageWeightLedger } from "@/lib/garbage-weight-ledger";
 import { loadMunicipalSnapshot } from "@/lib/odoo";
 
 import styles from "./reports.module.css";
@@ -118,7 +119,6 @@ export default async function ReportsPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const requestedDepartment = getDepartmentParam(params.department);
   const requestedUnit = getDepartmentParam(params.unit);
-  const allReportUnits = Array.from(new Set(snapshot.reports.map((report) => report.departmentName)));
   const masterDepartmentName = masterMode
     ? pickPrimaryDepartmentName({
         taskDirectory: snapshot.taskDirectory,
@@ -133,9 +133,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
       ? findDepartmentGroupByName(requestedDepartment) ??
         findDepartmentGroupByUnit(requestedDepartment)
       : null;
-  const availableUnits = selectedGroup
-    ? getAvailableUnits(selectedGroup, allReportUnits)
-    : [];
+  const availableUnits = selectedGroup ? getAvailableUnits(selectedGroup) : [];
   const selectedUnit =
     requestedUnit && availableUnits.includes(requestedUnit)
       ? requestedUnit
@@ -204,6 +202,71 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     : selectedUnit || selectedGroup?.name || "Бүх хэлтэс";
   const totalImages = filteredReports.reduce((sum, report) => sum + report.imageCount, 0);
   const totalAudios = filteredReports.reduce((sum, report) => sum + report.audioCount, 0);
+  const isGarbageTransportView = selectedDepartmentName === "Хог тээвэрлэлт";
+  let garbageWeightLedger = null as Awaited<ReturnType<typeof loadGarbageWeightLedger>> | null;
+  let garbageWeightError = "";
+
+  try {
+    garbageWeightLedger = await loadGarbageWeightLedger({
+        login: session.login,
+        password: session.password,
+      });
+    } catch (error) {
+      console.error("Garbage transport weight ledger could not be loaded:", error);
+      garbageWeightError =
+        "Хог тээвэрлэлтийн жингийн мэдээллийг Odoo-оос уншиж чадсангүй.";
+    }
+
+  const garbageSummaryCards = [
+    {
+      title: masterMode ? "Алба нэгж" : "Сонгосон хүрээ",
+      value: selectedDepartmentName,
+      note: masterMode ? "Жингийн тайлангийн хүрээ" : "Жингээр харагдах багц",
+    },
+    {
+      title: "Энэ сар",
+      value: garbageWeightLedger?.thisMonth.kgLabel || "0 кг",
+      note: garbageWeightLedger?.thisMonth.rangeLabel || "Энэ сарын дүн",
+    },
+    {
+      title: "Өмнөх долоо хоног",
+      value: garbageWeightLedger?.previousWeek.kgLabel || "0 кг",
+      note: garbageWeightLedger?.previousWeek.rangeLabel || "Өмнөх 7 хоног",
+    },
+    {
+      title: "Өчигдөр",
+      value: garbageWeightLedger?.yesterday.kgLabel || "0 кг",
+      note: garbageWeightLedger?.yesterday.rangeLabel || "Өмнөх өдөр",
+    },
+    {
+      title: "Сүүлийн 1 сар",
+      value: garbageWeightLedger?.lastMonth.kgLabel || "0 кг",
+      note: garbageWeightLedger?.lastMonth.rangeLabel || "Сүүлийн 1 сарын дүн",
+    },
+    {
+      title: "Нийт жин",
+      value: garbageWeightLedger?.totalLabel || "0 кг",
+      note: garbageWeightLedger?.rangeLabel || "Харагдаж буй хугацаа",
+    },
+  ] as const;
+
+  const garbageOverviewCards = [
+    {
+      title: "Өнөөдөр",
+      value: garbageWeightLedger?.today.kgLabel || "0 кг",
+      note: garbageWeightLedger?.today.rangeLabel || "Өнөөдрийн дүн",
+    },
+    {
+      title: "Энэ сар",
+      value: garbageWeightLedger?.thisMonth.kgLabel || "0 кг",
+      note: garbageWeightLedger?.thisMonth.rangeLabel || "Энэ сарын дүн",
+    },
+    {
+      title: "Сүүлийн 1 сар",
+      value: garbageWeightLedger?.lastMonth.kgLabel || "0 кг",
+      note: garbageWeightLedger?.lastMonth.rangeLabel || "Сүүлийн 1 сарын дүн",
+    },
+  ] as const;
 
   return (
     <main className={shellStyles.shell}>
@@ -286,7 +349,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
                     {DEPARTMENT_GROUPS.map((group) => {
                       const isActive = selectedGroup?.name === group.name;
                       const reportCount = countReportsByGroup(group, snapshot.reports);
-                      const groupUnits = getAvailableUnits(group, allReportUnits);
+                      const groupUnits = getAvailableUnits(group);
                       const hrefParams = new URLSearchParams();
                       hrefParams.set("department", group.name);
                       if (groupUnits[0]) {
@@ -353,6 +416,16 @@ export default async function ReportsPage({ searchParams }: PageProps) {
             ) : null}
 
             <section className={styles.summaryStrip}>
+              {isGarbageTransportView ? (
+                garbageSummaryCards.map((card) => (
+                  <article key={card.title} className={styles.summaryCard}>
+                    <span>{card.title}</span>
+                    <strong>{card.value}</strong>
+                    <small>{card.note}</small>
+                  </article>
+                ))
+              ) : (
+                <>
               <article className={styles.summaryCard}>
                 <span>{masterMode ? "Алба нэгж" : "Сонгосон хүрээ"}</span>
                 <strong>{selectedDepartmentName}</strong>
@@ -389,7 +462,123 @@ export default async function ReportsPage({ searchParams }: PageProps) {
                 <strong>{totalAudios}</strong>
                 <small>Хавсаргасан аудио</small>
               </article>
+                </>
+              )}
             </section>
+
+            {!isGarbageTransportView ? (
+              <section className={styles.sectionCard}>
+                <div className={dashboardStyles.sectionHeader}>
+                  <div>
+                    <span className={dashboardStyles.kicker}>Хог тээвэрлэлтийн жин</span>
+                    <h2>Өнөөдөр, энэ сарын ачилт</h2>
+                    <small className={dashboardStyles.sectionNote}>
+                      Бүх тайлан дундаас хог тээвэрлэлтийн кг-ийг товч харуулна
+                    </small>
+                  </div>
+                </div>
+
+                {garbageWeightError ? (
+                  <div className={styles.weightError}>{garbageWeightError}</div>
+                ) : null}
+
+                <div className={styles.weightSummaryGrid}>
+                  {garbageOverviewCards.map((card) => (
+                    <article key={card.title} className={styles.weightSummaryCard}>
+                      <span>{card.title}</span>
+                      <strong>{card.value}</strong>
+                      <small>{card.note}</small>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {isGarbageTransportView ? (
+              <section className={styles.sectionCard}>
+                <div className={styles.weightSectionHeader}>
+                  <div>
+                    <span className={styles.kicker}>Жингийн тайлан</span>
+                    <h2>Машин, өдрийн тээвэрлэлтийн жин</h2>
+                    <p>
+                      Odoo дээр орсон хог тээвэрлэлтийн жинг машиныг өдөр өдрөөр нь
+                      нэгтгэн харуулна.
+                    </p>
+                  </div>
+                  <div className={styles.weightMetaCard}>
+                    <span>Хамрах хугацаа</span>
+                    <strong>{garbageWeightLedger?.rangeLabel || "Мэдээлэл алга"}</strong>
+                    <small>{garbageWeightLedger?.generatedAtLabel || snapshot.generatedAt}</small>
+                  </div>
+                </div>
+
+                {garbageWeightError ? (
+                  <div className={styles.weightError}>{garbageWeightError}</div>
+                ) : null}
+
+                <div className={styles.weightSummaryGrid}>
+                  <article className={styles.weightSummaryCard}>
+                    <span>Нийт жин</span>
+                    <strong>{garbageWeightLedger?.totalLabel || "0 кг"}</strong>
+                    <small>Одоо харагдаж буй өдрүүдийн нийлбэр</small>
+                  </article>
+                  <article className={styles.weightSummaryCard}>
+                    <span>Огноо</span>
+                    <strong>{garbageWeightLedger?.dateCount || 0}</strong>
+                    <small>Жин бүртгэгдсэн өдөр</small>
+                  </article>
+                  <article className={styles.weightSummaryCard}>
+                    <span>Машин</span>
+                    <strong>{garbageWeightLedger?.vehicleCount || 0}</strong>
+                    <small>Жин орсон техник</small>
+                  </article>
+                  <article className={styles.weightSummaryCard}>
+                    <span>Мөр</span>
+                    <strong>{garbageWeightLedger?.recordCount || 0}</strong>
+                    <small>Өдөр-машины нэгтгэсэн бичлэг</small>
+                  </article>
+                </div>
+
+                {garbageWeightLedger?.dayItems.length ? (
+                  <div className={styles.weightDayStack}>
+                    {garbageWeightLedger.dayItems.map((day) => (
+                      <article key={day.dateKey} className={styles.weightDayCard}>
+                        <div className={styles.weightDayHeader}>
+                          <div>
+                            <span className={styles.kicker}>Огноо</span>
+                            <h3>{day.dateLabel}</h3>
+                          </div>
+                          <strong>{day.totalLabel}</strong>
+                        </div>
+
+                        <div className={styles.weightVehicleList}>
+                          {day.rows.map((row) => (
+                            <article key={`${day.dateKey}-${row.vehicleKey}`} className={styles.weightVehicleRow}>
+                              <div className={styles.weightVehicleMeta}>
+                                <strong>{row.primaryLabel}</strong>
+                                <span>
+                                  {row.plate && row.vehicleName !== row.plate
+                                    ? row.vehicleName
+                                    : row.routeName}
+                                </span>
+                              </div>
+                              <div className={styles.weightVehicleValue}>
+                                <strong>{row.kgLabel}</strong>
+                                <span>{row.taskCount} ажил</span>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.weightEmpty}>
+                    Odoo дээр одоогоор хог тээвэрлэлтийн жингийн бүртгэл алга байна.
+                  </div>
+                )}
+              </section>
+            ) : null}
 
             <section className={styles.sectionCard}>
               <div className={styles.workflowHeader}>

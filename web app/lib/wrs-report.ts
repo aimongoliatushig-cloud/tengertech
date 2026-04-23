@@ -11,6 +11,8 @@ const WRS_DEFAULT_BRANCH_NAME =
   "\u041c\u043e\u0440\u0438\u043d\u0433\u0438\u0439\u043d \u044d\u043d\u0433\u044d\u0440\u0438\u0439\u043d \u0442\u04e9\u0432\u043b\u04e9\u0440\u0441\u04e9\u043d \u0445\u043e\u0433\u0438\u0439\u043d \u0446\u044d\u0433";
 const WRS_REQUIRED_BRANCH_NAME =
   process.env.WRS_REPORT_BRANCH_NAME?.trim() || WRS_DEFAULT_BRANCH_NAME;
+const PARAMETER_CAPTION_SELECTOR = "label.dxbrv-params-caption[for]";
+const SUBMIT_BUTTON_LABEL = "Submit";
 
 type ParameterMap = {
   endDateId: string;
@@ -111,36 +113,50 @@ async function loginIfNeeded(page: Page) {
   await page.waitForURL((url) => !url.pathname.includes("/LoginPage"), {
     timeout: 60_000,
   });
+  await page.waitForLoadState("domcontentloaded");
 }
 
 async function getParameterMap(page: Page): Promise<ParameterMap> {
-  const ids = await page.evaluate(() =>
-    Array.from(document.querySelectorAll("label.dxbrv-params-caption"))
-      .map((label) => label.getAttribute("for") ?? "")
-      .filter(Boolean),
+  await page.waitForFunction(
+    (selector) => document.querySelectorAll(selector).length >= 3,
+    PARAMETER_CAPTION_SELECTOR,
+    {
+      timeout: 60_000,
+    },
   );
 
-  if (ids.length < 3) {
-    throw new Error("WRS report parameters could not be detected.");
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const ids = await page.evaluate((selector) =>
+      Array.from(document.querySelectorAll(selector))
+        .map((label) => label.getAttribute("for") ?? "")
+        .filter(Boolean),
+      PARAMETER_CAPTION_SELECTOR,
+    );
+
+    if (ids.length >= 3) {
+      return {
+        endDateId: ids[0] ?? "",
+        startDateId: ids[1] ?? "",
+        branchId: ids[2] ?? "",
+      };
+    }
+
+    await page.waitForTimeout(1_500);
   }
 
-  return {
-    endDateId: ids[0],
-    startDateId: ids[1],
-    branchId: ids[2],
-  };
+  throw new Error("WRS report parameters could not be detected.");
 }
 
 async function waitForSubmitButtonEnabled(page: Page) {
   await page.waitForFunction(
-    () => {
+    (buttonLabel) => {
       const submitButton = Array.from(document.querySelectorAll("button")).find(
-        (button) => (button.textContent ?? "").trim() === "Submit",
+        (button) => (button.textContent ?? "").trim() === buttonLabel,
       ) as HTMLButtonElement | undefined;
 
       return Boolean(submitButton && !submitButton.disabled);
     },
-    undefined,
+    SUBMIT_BUTTON_LABEL,
     {
       timeout: 30_000,
     },
@@ -155,13 +171,13 @@ async function fillReportDate(page: Page, inputId: string, value: string) {
 
 async function selectBranch(page: Page, branchId: string) {
   const currentBranchId =
-    (await page.evaluate(() => {
-      const ids = Array.from(document.querySelectorAll("label.dxbrv-params-caption"))
+    (await page.evaluate((selector) => {
+      const ids = Array.from(document.querySelectorAll(selector))
         .map((label) => label.getAttribute("for") ?? "")
         .filter(Boolean);
 
       return ids[2] ?? null;
-    })) ?? branchId;
+    }, PARAMETER_CAPTION_SELECTOR)) ?? branchId;
 
   const branchInput = page.locator(`input#${currentBranchId}`);
   await branchInput.waitFor({
@@ -252,9 +268,9 @@ async function selectBranch(page: Page, branchId: string) {
 
 async function waitForReportRender(page: Page) {
   await page.waitForFunction(
-    () => {
+    (buttonLabel) => {
       const submitButton = Array.from(document.querySelectorAll("button")).find(
-        (button) => (button.textContent ?? "").trim() === "Submit",
+        (button) => (button.textContent ?? "").trim() === buttonLabel,
       ) as HTMLButtonElement | undefined;
 
       if (!submitButton || submitButton.disabled) {
@@ -266,7 +282,7 @@ async function waitForReportRender(page: Page) {
 
       return /of\s+\d+/i.test(pageLabel);
     },
-    undefined,
+    SUBMIT_BUTTON_LABEL,
     {
       timeout: 120_000,
     },
@@ -310,14 +326,6 @@ async function prepareWrsReportPage(requestedDate: string): Promise<PreparedRepo
 
     await loginIfNeeded(page);
 
-    await page.waitForFunction(
-      () => document.querySelectorAll("label.dxbrv-params-caption").length >= 3,
-      undefined,
-      {
-        timeout: 60_000,
-      },
-    );
-
     const { startDateId, endDateId, branchId } = await getParameterMap(page);
 
     await fillReportDate(page, startDateId, requestedDate);
@@ -326,19 +334,11 @@ async function prepareWrsReportPage(requestedDate: string): Promise<PreparedRepo
     const branchName = await selectBranch(page, branchId);
 
     await waitForSubmitButtonEnabled(page);
-    const submitButton = page.locator("button").filter({ hasText: "Submit" }).first();
-    await submitButton.click();
-
-    await page.waitForFunction(
-      () =>
-        Array.from(document.querySelectorAll("button")).some(
-          (button) => (button.textContent ?? "").trim() === "Submit" && button.disabled,
-        ),
-      undefined,
-      {
-        timeout: 15_000,
-      },
-    );
+    const submitButton = page.locator("button").filter({ hasText: SUBMIT_BUTTON_LABEL }).first();
+    await submitButton.click({
+      force: true,
+    });
+    await page.waitForTimeout(2_000);
 
     await waitForReportRender(page);
 

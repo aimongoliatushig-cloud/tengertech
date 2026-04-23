@@ -8,7 +8,7 @@ export type DepartmentGroupDefinition = {
 export const DEPARTMENT_GROUPS: DepartmentGroupDefinition[] = [
   {
     name: "Авто бааз, хог тээвэрлэлтийн хэлтэс",
-    units: ["Авто бааз", "Хог тээвэрлэлт"],
+    units: ["Хог тээвэрлэлт", "Авто бааз"],
     icon: "🚚",
     accent: "var(--tone-amber)",
   },
@@ -34,8 +34,8 @@ export function findDepartmentGroupByUnit(unitName: string) {
   return DEPARTMENT_GROUPS.find((group) => group.units.includes(unitName)) ?? null;
 }
 
-export function getAvailableUnits(group: DepartmentGroupDefinition, availableNames: string[]) {
-  return group.units.filter((unit) => availableNames.includes(unit));
+export function getAvailableUnits(group: DepartmentGroupDefinition) {
+  return Array.from(new Set(group.units.map((unit) => unit.trim()).filter(Boolean)));
 }
 
 export function matchesDepartmentGroup(

@@ -13,6 +13,14 @@
   --brand-500: #7ab785;
   --brand-200: #dcefd9;
   --brand-100: #eef7ed;
+  --status-good: #2f7f46;
+  --status-good-soft: #edf8ee;
+  --status-attention: #b6811f;
+  --status-attention-soft: #fff8e7;
+  --status-urgent: #ba5b34;
+  --status-urgent-soft: #fff1eb;
+  --status-muted: #5f7563;
+  --status-muted-soft: #f3f6f2;
   --surface-page: #f4faf2;
   --surface-shell: #e7f0e4;
   --surface-panel: rgba(255, 255, 255, 0.88);

@@ -34,7 +34,7 @@
               groups="municipal_field_ops.group_mfo_manager,municipal_field_ops.group_mfo_dispatcher,municipal_field_ops.group_mfo_inspector,base.group_system"/>
 
     <menuitem id="menu_mfo_report_daily"
-              name="Өдрийн ажиллагаа"
+              name="Өдрийн тайлан"
               parent="menu_mfo_reports_root"
               action="action_mfo_daily_operation_report"
               sequence="10"/>
@@ -46,7 +46,7 @@
               sequence="20"/>
 
     <menuitem id="menu_mfo_report_daily_weight_total"
-              name="Өдөр тутмын жингийн нийт"
+              name="Машины жингийн тайлан"
               parent="menu_mfo_reports_root"
               action="action_mfo_daily_weight_total_report"
               sequence="25"/>

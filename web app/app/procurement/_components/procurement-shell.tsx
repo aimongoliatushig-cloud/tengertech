@@ -22,6 +22,23 @@ type ProcurementShellProps = {
   children: ReactNode;
 };
 
+function getViewportLabel(procurementUser: ProcurementUser) {
+  if (procurementUser.flags.general_manager || procurementUser.flags.director) {
+    return "Удирдлагын хяналтын харагдац";
+  }
+
+  if (
+    procurementUser.flags.storekeeper ||
+    procurementUser.flags.finance ||
+    procurementUser.flags.office_clerk ||
+    procurementUser.flags.contract_officer
+  ) {
+    return "Гүйцэтгэлийн урсгал";
+  }
+
+  return "Хүсэлт гаргагчийн харагдац";
+}
+
 export function ProcurementShell({
   session,
   procurementUser,
@@ -51,22 +68,28 @@ export function ProcurementShell({
     procurementUser.flags.contract_officer ||
     procurementUser.flags.admin;
   const showCreate = procurementUser.flags.requester || procurementUser.flags.admin;
+  const viewportLabel =
+    session.role === "director" || session.role === "general_manager"
+      ? "Удирдлагын хяналтын харагдац"
+      : getViewportLabel(procurementUser);
 
   return (
     <div className={styles.workspaceShell}>
-      <AppMenu
-        active="procurement"
-        canCreateProject={canCreateProject}
-        canCreateTasks={canCreateTasks}
-        canWriteReports={canWriteReports}
-        canViewQualityCenter={canViewQualityCenter}
-        canUseFieldConsole={canUseFieldConsole}
-        variant={procurementUser.flags.general_manager || procurementUser.flags.director ? "executive" : "default"}
-        userName={session.name}
-        roleLabel={getRoleLabel(session.role)}
-        masterMode={isMasterRole(session.role)}
-        workerMode={isWorkerOnly(session)}
-      />
+      <div className={styles.workspaceSidebar}>
+        <AppMenu
+          active="procurement"
+          canCreateProject={canCreateProject}
+          canCreateTasks={canCreateTasks}
+          canWriteReports={canWriteReports}
+          canViewQualityCenter={canViewQualityCenter}
+          canUseFieldConsole={canUseFieldConsole}
+          variant={procurementUser.flags.general_manager || procurementUser.flags.director ? "executive" : "default"}
+          userName={session.name}
+          roleLabel={getRoleLabel(session.role)}
+          masterMode={isMasterRole(session.role)}
+          workerMode={isWorkerOnly(session)}
+        />
+      </div>
 
       <main className={styles.workspaceMain}>
         <section className={styles.heroCard}>
@@ -76,9 +99,16 @@ export function ProcurementShell({
             <p>{description}</p>
           </div>
           <div className={styles.heroMeta}>
-            <span>Хэрэглэгч</span>
-            <strong>{procurementUser.name}</strong>
-            <small>{procurementUser.company}</small>
+            <div className={styles.heroMetaBlock}>
+              <span>Хэрэглэгч</span>
+              <strong>{procurementUser.name}</strong>
+              <small>{procurementUser.company}</small>
+            </div>
+            <div className={styles.heroMetaBlock}>
+              <span>Эрхийн хүрээ</span>
+              <strong>{viewportLabel}</strong>
+              <small>{getRoleLabel(session.role)}</small>
+            </div>
           </div>
         </section>
 
@@ -115,7 +145,7 @@ export function ProcurementShell({
           ) : null}
         </nav>
 
-        {children}
+        <div className={styles.pageStack}>{children}</div>
       </main>
     </div>
   );

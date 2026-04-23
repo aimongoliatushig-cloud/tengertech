@@ -5,6 +5,19 @@ from odoo.fields import Command
 from odoo.http import request
 
 
+PROCUREMENT_ROLE_XMLIDS = (
+    "municipal_procurement_workflow.group_mpw_requester",
+    "municipal_procurement_workflow.group_mpw_storekeeper",
+    "municipal_procurement_workflow.group_mpw_finance",
+    "municipal_procurement_workflow.group_mpw_office_clerk",
+    "municipal_procurement_workflow.group_mpw_contract_officer",
+    "municipal_procurement_workflow.group_mpw_director",
+    "municipal_procurement_workflow.group_mpw_general_manager",
+    "municipal_procurement_workflow.group_mpw_admin",
+    "base.group_system",
+)
+
+
 class ProcurementApiController(http.Controller):
     def _json_body(self):
         return request.httprequest.get_json(silent=True) or {}
@@ -45,6 +58,35 @@ class ProcurementApiController(http.Controller):
             },
         }
 
+    def _has_procurement_role(self, user=None):
+        user = user or request.env.user
+        return any(user.has_group(xmlid) for xmlid in PROCUREMENT_ROLE_XMLIDS)
+
+    def _employee_visibility_domain(self, user=None):
+        user = user or request.env.user
+        return [
+            "|",
+            "|",
+            "|",
+            ("requester_user_id", "=", user.id),
+            ("project_id.user_id", "=", user.id),
+            ("task_id.user_ids", "in", user.id),
+            ("department_id.manager_id.user_id", "=", user.id),
+        ]
+
+    def _get_request_read_context(self, domain=None):
+        Request = request.env["mpw.procurement.request"]
+        normalized_domain = domain or []
+        if self._has_procurement_role():
+            return Request, normalized_domain, False
+        return Request.sudo(), normalized_domain + self._employee_visibility_domain(), True
+
+    def _serialize_request(self, procurement_request, *, detail=False, read_only=False):
+        payload = procurement_request._prepare_api_payload(detail=detail)
+        if read_only:
+            payload["available_actions"] = []
+        return payload
+
     def _get_procurement_request(self, request_id):
         procurement_request = request.env["mpw.procurement.request"].browse(request_id).exists()
         if not procurement_request:
@@ -52,6 +94,11 @@ class ProcurementApiController(http.Controller):
         procurement_request.check_access("read")
         procurement_request.check_access_rule("read")
         return procurement_request
+
+    def _get_procurement_request_for_read(self, request_id):
+        Request, domain, read_only = self._get_request_read_context([("id", "=", request_id)])
+        procurement_request = Request.search(domain, limit=1)
+        return procurement_request, read_only
 
     def _parse_request_filters(self):
         args = request.httprequest.args
@@ -141,7 +188,13 @@ class ProcurementApiController(http.Controller):
         if not login or not password:
             return self._error("Нэвтрэх нэр болон нууц үгээ оруулна уу.", status=400, code="missing_credentials")
 
-        uid = request.session.authenticate(db_name, login, password)
+        credential = {
+            "login": login,
+            "password": password,
+            "type": "password",
+        }
+        auth_info = request.session.authenticate(request.env, credential)
+        uid = auth_info.get("uid")
         if not uid:
             return self._error("Нэвтрэх мэдээлэл буруу байна.", status=401, code="invalid_credentials")
 
@@ -154,17 +207,21 @@ class ProcurementApiController(http.Controller):
 
     @http.route("/mpw/api/meta", type="http", auth="user", methods=["GET"], csrf=False)
     def meta(self, **kwargs):
-        Project = request.env["project.project"]
-        Task = request.env["project.task"]
-        Department = request.env["hr.department"]
-        Partner = request.env["res.partner"]
-        Uom = request.env["uom.uom"]
+        Project = request.env["project.project"].sudo()
+        Task = request.env["project.task"].sudo()
+        Department = request.env["hr.department"].sudo()
+        Partner = request.env["res.partner"].sudo()
+        Uom = request.env["uom.uom"].sudo()
 
         storekeeper_group = request.env.ref(
             "municipal_procurement_workflow.group_mpw_storekeeper",
             raise_if_not_found=False,
         )
-        storekeepers = storekeeper_group.users.filtered(lambda user: not user.share) if storekeeper_group else request.env["res.users"]
+        storekeepers = (
+            storekeeper_group.user_ids.filtered(lambda user: not user.share)
+            if storekeeper_group
+            else request.env["res.users"].sudo()
+        )
 
         return self._ok(
             {
@@ -203,13 +260,12 @@ class ProcurementApiController(http.Controller):
     def list_requests(self, **kwargs):
         page = max(int(request.httprequest.args.get("page", 1) or 1), 1)
         limit = max(min(int(request.httprequest.args.get("limit", 20) or 20), 100), 1)
-        domain = self._parse_request_filters()
-        Request = request.env["mpw.procurement.request"]
+        Request, domain, read_only = self._get_request_read_context(self._parse_request_filters())
         total = Request.search_count(domain)
         items = Request.search(domain, offset=(page - 1) * limit, limit=limit, order="create_date desc, id desc")
         return self._ok(
             {
-                "items": [item._prepare_api_payload(detail=False) for item in items],
+                "items": [self._serialize_request(item, detail=False, read_only=read_only) for item in items],
                 "pagination": {
                     "page": page,
                     "limit": limit,
@@ -221,10 +277,10 @@ class ProcurementApiController(http.Controller):
 
     @http.route("/mpw/api/requests/<int:request_id>", type="http", auth="user", methods=["GET"], csrf=False)
     def request_detail(self, request_id, **kwargs):
-        procurement_request = self._get_procurement_request(request_id)
+        procurement_request, read_only = self._get_procurement_request_for_read(request_id)
         if not procurement_request:
             return self._error("Хүсэлт олдсонгүй.", status=404, code="not_found")
-        return self._ok({"item": procurement_request._prepare_api_payload(detail=True)})
+        return self._ok({"item": self._serialize_request(procurement_request, detail=True, read_only=read_only)})
 
     @http.route("/mpw/api/requests", type="http", auth="user", methods=["POST"], csrf=False)
     def create_request(self, **kwargs):
@@ -568,8 +624,7 @@ class ProcurementApiController(http.Controller):
 
     @http.route("/mpw/api/dashboard", type="http", auth="user", methods=["GET"], csrf=False)
     def dashboard(self, **kwargs):
-        Request = request.env["mpw.procurement.request"]
-        domain = self._parse_request_filters()
+        Request, domain, read_only = self._get_request_read_context(self._parse_request_filters())
         records = Request.search(domain, order="create_date desc, id desc")
 
         today = fields.Date.context_today(Request)
@@ -634,6 +689,6 @@ class ProcurementApiController(http.Controller):
                 "storekeeper_load": storekeeper_load,
                 "project_progress": project_progress,
                 "supplier_counts": supplier_counts,
-                "items": [item._prepare_api_payload(detail=False) for item in records[:20]],
+                "items": [self._serialize_request(item, detail=False, read_only=read_only) for item in records[:20]],
             }
         )

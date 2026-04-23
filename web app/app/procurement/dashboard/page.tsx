@@ -1,8 +1,25 @@
+import Link from "next/link";
+
 import { ProcurementShell } from "@/app/procurement/_components/procurement-shell";
 import { requireSession } from "@/lib/auth";
 import { loadProcurementDashboard, loadProcurementMe } from "@/lib/procurement";
 
 import styles from "../procurement.module.css";
+
+function formatGeneratedOn(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("mn-MN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parsed);
+}
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +34,8 @@ export default async function ProcurementDashboardPage() {
     loadProcurementDashboard({}, connectionOverrides),
   ]);
 
+  const highlightedItems = dashboard.items.slice(0, 3);
+
   return (
     <ProcurementShell
       session={session}
@@ -25,6 +44,36 @@ export default async function ProcurementDashboardPage() {
       description="Төслүүдийн худалдан авалтын явц, няравын ачаалал, нийлүүлэгчийн сонголт, шийдвэрлэх хугацааг төвлөрүүлэн харуулна."
       activeTab="dashboard"
     >
+      <section className={styles.overviewPanel}>
+        <div className={styles.overviewCopy}>
+          <p className={styles.overviewEyebrow}>Удирдлагын тойм</p>
+          <h2>Шийдвэр гаргах түвшний зураглалыг нэг дэлгэцэд төвлөрүүлэв</h2>
+          <p>Ачаалал, төсөл, нийлүүлэгч, анхаарал шаардсан хүсэлтийг нэг хэлбэрийн section-оор харуулж, өдөр тутмын хяналтыг хялбаршуулна.</p>
+        </div>
+        <div className={styles.pillGrid}>
+          <article className={styles.pillCard}>
+            <span>Сүүлд шинэчилсэн</span>
+            <strong>{formatGeneratedOn(dashboard.metrics.generated_on)}</strong>
+            <small>Самбарын тайлан үүссэн огноо</small>
+          </article>
+          <article className={styles.pillCard}>
+            <span>Төлбөр хүлээж буй</span>
+            <strong>{dashboard.metrics.payment_pending} хүсэлт</strong>
+            <small>Санхүүгийн дараагийн алхамтай урсгал</small>
+          </article>
+          <article className={styles.pillCard}>
+            <span>Хүлээн авалт хүлээж буй</span>
+            <strong>{dashboard.metrics.receipt_pending} хүсэлт</strong>
+            <small>Бараа, үйлчилгээ баталгаажаагүй байна</small>
+          </article>
+          <article className={styles.pillCard}>
+            <span>Дундаж хугацаа</span>
+            <strong>{dashboard.metrics.average_resolution_days} өдөр</strong>
+            <small>Хүсэлт хаагдах дундаж хугацаа</small>
+          </article>
+        </div>
+      </section>
+
       <section className={styles.metricsGrid}>
         <article className={styles.metricCard}>
           <span>Нийт хүсэлт</span>
@@ -32,19 +81,19 @@ export default async function ProcurementDashboardPage() {
           <small>Системийн бүх урсгал</small>
         </article>
         <article className={styles.metricCard}>
-          <span>Төлбөр хүлээгдэж буй</span>
-          <strong>{dashboard.metrics.payment_pending}</strong>
-          <small>Санхүүгийн дараагийн алхамтай</small>
+          <span>1 саяас доош</span>
+          <strong>{dashboard.metrics.low_flow}</strong>
+          <small>Шуурхай урсгал</small>
         </article>
         <article className={styles.metricCard}>
-          <span>Хүлээн авалт хүлээгдэж буй</span>
-          <strong>{dashboard.metrics.receipt_pending}</strong>
-          <small>Няравын баталгаажуулалт дутуу</small>
+          <span>1 саяас дээш</span>
+          <strong>{dashboard.metrics.high_flow}</strong>
+          <small>Тушаал, гэрээтэй шат</small>
         </article>
         <article className={styles.metricCard}>
-          <span>Дундаж хугацаа</span>
-          <strong>{dashboard.metrics.average_resolution_days}</strong>
-          <small>өдөр</small>
+          <span>Хоцорсон</span>
+          <strong>{dashboard.metrics.delayed}</strong>
+          <small>Анхаарал шаардсан урсгал</small>
         </article>
       </section>
 
@@ -117,6 +166,46 @@ export default async function ProcurementDashboardPage() {
             <div className={styles.emptyState}>Сонгогдсон нийлүүлэгчийн статистик алга байна.</div>
           )}
         </article>
+      </section>
+
+      <section className={styles.cardSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <h2>Анхаарал шаардсан хүсэлтүүд</h2>
+            <p>Хяналтын самбарт хамгийн түрүүнд шалгах урсгалуудыг энд товчлон харууллаа.</p>
+          </div>
+          <Link href="/procurement/assigned" className={styles.secondaryButton}>
+            Хариуцсан урсгал руу очих
+          </Link>
+        </div>
+        {highlightedItems.length ? (
+          <div className={styles.requestGrid}>
+            {highlightedItems.map((item) => (
+              <Link key={item.id} href={`/procurement/${item.id}`} className={styles.requestCard}>
+                <div className={styles.requestCardTop}>
+                  <div>
+                    <strong>{item.name}</strong>
+                    <p>{item.title}</p>
+                  </div>
+                  <span className={item.is_delayed ? styles.badgeDanger : styles.badge}>{item.state.label}</span>
+                </div>
+                <div className={styles.badgeRow}>
+                  {item.flow_type ? <span className={styles.badgeOutline}>{item.flow_type.label}</span> : null}
+                  <span className={styles.badgeOutline}>{item.payment_status.label}</span>
+                  <span className={styles.badgeOutline}>{item.receipt_status.label}</span>
+                </div>
+                <div className={styles.metaList}>
+                  <span><strong>Төсөл:</strong> {item.project?.name || "Сонгоогүй"}</span>
+                  <span><strong>Хариуцагч:</strong> {item.current_responsible?.name || "Тодорхойгүй"}</span>
+                  <span><strong>Нярав:</strong> {item.storekeeper?.name || "Сонгоогүй"}</span>
+                  <span><strong>Шатны насжилт:</strong> {item.current_stage_age_days} өдөр</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyState}>Одоогоор тусгайлан анхаарах хүсэлт илрээгүй байна.</div>
+        )}
       </section>
     </ProcurementShell>
   );

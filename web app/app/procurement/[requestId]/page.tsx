@@ -12,6 +12,7 @@ import {
   loadProcurementRequestDetail,
   type ProcurementAction,
   type ProcurementCodeLabel,
+  type ProcurementMeta,
 } from "@/lib/procurement";
 
 import styles from "../procurement.module.css";
@@ -33,10 +34,12 @@ function formatDate(value?: string | null) {
   if (!value) {
     return "Товлоогүй";
   }
+
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
     return value;
   }
+
   return new Intl.DateTimeFormat("mn-MN", {
     year: "numeric",
     month: "short",
@@ -48,10 +51,12 @@ function formatDateTime(value?: string | null) {
   if (!value) {
     return "Одоогоор бүртгэгдээгүй";
   }
+
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
     return value;
   }
+
   return new Intl.DateTimeFormat("mn-MN", {
     year: "numeric",
     month: "short",
@@ -84,9 +89,8 @@ export default async function ProcurementDetailPage({ params, searchParams }: Pa
     password: session.password,
   };
 
-  const [procurementUser, meta, item] = await Promise.all([
+  const [procurementUser, item] = await Promise.all([
     loadProcurementMe(connectionOverrides),
-    loadProcurementMeta(connectionOverrides),
     loadProcurementRequestDetail(requestId, connectionOverrides),
   ]);
 
@@ -101,40 +105,38 @@ export default async function ProcurementDetailPage({ params, searchParams }: Pa
   const markReceivedAction = findAction(item.available_actions, "mark_received");
   const markDoneAction = findAction(item.available_actions, "mark_done");
   const cancelAction = findAction(item.available_actions, "cancel");
+  const meta: ProcurementMeta = submitQuotesAction
+    ? await loadProcurementMeta(connectionOverrides)
+    : { projects: [], tasks: [], departments: [], storekeepers: [], suppliers: [], uoms: [] };
+
+  const activeActionCount = item.available_actions.length;
+  const flowLabel = item.flow_type?.label || "Сонголт хүлээж байна";
+  const selectedSupplierLabel = item.selected_supplier?.name || "Сонгоогүй";
 
   const timelineItems = [
     {
       key: "quotation",
       title: "Үнийн саналын шат",
       value: formatDateTime(item.date_quotation_submitted),
-      note: item.date_quotation_submitted ? "3 үнийн саналын шат бүртгэгдсэн." : "Үнийн саналын шат хүлээгдэж байна.",
+      note: item.date_quotation_submitted ? "3 үнийн санал бүртгэгдсэн." : "Үнийн санал хүлээгдэж байна.",
     },
     {
       key: "director",
       title: "Захирлын шийдвэр",
       value: formatDateTime(item.date_director_decision),
-      note:
-        item.flow_type?.code === "high"
-          ? "1 саяас дээш урсгалд заавал хэрэглэнэ."
-          : "1 саяас доош урсгалд энэ шат алгасагдана.",
+      note: item.flow_type?.code === "high" ? "1 саяас дээш урсгалд хэрэглэнэ." : "Бага урсгалд алгасагдана.",
     },
     {
       key: "order",
       title: "Тушаалын шат",
       value: formatDateTime(item.date_order_issued),
-      note:
-        item.flow_type?.code === "high"
-          ? "Эцсийн тушаал хавсарсны дараа баталгаажна."
-          : "Бага үнийн урсгалд тушаал шаардахгүй.",
+      note: item.flow_type?.code === "high" ? "Тушаалын баримт хавсарна." : "Энэ шат шаардахгүй.",
     },
     {
       key: "contract",
       title: "Гэрээний шат",
       value: formatDateTime(item.date_contract_signed),
-      note:
-        item.flow_type?.code === "high"
-          ? "Гэрээ байгуулсны дараа санхүүгийн шат руу орно."
-          : "Бага үнийн урсгалд гэрээ шаардахгүй.",
+      note: item.flow_type?.code === "high" ? "Гэрээ байгуулсны дараа үргэлжилнэ." : "Энэ шат шаардахгүй.",
     },
     {
       key: "paid",
@@ -155,11 +157,64 @@ export default async function ProcurementDetailPage({ params, searchParams }: Pa
       session={session}
       procurementUser={procurementUser}
       title={`${item.name} - ${item.title}`}
-      description="Таймлайн, мөр, 3 үнийн санал, баримтууд, төлбөр, хүлээн авалтын мэдээллийг нэг дэлгэрэнгүй дэлгэцэд нэгтгэв."
+      description="Таймлайн, мөр, үнийн санал, баримт, төлбөр, хүлээн авалтын мэдээллийг нэг дэлгэрэнгүй дэлгэцэд нэгтгэв."
       activeTab="list"
     >
-      {notice ? <section className={styles.cardSection}>{notice}</section> : null}
-      {error ? <section className={styles.cardSection}>{error}</section> : null}
+      {notice ? <section className={`${styles.statusBanner} ${styles.noticeBanner}`}>{notice}</section> : null}
+      {error ? <section className={`${styles.statusBanner} ${styles.errorBanner}`}>{error}</section> : null}
+
+      <section className={styles.overviewPanel}>
+        <div className={styles.overviewCopy}>
+          <p className={styles.overviewEyebrow}>Дэлгэрэнгүй тойм</p>
+          <h2>Шийдвэр, баримт, гүйцэтгэл бүгд нэг харагдацад байна</h2>
+          <p>Суурь мэдээлэл, урсгалын төрөл, сонгосон нийлүүлэгч, нээлттэй үйлдлүүдийг эхэнд нь товчлон харуулж байна.</p>
+        </div>
+        <div className={styles.pillGrid}>
+          <article className={styles.pillCard}>
+            <span>Урсгал</span>
+            <strong>{flowLabel}</strong>
+            <small>{item.procurement_type.label}</small>
+          </article>
+          <article className={styles.pillCard}>
+            <span>Сонгосон нийлүүлэгч</span>
+            <strong>{selectedSupplierLabel}</strong>
+            <small>{formatMoney(item.selected_supplier_total || item.amount_approx_total)}</small>
+          </article>
+          <article className={styles.pillCard}>
+            <span>Идэвхтэй үйлдэл</span>
+            <strong>{activeActionCount} боломж</strong>
+            <small>Таны эрхээр харагдаж буй дараагийн алхам</small>
+          </article>
+          <article className={styles.pillCard}>
+            <span>Шаардлагатай огноо</span>
+            <strong>{formatDate(item.required_date)}</strong>
+            <small>{item.is_delayed ? `${item.delay_days} өдөр хоцорсон` : "Одоогоор хоцроогүй"}</small>
+          </article>
+        </div>
+      </section>
+
+      <section className={styles.metricsGrid}>
+        <article className={styles.metricCard}>
+          <span>Одоогийн төлөв</span>
+          <strong>{item.state.label}</strong>
+          <small>Урсгалын одоогийн шат</small>
+        </article>
+        <article className={styles.metricCard}>
+          <span>Шатанд өнгөрүүлсэн</span>
+          <strong>{item.current_stage_age_days} өдөр</strong>
+          <small>Одоогийн хариуцагч дээр байгаа хугацаа</small>
+        </article>
+        <article className={styles.metricCard}>
+          <span>Төлбөр</span>
+          <strong>{item.payment_status.label}</strong>
+          <small>{item.payment_reference || "Лавлагаа оруулаагүй"}</small>
+        </article>
+        <article className={styles.metricCard}>
+          <span>Хүлээн авалт</span>
+          <strong>{item.receipt_status.label}</strong>
+          <small>{item.received ? "Хаагдсан" : "Дараагийн баталгаажуулалт хүлээж байна"}</small>
+        </article>
+      </section>
 
       <section className={styles.detailGrid}>
         <div className={styles.detailStack}>
@@ -192,7 +247,7 @@ export default async function ProcurementDetailPage({ params, searchParams }: Pa
               </div>
               <div className={styles.infoCard}>
                 <span>Сонгосон нийлүүлэгч</span>
-                <strong>{item.selected_supplier?.name || "Сонгоогүй"}</strong>
+                <strong>{selectedSupplierLabel}</strong>
               </div>
               <div className={styles.infoCard}>
                 <span>Дүн</span>
@@ -219,7 +274,7 @@ export default async function ProcurementDetailPage({ params, searchParams }: Pa
               <span><strong>Хүсэлт гаргагч:</strong> {item.requester?.name || "Тодорхойгүй"}</span>
               <span><strong>Тайлбар:</strong> {item.description || "Оруулаагүй"}</span>
               <span><strong>Төрөл:</strong> {item.procurement_type.label}</span>
-              <span><strong>Урсгал:</strong> {item.flow_type?.label || "Сонгосон үнийн санал баталгаажаагүй"}</span>
+              <span><strong>Урсгал:</strong> {flowLabel}</span>
             </div>
           </article>
 
@@ -373,7 +428,7 @@ export default async function ProcurementDetailPage({ params, searchParams }: Pa
                         />
                       </label>
                       <label>
-                        Хүлээгдэж буй нийлүүлэлт
+                        Хүргэлтийн огноо
                         <input
                           type="date"
                           name={`expected_delivery_date_${index}`}
@@ -396,7 +451,10 @@ export default async function ProcurementDetailPage({ params, searchParams }: Pa
                       </label>
                       <label>
                         Тайлбар
-                        <textarea name={`quote_note_${index}`} defaultValue={item.quotations[index - 1]?.notes || ""} />
+                        <textarea
+                          name={`quote_note_${index}`}
+                          defaultValue={item.quotations[index - 1]?.notes || ""}
+                        />
                       </label>
                       <label>
                         Хавсралт

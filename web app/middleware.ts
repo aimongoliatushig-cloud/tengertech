@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 
 import { SESSION_COOKIE_NAME } from "@/lib/session";
 
-const PUBLIC_PATHS = new Set(["/login"]);
+const PUBLIC_PATHS = new Set([
+  "/login",
+  "/design-board",
+  "/api/wrs-report/normalized",
+]);
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

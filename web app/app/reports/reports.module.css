@@ -369,6 +369,170 @@
   font-size: 1.7rem;
 }
 
+.weightSectionHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.weightSectionHeader h2,
+.weightDayHeader h3 {
+  margin: 8px 0 0;
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
+}
+
+.weightSectionHeader p {
+  margin: 0;
+  color: var(--ink-700);
+  line-height: 1.7;
+}
+
+.weightMetaCard,
+.weightSummaryCard,
+.weightDayCard,
+.weightVehicleRow,
+.weightEmpty,
+.weightError {
+  border: 1px solid var(--line-soft);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.weightMetaCard,
+.weightSummaryCard,
+.weightDayCard,
+.weightVehicleRow,
+.weightEmpty,
+.weightError {
+  display: grid;
+  gap: 12px;
+}
+
+.weightMetaCard,
+.weightSummaryCard,
+.weightDayCard,
+.weightEmpty,
+.weightError {
+  padding: 18px;
+}
+
+.weightMetaCard {
+  background: rgba(74, 154, 93, 0.08);
+}
+
+.weightMetaCard span,
+.weightSummaryCard span,
+.weightVehicleMeta span,
+.weightVehicleValue span {
+  color: var(--ink-600);
+  font-size: 0.88rem;
+}
+
+.weightMetaCard strong,
+.weightSummaryCard strong,
+.weightDayHeader strong,
+.weightVehicleValue strong {
+  font-family: var(--font-display);
+  line-height: 1;
+}
+
+.weightMetaCard strong {
+  font-size: 1.4rem;
+}
+
+.weightMetaCard small,
+.weightSummaryCard small {
+  color: var(--ink-600);
+}
+
+.weightError {
+  margin-top: 18px;
+  background: rgba(245, 135, 31, 0.08);
+  border-color: rgba(245, 135, 31, 0.2);
+  color: var(--ink-800);
+}
+
+.weightSummaryGrid,
+.weightDayStack {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.weightSummaryGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.weightSummaryCard strong {
+  font-size: 1.75rem;
+}
+
+.weightDayCard {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.weightDayHeader,
+.weightVehicleRow {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.weightDayHeader {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(31, 95, 49, 0.08);
+}
+
+.weightDayHeader strong {
+  font-size: 1.5rem;
+  color: var(--brand-900);
+}
+
+.weightVehicleList {
+  display: grid;
+  gap: 12px;
+}
+
+.weightVehicleRow {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(74, 154, 93, 0.05);
+}
+
+.weightVehicleMeta {
+  display: grid;
+  gap: 4px;
+}
+
+.weightVehicleMeta strong {
+  color: var(--ink-900);
+  font-size: 1rem;
+}
+
+.weightVehicleValue {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+}
+
+.weightVehicleValue strong {
+  font-size: 1.35rem;
+  color: var(--brand-900);
+}
+
+.weightEmpty {
+  margin-top: 18px;
+  min-height: 160px;
+  place-items: center;
+  text-align: center;
+  color: var(--ink-600);
+  line-height: 1.7;
+}
+
 .projectStack {
   margin-top: 18px;
 }
@@ -472,6 +636,8 @@
   .pageHeader,
   .summaryStrip,
   .departmentFilterInner,
+  .weightSectionHeader,
+  .weightSummaryGrid,
   .workflowHeader,
   .workflowSummaryGrid,
   .workflowColumns {
@@ -480,6 +646,8 @@
 
   .projectHeader,
   .reportTop,
+  .weightDayHeader,
+  .weightVehicleRow,
   .workflowColumnHeader,
   .workflowItemTop,
   .workflowItemMeta {
@@ -515,6 +683,10 @@
   .workflowMetaCard,
   .workflowSummaryCard,
   .workflowColumn,
+  .weightMetaCard,
+  .weightSummaryCard,
+  .weightDayCard,
+  .weightEmpty,
   .workflowEmpty {
     padding: 16px;
   }
@@ -522,5 +694,10 @@
   .departmentFilterCard {
     min-height: 64px;
     padding: 14px 16px;
+  }
+
+  .weightVehicleValue {
+    justify-items: start;
+    text-align: left;
   }
 }
