@@ -23,6 +23,21 @@ type MenuKey =
   | "reports"
   | "data-download";
 
+type IconName =
+  | "dashboard"
+  | "tasks"
+  | "field"
+  | "projects"
+  | "procurement"
+  | "review"
+  | "reports"
+  | "download"
+  | "garage"
+  | "team"
+  | "plus"
+  | "profile"
+  | "more";
+
 type AppMenuProps = {
   active: MenuKey;
   canCreateProject?: boolean;
@@ -42,34 +57,292 @@ type MenuItem = {
   href: string;
   label: string;
   note: string;
-  icon: string;
+  icon: IconName;
 };
 
-function ProfileGlyph({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-hidden
-    >
-      <path
-        d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M5.5 19.5C6.9 16.9 9.1 15.5 12 15.5C14.9 15.5 17.1 16.9 18.5 19.5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+type QuickAction = {
+  key: "project" | "task" | "report";
+  href: string;
+  label: string;
+  note: string;
+  icon: IconName;
+};
+
+function MenuIcon({
+  icon,
+  className,
+}: {
+  icon: IconName;
+  className?: string;
+}) {
+  switch (icon) {
+    case "dashboard":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M4.5 10.2L12 4.5L19.5 10.2V18.2C19.5 19.0284 18.8284 19.7 18 19.7H6C5.17157 19.7 4.5 19.0284 4.5 18.2V10.2Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.2 19.7V13.3H14.8V19.7"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "tasks":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M9 7H19"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M9 12H19"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M9 17H19"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <circle cx="5.4" cy="7" r="1.4" fill="currentColor" />
+          <circle cx="5.4" cy="12" r="1.4" fill="currentColor" />
+          <circle cx="5.4" cy="17" r="1.4" fill="currentColor" />
+        </svg>
+      );
+    case "field":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M12 20C15.6 16.3 17.4 13.5 17.4 10.8C17.4 7.6 15 5.2 12 5.2C9 5.2 6.6 7.6 6.6 10.8C6.6 13.5 8.4 16.3 12 20Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="12" cy="10.6" r="2.2" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+      );
+    case "projects":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M4.8 8.3C4.8 7.52753 5.42753 6.9 6.2 6.9H10.1L11.8 8.6H17.8C18.5725 8.6 19.2 9.22753 19.2 10V17.8C19.2 18.5725 18.5725 19.2 17.8 19.2H6.2C5.42753 19.2 4.8 18.5725 4.8 17.8V8.3Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "procurement":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M7.2 9.2H16.8L16.2 18.2C16.1478 18.9828 15.4973 19.59 14.7128 19.59H9.28718C8.50268 19.59 7.85218 18.9828 7.8 18.2L7.2 9.2Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.6 9.2V7.8C9.6 6.47452 10.6745 5.4 12 5.4C13.3255 5.4 14.4 6.47452 14.4 7.8V9.2"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "review":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M12 4.9L18.2 7.3V11.8C18.2 15.9 15.7 18.8 12 20.1C8.3 18.8 5.8 15.9 5.8 11.8V7.3L12 4.9Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.6 12.1L11.2 13.7L14.8 10.1"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "reports":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M8.1 5.4H13.5L17.7 9.6V18.1C17.7 18.8732 17.0732 19.5 16.3 19.5H8.1C7.3268 19.5 6.7 18.8732 6.7 18.1V6.8C6.7 6.0268 7.3268 5.4 8.1 5.4Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M13.5 5.6V9.6H17.5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.4 12.6H14.8"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M9.4 15.8H14.8"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "download":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M12 5.2V14.8"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M8.6 11.8L12 15.2L15.4 11.8"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M5.5 18.2H18.5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "garage":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M4.8 10.4L12 5L19.2 10.4V18.4C19.2 18.9523 18.7523 19.4 18.2 19.4H5.8C5.24772 19.4 4.8 18.9523 4.8 18.4V10.4Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.4 19.4V13.5H14.6V19.4"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "team":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M9.2 11C10.7464 11 12 9.7464 12 8.2C12 6.6536 10.7464 5.4 9.2 5.4C7.6536 5.4 6.4 6.6536 6.4 8.2C6.4 9.7464 7.6536 11 9.2 11Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M15.8 10.2C17.0144 10.2 18 9.21442 18 8C18 6.78558 17.0144 5.8 15.8 5.8"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M4.9 18.6C5.7 15.9 7.9 14.5 10.2 14.5C12.5 14.5 14.7 15.9 15.5 18.6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M16 14.8C17.7 15.1 19 16.3 19.6 18"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "plus":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M12 6.4V17.6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M6.4 12H17.6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "profile":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path
+            d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M5.5 19.5C6.9 16.9 9.1 15.5 12 15.5C14.9 15.5 17.1 16.9 18.5 19.5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "more":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <circle cx="6.5" cy="12" r="1.7" fill="currentColor" />
+          <circle cx="12" cy="12" r="1.7" fill="currentColor" />
+          <circle cx="17.5" cy="12" r="1.7" fill="currentColor" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function getInitials(userName: string) {
+  const parts = userName
+    .split(/\s+/)
+    .map((part) => part.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (!parts.length) {
+    return "ХТ";
+  }
+
+  return parts
+    .map((part) => part[0])
+    .join("")
+    .toLocaleUpperCase("mn-MN");
 }
 
 export function AppMenu({
@@ -87,7 +360,7 @@ export function AppMenu({
 }: AppMenuProps) {
   void canViewQualityCenter;
 
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const createHubHref = "/create";
   const autoBaseHref = "/auto-base";
   const canOpenCreateHub = canCreateProject || canCreateTasks || canWriteReports;
@@ -106,21 +379,21 @@ export function AppMenu({
             href: "/",
             label: "Хяналтын самбар",
             note: "Ерөнхий төлөв",
-            icon: "⌂",
+            icon: "dashboard",
           },
           {
             key: "tasks",
             href: "/tasks",
             label: "Өнөөдрийн ажил",
             note: "Ажилбарын жагсаалт",
-            icon: "≣",
+            icon: "tasks",
           },
           {
             key: "procurement",
             href: "/procurement",
             label: "Худалдан авалт",
             note: "Хүсэлт ба шат",
-            icon: "¤",
+            icon: "procurement",
           },
           ...(canViewAutoBaseShortcut
             ? [
@@ -129,7 +402,7 @@ export function AppMenu({
                   href: autoBaseHref,
                   label: "Авто бааз",
                   note: "Машины төлөв",
-                  icon: "▥",
+                  icon: "garage",
                 } satisfies MenuItem,
               ]
             : []),
@@ -140,7 +413,7 @@ export function AppMenu({
                   href: "/hr",
                   label: "Хүний нөөц",
                   note: "Ажилтны бүртгэл",
-                  icon: "◉",
+                  icon: "team",
                 } satisfies MenuItem,
               ]
             : []),
@@ -149,7 +422,7 @@ export function AppMenu({
             href: "/reports",
             label: "Тайлан",
             note: "Хяналт ба тайлан",
-            icon: "○",
+            icon: "reports",
           },
         ]
       : workerMode
@@ -159,7 +432,7 @@ export function AppMenu({
               href: "/",
               label: "Миний ажил",
               note: "Надад хамаарах ажил",
-              icon: "⌂",
+              icon: "dashboard",
             },
             ...(canUseFieldConsole
               ? [
@@ -168,7 +441,7 @@ export function AppMenu({
                     href: "/field",
                     label: "Өнөөдрийн ажил",
                     note: "Тухайн өдрийн маршрут",
-                    icon: "◎",
+                    icon: "field",
                   } satisfies MenuItem,
                 ]
               : []),
@@ -177,14 +450,14 @@ export function AppMenu({
               href: "/tasks",
               label: "Ажилбар",
               note: "Надад оноогдсон жагсаалт",
-              icon: "≣",
+              icon: "tasks",
             },
             {
               key: "procurement",
               href: "/procurement",
               label: "Худалдан авалт",
               note: "Надад хамаарах хүсэлт",
-              icon: "¤",
+              icon: "procurement",
             },
           ]
         : masterMode
@@ -194,35 +467,35 @@ export function AppMenu({
                 href: "/",
                 label: "Нэгжийн самбар",
                 note: "Өнөөдрийн хураангуй",
-                icon: "⌂",
+                icon: "dashboard",
               },
               {
                 key: "tasks",
                 href: "/tasks",
                 label: "Өнөөдрийн ажил",
                 note: "Зөвхөн өнөөдөр харагдана",
-                icon: "≣",
+                icon: "tasks",
               },
               {
                 key: "new-project",
                 href: createHubHref,
                 label: "Ажил нэмэх",
                 note: "Өөрийн нэгжийн ажил үүсгэх",
-                icon: "+",
+                icon: "plus",
               },
               {
                 key: "procurement",
                 href: "/procurement",
                 label: "Худалдан авалт",
                 note: "Нэгжийн хүсэлтүүд",
-                icon: "¤",
+                icon: "procurement",
               },
               {
                 key: "reports",
                 href: "/reports",
                 label: "Тайлан",
                 note: "Илгээсэн тайлан",
-                icon: "○",
+                icon: "reports",
               },
             ]
           : [
@@ -233,7 +506,7 @@ export function AppMenu({
                       href: "/field",
                       label: "Өнөөдрийн маршрут",
                       note: "Талбайн ажил",
-                      icon: "◎",
+                      icon: "field",
                     } satisfies MenuItem,
                   ]
                 : []),
@@ -242,7 +515,7 @@ export function AppMenu({
                 href: "/",
                 label: "Хяналтын самбар",
                 note: "Нүүр хуудас",
-                icon: "⌂",
+                icon: "dashboard",
               },
               ...(canViewAutoBaseShortcut
                 ? [
@@ -251,7 +524,7 @@ export function AppMenu({
                       href: autoBaseHref,
                       label: "Авто бааз",
                       note: "Машины төлөв",
-                      icon: "▥",
+                      icon: "garage",
                     } satisfies MenuItem,
                   ]
                 : []),
@@ -260,21 +533,21 @@ export function AppMenu({
                 href: "/projects",
                 label: "Ажил",
                 note: "Ажлын жагсаалт",
-                icon: "▣",
+                icon: "projects",
               },
               {
                 key: "procurement",
                 href: "/procurement",
                 label: "Худалдан авалт",
                 note: "Хүсэлт ба явц",
-                icon: "¤",
+                icon: "procurement",
               },
               {
                 key: "review",
                 href: "/review",
                 label: "Хяналт",
                 note: "Баталгаажуулалт",
-                icon: "✓",
+                icon: "review",
               },
               ...(canViewHrDirectory
                 ? [
@@ -283,7 +556,7 @@ export function AppMenu({
                       href: "/hr",
                       label: "Хүний нөөц",
                       note: "Бүх ажилтан",
-                      icon: "◉",
+                      icon: "team",
                     } satisfies MenuItem,
                   ]
                 : []),
@@ -294,7 +567,7 @@ export function AppMenu({
                       href: createHubHref,
                       label: "Шинэ ажил",
                       note: "Шууд үүсгэх",
-                      icon: "+",
+                      icon: "plus",
                     } satisfies MenuItem,
                   ]
                 : []),
@@ -303,16 +576,52 @@ export function AppMenu({
                 href: "/reports",
                 label: "Тайлан",
                 note: "Өдрийн урсгал",
-                icon: "○",
+                icon: "reports",
               },
               {
                 key: "data-download",
                 href: "/data-download",
                 label: "Өгөгдөл татах",
                 note: "Файл ба тайлан",
-                icon: "↓",
+                icon: "download",
               },
             ];
+
+  const quickActions: QuickAction[] = [
+    ...(canCreateProject
+      ? [
+          {
+            key: "project",
+            href: "/projects/new",
+            label: "Ажил нэмэх",
+            note: "Шинэ ажил, төсөл",
+            icon: "plus",
+          } satisfies QuickAction,
+        ]
+      : []),
+    ...(canCreateTasks
+      ? [
+          {
+            key: "task",
+            href: "/projects?quickAction=task",
+            label: "Ажилбар нэмэх",
+            note: "Ажил сонгоод үргэлжлүүлнэ",
+            icon: "tasks",
+          } satisfies QuickAction,
+        ]
+      : []),
+    ...(canWriteReports
+      ? [
+          {
+            key: "report",
+            href: "/create/report",
+            label: "Тайлан оруулах",
+            note: "Идэвхтэй ажлаас сонгоно",
+            icon: "reports",
+          } satisfies QuickAction,
+        ]
+      : []),
+  ];
 
   const menuTitle =
     variant === "executive"
@@ -328,19 +637,35 @@ export function AppMenu({
           href: createHubHref,
           label: "Нэмэх",
           note: "Шинэ үйлдэл сонгох",
-          icon: "+",
+          icon: "plus",
         }
       : items[0]);
+
   const mobileItems = items.filter((item) => item.key !== "new-project");
-  const mobileLeadingItems = mobileItems.slice(0, 2);
-  const mobileTrailingItems = mobileItems.slice(2);
+  const defaultMobilePrimary = mobileItems.slice(0, 3);
+  const activeMobileItem =
+    activeItem?.key !== "new-project"
+      ? mobileItems.find((item) => item.key === activeItem?.key) ?? null
+      : null;
+  const mobilePrimaryItems =
+    activeMobileItem && !defaultMobilePrimary.some((item) => item.key === activeMobileItem.key)
+      ? [
+          ...defaultMobilePrimary.slice(0, Math.max(0, defaultMobilePrimary.length - 1)),
+          activeMobileItem,
+        ]
+      : defaultMobilePrimary;
+  const mobileLeadingItems = mobilePrimaryItems.slice(0, 2);
+  const mobileTrailingItems = mobilePrimaryItems.slice(2);
+  const mobileOverflowItems = mobileItems.filter(
+    (item) => !mobilePrimaryItems.some((primary) => primary.key === item.key),
+  );
 
   function closeMobileSheets() {
-    setIsProfileOpen(false);
+    setIsMoreOpen(false);
   }
 
-  function toggleProfile() {
-    setIsProfileOpen((current) => !current);
+  function toggleMoreSheet() {
+    setIsMoreOpen((current) => !current);
   }
 
   return (
@@ -361,8 +686,8 @@ export function AppMenu({
               <Image
                 src="/logo.png"
                 alt="Хот тохижилтын удирдлагын төв"
-                width={108}
-                height={34}
+                width={112}
+                height={36}
                 className={styles.menuLogo}
                 unoptimized
               />
@@ -370,15 +695,19 @@ export function AppMenu({
             <div className={styles.menuBrandText}>
               <span className={styles.menuKicker}>Навигаци</span>
               <strong>{menuTitle}</strong>
+              <small>Нэг дэлгэц дээр нэг гол зорилго баримталсан цэс</small>
             </div>
           </div>
-        </div>
 
-        <div className={styles.menuUserCard}>
-          <span>Нэвтэрсэн хэрэглэгч</span>
-          <strong>{userName}</strong>
-          <div className={styles.menuUserMeta}>
-            <small>{roleLabel}</small>
+          <div className={styles.menuUserCard}>
+            <div className={styles.menuUserAvatar} aria-hidden>
+              {getInitials(userName)}
+            </div>
+            <div className={styles.menuUserBody}>
+              <span>Нэвтэрсэн хэрэглэгч</span>
+              <strong>{userName}</strong>
+              <small>{roleLabel}</small>
+            </div>
           </div>
         </div>
 
@@ -392,7 +721,7 @@ export function AppMenu({
                 aria-current={active === item.key ? "page" : undefined}
               >
                 <span className={styles.menuLinkIcon} aria-hidden>
-                  {item.icon}
+                  <MenuIcon icon={item.icon} className={styles.menuIconSvg} />
                 </span>
                 <span className={styles.menuLinkBody}>
                   <span className={styles.menuLabel}>{item.label}</span>
@@ -401,6 +730,33 @@ export function AppMenu({
               </Link>
             ))}
           </div>
+
+          {quickActions.length ? (
+            <section className={styles.menuQuickPanel} aria-label="Товч үйлдэл">
+              <div className={styles.menuQuickPanelHeader}>
+                <span className={styles.menuKicker}>Товч үйлдэл</span>
+                <strong>Нэмэх төв</strong>
+              </div>
+
+              <div className={styles.menuQuickGrid}>
+                {quickActions.map((action) => (
+                  <Link
+                    key={action.key}
+                    href={action.href}
+                    className={styles.menuQuickActionCard}
+                  >
+                    <span className={styles.menuQuickActionIcon} aria-hidden>
+                      <MenuIcon icon={action.icon} className={styles.menuIconSvg} />
+                    </span>
+                    <div>
+                      <strong>{action.label}</strong>
+                      <small>{action.note}</small>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
 
         <div className={styles.menuFooter}>
@@ -412,16 +768,114 @@ export function AppMenu({
         </div>
       </aside>
 
-      {isProfileOpen ? (
-        <button
-          type="button"
-          className={styles.menuMobileBackdrop}
-          aria-label="Хаах"
-          onClick={closeMobileSheets}
-        />
+      {isMoreOpen ? (
+        <>
+          <button
+            type="button"
+            className={styles.menuMobileBackdrop}
+            aria-label="Цэс хаах"
+            onClick={closeMobileSheets}
+          />
+
+          <div className={styles.menuQuickSheet} role="dialog" aria-label="Дэлгэрэнгүй цэс">
+            <div className={styles.menuQuickSheetHeader}>
+              <div>
+                <span className={styles.menuKicker}>Дэлгэрэнгүй цэс</span>
+                <strong>{activeItem?.label ?? menuTitle}</strong>
+              </div>
+
+              <button
+                type="button"
+                className={styles.menuQuickSheetClose}
+                onClick={closeMobileSheets}
+              >
+                Хаах
+              </button>
+            </div>
+
+            <div className={styles.menuProfileCard}>
+              <div className={styles.menuProfileAvatar} aria-hidden>
+                <MenuIcon icon="profile" className={styles.menuProfileAvatarSvg} />
+              </div>
+              <div className={styles.menuProfileBody}>
+                <span>Профайл</span>
+                <strong>{userName}</strong>
+                <small>{roleLabel}</small>
+              </div>
+            </div>
+
+            {quickActions.length ? (
+              <section className={styles.menuQuickPanel} aria-label="Товч үйлдэл">
+                <div className={styles.menuQuickPanelHeader}>
+                  <span className={styles.menuKicker}>Нэмэх төв</span>
+                  <strong>Шууд эхлэх үйлдлүүд</strong>
+                </div>
+
+                <div className={styles.menuQuickGrid}>
+                  {quickActions.map((action) => (
+                    <Link
+                      key={`sheet-${action.key}`}
+                      href={action.href}
+                      className={styles.menuQuickActionCard}
+                      onClick={closeMobileSheets}
+                    >
+                      <span className={styles.menuQuickActionIcon} aria-hidden>
+                        <MenuIcon icon={action.icon} className={styles.menuIconSvg} />
+                      </span>
+                      <div>
+                        <strong>{action.label}</strong>
+                        <small>{action.note}</small>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {mobileOverflowItems.length ? (
+              <div className={styles.menuSheetLinks}>
+                {mobileOverflowItems.map((item) => (
+                  <Link
+                    key={`sheet-${item.key}`}
+                    href={item.href}
+                    className={`${styles.menuSheetLink} ${
+                      active === item.key ? styles.menuSheetLinkActive : ""
+                    }`}
+                    aria-current={active === item.key ? "page" : undefined}
+                    onClick={closeMobileSheets}
+                  >
+                    <span className={styles.menuLinkIcon} aria-hidden>
+                      <MenuIcon icon={item.icon} className={styles.menuIconSvg} />
+                    </span>
+                    <span className={styles.menuLinkBody}>
+                      <span className={styles.menuLabel}>{item.label}</span>
+                      <small className={styles.menuNote}>{item.note}</small>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+
+            <div className={styles.menuProfileMeta}>
+              <span>Одоогийн хэсэг</span>
+              <strong>{activeItem?.label ?? menuTitle}</strong>
+            </div>
+
+            <form action={logoutAction}>
+              <button type="submit" className={styles.menuProfileLogoutButton}>
+                Гарах
+              </button>
+            </form>
+          </div>
+        </>
       ) : null}
 
-      <div className={styles.menuMobileDock} aria-label="Хурдан цэс">
+      <div
+        className={`${styles.menuMobileDock} ${
+          canOpenCreateHub ? styles.menuMobileDockWithAdd : styles.menuMobileDockCompact
+        }`}
+        aria-label="Хурдан цэс"
+      >
         {mobileLeadingItems.map((item) => (
           <Link
             key={`mobile-${item.key}`}
@@ -433,28 +887,26 @@ export function AppMenu({
             onClick={closeMobileSheets}
           >
             <span className={styles.menuDockIcon} aria-hidden>
-              {item.icon}
+              <MenuIcon icon={item.icon} className={styles.menuIconSvg} />
             </span>
             <span className={styles.menuDockLabel}>{item.label}</span>
           </Link>
         ))}
 
         {canOpenCreateHub ? (
-          <div className={styles.menuMobileQuickAdd}>
-            <Link
-              href={createHubHref}
-              className={`${styles.menuDockAddTrigger} ${
-                active === "new-project" ? styles.menuDockAddTriggerActive : ""
-              }`}
-              aria-label="Нэмэх цэс"
-              onClick={closeMobileSheets}
-            >
-              <span className={styles.menuDockAddIcon} aria-hidden>
-                +
-              </span>
-              <span className={styles.srOnly}>Нэмэх</span>
-            </Link>
-          </div>
+          <Link
+            href={createHubHref}
+            className={`${styles.menuDockAddTrigger} ${
+              active === "new-project" ? styles.menuDockAddTriggerActive : ""
+            }`}
+            aria-label="Нэмэх төв"
+            onClick={closeMobileSheets}
+          >
+            <span className={styles.menuDockAddIcon} aria-hidden>
+              <MenuIcon icon="plus" className={styles.menuIconSvg} />
+            </span>
+            <span className={styles.srOnly}>Нэмэх</span>
+          </Link>
         ) : null}
 
         {mobileTrailingItems.map((item) => (
@@ -468,58 +920,23 @@ export function AppMenu({
             onClick={closeMobileSheets}
           >
             <span className={styles.menuDockIcon} aria-hidden>
-              {item.icon}
+              <MenuIcon icon={item.icon} className={styles.menuIconSvg} />
             </span>
             <span className={styles.menuDockLabel}>{item.label}</span>
           </Link>
         ))}
 
-        <div className={styles.menuMobileProfile}>
-          <button
-            type="button"
-            className={styles.menuDockProfileTrigger}
-            aria-expanded={isProfileOpen}
-            onClick={toggleProfile}
-          >
-            <span
-              className={`${styles.menuDockIcon} ${styles.menuDockProfileIcon}`}
-              aria-hidden
-            >
-              <ProfileGlyph className={styles.menuDockProfileSvg} />
-            </span>
-            <span className={styles.menuDockLabel}>Профайл</span>
-          </button>
-
-          {isProfileOpen ? (
-            <div className={styles.menuProfileSheet}>
-              <div className={styles.menuProfileCard}>
-                <div className={styles.menuProfileAvatar} aria-hidden>
-                  <ProfileGlyph className={styles.menuProfileAvatarSvg} />
-                </div>
-                <div className={styles.menuProfileBody}>
-                  <span>Профайл</span>
-                  <strong>{userName}</strong>
-                  <small>{roleLabel}</small>
-                </div>
-              </div>
-
-              <div className={styles.menuProfileMeta}>
-                <span>Одоогийн хэсэг</span>
-                <strong>{activeItem?.label ?? menuTitle}</strong>
-              </div>
-
-              <form action={logoutAction}>
-                <button type="submit" className={styles.menuProfileLogoutButton}>
-                  Гарах
-                </button>
-              </form>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className={styles.menuMobileCurrent}>
-        <span>{activeItem?.label ?? menuTitle}</span>
+        <button
+          type="button"
+          className={`${styles.menuDockMoreButton} ${isMoreOpen ? styles.menuDockLinkActive : ""}`}
+          aria-expanded={isMoreOpen}
+          onClick={toggleMoreSheet}
+        >
+          <span className={styles.menuDockIcon} aria-hidden>
+            <MenuIcon icon="more" className={styles.menuIconSvg} />
+          </span>
+          <span className={styles.menuDockLabel}>Цэс</span>
+        </button>
       </div>
     </nav>
   );

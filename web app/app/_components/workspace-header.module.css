@@ -1,36 +1,48 @@
 .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
   gap: 16px;
   margin-bottom: 18px;
-  padding: 16px 18px;
-  border: 1px solid var(--line-soft);
-  border-radius: 28px;
-  background: rgba(248, 253, 247, 0.92);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 16px 40px rgba(18, 28, 39, 0.08);
+  padding: 18px 20px;
+  border: 1px solid rgba(31, 95, 49, 0.1);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(166, 211, 157, 0.16), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(244, 250, 243, 0.94));
+  box-shadow: 0 18px 44px rgba(18, 28, 39, 0.08);
+}
+
+.primaryBlock,
+.brandBlock,
+.metaGrid,
+.metaHead,
+.metaCopy {
+  display: grid;
+}
+
+.primaryBlock {
+  gap: 14px;
+  align-content: start;
 }
 
 .brandBlock {
-  display: flex;
-  align-items: center;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 14px;
-  min-width: 0;
+  align-items: center;
 }
 
 .logoShell {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  min-width: 76px;
-  height: 76px;
+  width: 72px;
+  min-width: 72px;
+  height: 72px;
   padding: 12px;
-  border-radius: 24px;
+  border-radius: 22px;
   background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(74, 154, 93, 0.14);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(74, 154, 93, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .logo {
@@ -41,12 +53,12 @@
 
 .brandCopy {
   display: grid;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
 }
 
 .kicker,
-.cardCopy span {
+.metaCopy span {
   display: inline-flex;
   align-items: center;
   width: fit-content;
@@ -57,53 +69,94 @@
   color: var(--brand-800);
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .brandCopy strong {
-  font-family: var(--font-display);
-  font-size: clamp(1.15rem, 2vw, 1.7rem);
-  line-height: 1;
-  letter-spacing: -0.04em;
   color: var(--ink-900);
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2.2vw, 1.95rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
 }
 
 .brandCopy small,
-.cardCopy small {
+.metaCopy small,
+.liveNote span {
   color: var(--ink-700);
-  font-size: 0.88rem;
+}
+
+.brandCopy small {
+  font-size: 0.9rem;
   line-height: 1.55;
 }
 
-.metaRow {
-  display: flex;
-  align-items: stretch;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
+.liveNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(74, 154, 93, 0.08);
+  border: 1px solid rgba(74, 154, 93, 0.12);
 }
 
-.noticeCard,
-.accountCard {
-  display: flex;
-  align-items: center;
+.liveDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2f8d4a, #70b67b);
+  box-shadow: 0 0 0 6px rgba(74, 154, 93, 0.12);
+}
+
+.liveNote span {
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.metaGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  min-width: 220px;
-  padding: 12px 14px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.88);
+  align-content: start;
+}
+
+.metaCard {
+  display: grid;
+  padding: 14px;
+  border-radius: 24px;
   border: 1px solid rgba(74, 154, 93, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.noticeCard {
+  background:
+    radial-gradient(circle at top right, rgba(239, 216, 133, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 250, 240, 0.94));
+}
+
+.accountCard {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.metaHead {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
 }
 
 .noticeIcon,
 .avatar {
   display: inline-grid;
   place-items: center;
-  width: 46px;
-  min-width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 16px;
 }
 
@@ -113,8 +166,8 @@
 }
 
 .noticeSvg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 .avatar {
@@ -126,83 +179,70 @@
   letter-spacing: 0.02em;
 }
 
-.cardCopy {
-  display: grid;
+.metaCopy {
   gap: 4px;
   min-width: 0;
 }
 
-.cardCopy strong {
+.metaCopy strong {
   color: var(--ink-900);
-  font-size: 1rem;
+  font-size: 1.1rem;
   line-height: 1.2;
+}
+
+.metaCopy small {
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 @media (max-width: 1100px) {
   .header {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
   }
 
-  .metaRow {
-    justify-content: stretch;
-  }
-
-  .noticeCard,
-  .accountCard {
-    flex: 1 1 240px;
-    min-width: 0;
-  }
-}
-
-@media (max-width: 900px) {
-  .header {
-    padding: 14px;
-    border-radius: 24px;
-  }
-
-  .metaRow {
-    display: grid;
+  .metaGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 760px) {
+  .header {
+    gap: 14px;
+    padding: 16px;
+    border-radius: 24px;
+  }
+
   .brandBlock {
-    align-items: flex-start;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
   }
 
   .logoShell {
-    width: 60px;
-    min-width: 60px;
-    height: 60px;
-    border-radius: 20px;
-  }
-
-  .brandCopy strong {
-    font-size: 1.02rem;
-  }
-
-  .brandCopy small,
-  .cardCopy small {
-    font-size: 0.82rem;
-  }
-
-  .metaRow {
-    grid-template-columns: 1fr;
-  }
-
-  .noticeCard,
-  .accountCard {
-    padding: 11px 12px;
+    width: 58px;
+    min-width: 58px;
+    height: 58px;
     border-radius: 18px;
   }
 
-  .noticeIcon,
-  .avatar {
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
-    border-radius: 14px;
+  .brandCopy strong {
+    font-size: 1.08rem;
+  }
+
+  .brandCopy small {
+    font-size: 0.82rem;
+  }
+
+  .liveNote {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .metaCard {
+    border-radius: 20px;
   }
 }

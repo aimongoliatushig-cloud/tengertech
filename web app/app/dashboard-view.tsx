@@ -10,6 +10,8 @@ import {
   buildDashboardModel,
   type DashboardActionRow,
   type DashboardComparisonCard,
+  type DashboardItem,
+  type DashboardLinkChip,
   type DashboardSummaryCard,
   type DashboardTrendPoint,
   type StatusTone,
@@ -311,6 +313,83 @@ function ActionList({
   );
 }
 
+function QuickFilterRail({ filters }: { filters: DashboardLinkChip[] }) {
+  return (
+    <div className={styles.quickFilterRail}>
+      {filters.map((filter) => (
+        <Link
+          key={filter.id}
+          href={filter.href}
+          className={cx(styles.quickFilterChip, toneClass(filter.tone))}
+        >
+          <span className={styles.quickFilterLabel}>{filter.label}</span>
+          <strong className={styles.quickFilterValue}>{filter.value}</strong>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function FocusPanel({
+  title,
+  description,
+  primaryItem,
+  secondaryItems,
+}: {
+  title: string;
+  description: string;
+  primaryItem: DashboardItem | null;
+  secondaryItems: DashboardItem[];
+}) {
+  return (
+    <section className={styles.focusPanel}>
+      <div className={styles.focusHeader}>
+        <div>
+          <span className={styles.sectionEyebrow}>{title}</span>
+          <h2>{primaryItem ? primaryItem.title : "Одоогоор сааталгүй"}</h2>
+          <p className={styles.focusDescription}>{description}</p>
+        </div>
+        {primaryItem ? <StatusChip tone={primaryItem.tone} label={primaryItem.statusLabel} /> : null}
+      </div>
+
+      {primaryItem ? (
+        <Link href={primaryItem.href} className={styles.focusPrimary}>
+          <div className={styles.focusPrimaryTop}>
+            <strong>{primaryItem.title}</strong>
+            {primaryItem.value ? <span>{primaryItem.value}</span> : null}
+          </div>
+          <p>{primaryItem.subtitle}</p>
+          <div className={styles.focusPrimaryMeta}>
+            {primaryItem.meta.slice(0, 3).map((meta) => (
+              <span key={meta}>{meta}</span>
+            ))}
+          </div>
+          <span className={styles.focusPrimaryAction}>{primaryItem.actionLabel}</span>
+        </Link>
+      ) : (
+        <div className={styles.emptyState}>
+          <strong>Шуурхай дараалалгүй байна</strong>
+          <span>Одоогоор эхэнд нь гаргах шаардлагатай ажил алга.</span>
+        </div>
+      )}
+
+      {secondaryItems.length ? (
+        <div className={styles.focusSecondaryList}>
+          {secondaryItems.slice(0, 3).map((item) => (
+            <Link key={item.id} href={item.href} className={styles.focusSecondaryLink}>
+              <div>
+                <strong>{item.title}</strong>
+                <small>{item.subtitle}</small>
+              </div>
+              <StatusChip tone={item.tone} label={item.statusLabel} />
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function TrendChart({ points }: { points: DashboardTrendPoint[] }) {
   const width = 720;
   const height = 230;
@@ -430,11 +509,6 @@ export function DashboardView({ session, snapshot, todayAssignments }: Dashboard
   const reviewCard = findSummaryCard(model.summaryCards, "review");
   const todayCard = findSummaryCard(model.summaryCards, "today");
   const completionCard = findSummaryCard(model.summaryCards, "completion");
-  const mobileWorkHref =
-    model.quickFilters.find((filter) => filter.id === "quick-today")?.href ??
-    (workerMode ? "/field" : "/tasks?view=today");
-  const mobileReviewHref =
-    model.quickFilters.find((filter) => filter.id === "quick-review")?.href ?? "/review";
 
   return (
     <main className={styles.shell}>
@@ -457,61 +531,84 @@ export function DashboardView({ session, snapshot, todayAssignments }: Dashboard
 
         <div className={styles.mainColumn}>
           <header className={styles.topbar}>
-            <div className={styles.brandBlock}>
-              <div className={styles.brandMark}>
-                <Image
-                  src="/logo.png"
-                  alt="Хот тохижилтын удирдлагын төв"
-                  width={172}
-                  height={54}
-                  className={styles.brandLogo}
-                  priority
-                  unoptimized
-                />
-              </div>
+            <div className={styles.heroStack}>
+              <div className={styles.brandBlock}>
+                <div className={styles.brandMark}>
+                  <Image
+                    src="/logo.png"
+                    alt="Хот тохижилтын удирдлагын төв"
+                    width={172}
+                    height={54}
+                    className={styles.brandLogo}
+                    priority
+                    unoptimized
+                  />
+                </div>
 
-              <div className={styles.heroCopy}>
-                <span className={styles.contextTag}>{roleLabel}</span>
-                <h1>Хяналтын самбар</h1>
-                <div className={styles.heroMeta}>
-                  <span>{model.scopeLabel}</span>
-                  <span>{model.updatedAt}</span>
+                <div className={styles.heroCopy}>
+                  <span className={styles.contextTag}>{model.eyebrow}</span>
+                  <h1>{model.title}</h1>
+                  <p className={styles.heroDescription}>{model.description}</p>
                 </div>
               </div>
-            </div>
 
-            <div className={styles.topbarActions}>
-              <div className={styles.userCard}>
+              <div className={styles.heroMeta}>
                 <span>{roleLabel}</span>
-                <strong>{session.name}</strong>
-                <small>Юу болж байна, юу хийх вэ гэдгийг эхний дэлгэцээс харна.</small>
+                <span>{model.scopeLabel}</span>
+                <span>{model.updatedAt}</span>
+                {model.emphasis ? <span className={styles.heroAccent}>{model.emphasis}</span> : null}
               </div>
 
-              <form action={logoutAction}>
-                <button type="submit" className={styles.logoutButton}>
-                  Гарах
-                </button>
-              </form>
+              <QuickFilterRail filters={model.quickFilters} />
+            </div>
+
+            <div className={styles.heroAside}>
+              <div className={styles.userCard}>
+                <div className={styles.userCardTop}>
+                  <div>
+                    <span>{roleLabel}</span>
+                    <strong>{session.name}</strong>
+                  </div>
+
+                  <div className={styles.userAlert}>
+                    <small>Анхаарах</small>
+                    <strong>{model.alertCount}</strong>
+                  </div>
+                </div>
+
+                <small>
+                  {workerMode
+                    ? "Өөрт оноогдсон ажил, тайлан, маршрутаа эхний дэлгэцээс удирдана."
+                    : "Шийдвэр шаардах урсгалыг эхний дэлгэцээс унших биш шууд хөдөлгөхөөр байрлууллаа."}
+                </small>
+
+                <form action={logoutAction}>
+                  <button type="submit" className={styles.logoutButton}>
+                    Гарах
+                  </button>
+                </form>
+              </div>
+
+              <FocusPanel
+                title={model.focusSection.title}
+                description={model.focusSection.description}
+                primaryItem={model.focusSection.primaryItem}
+                secondaryItems={model.focusSection.secondaryItems}
+              />
             </div>
           </header>
 
           {model.sourceNotice ? (
             <section className={styles.sourceNotice}>
-              <strong>{model.sourceNotice.title}</strong>
+              <div className={styles.sourceCopy}>
+                <strong>{model.sourceNotice.title}</strong>
+                <p className={styles.sourceNoticeBody}>{model.sourceNotice.body}</p>
+              </div>
               <Link href={model.sourceNotice.href} className={styles.noticeLink}>
                 {model.sourceNotice.actionLabel}
               </Link>
             </section>
           ) : null}
-
-          <div className={styles.mobileActionStrip}>
-            <Link href={mobileWorkHref} className={styles.mobileActionButton}>
-              Ажил харах
-            </Link>
-            <Link href={mobileReviewHref} className={cx(styles.mobileActionButton, styles.mobileActionSecondary)}>
-              Тайлан шалгах
-            </Link>
-          </div>
 
           <section className={styles.section}>
             <div className={styles.sectionHeader}>

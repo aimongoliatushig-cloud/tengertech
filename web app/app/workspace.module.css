@@ -2245,7 +2245,12 @@
   }
 
   .heroCard p {
-    display: none;
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 
   .eyebrow {

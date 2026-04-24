@@ -1,7 +1,6 @@
 .menuShell {
   position: relative;
   width: 100%;
-  margin: 0;
 }
 
 .menuShellExecutive {
@@ -10,65 +9,74 @@
 
 .menuBar {
   position: relative;
-  width: 100%;
-  min-height: calc(100vh - 40px);
-  padding: 12px;
-  border: 1px solid var(--line-soft);
-  border-radius: 24px;
-  background: var(--surface-panel-soft);
-  box-shadow: 0 16px 34px var(--shadow-soft);
   display: flex;
+  min-height: calc(100vh - 36px);
   flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(31, 95, 49, 0.1);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(166, 211, 157, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(244, 250, 243, 0.95));
+  box-shadow: 0 22px 52px rgba(31, 95, 49, 0.1);
 }
 
 .menuBarExecutive {
-  background: rgba(248, 253, 247, 0.92);
+  background:
+    radial-gradient(circle at top right, rgba(166, 211, 157, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 252, 246, 0.96));
 }
 
 .menuHeader {
   display: grid;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
 .menuBrand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(74, 154, 93, 0.12);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
 }
 
 .menuBrandLogo {
-  display: grid;
-  place-items: center;
-  width: 50px;
-  height: 50px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(74, 154, 93, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(244, 250, 243, 0.98), rgba(255, 255, 255, 0.94));
+  border: 1px solid rgba(74, 154, 93, 0.1);
 }
 
 .menuLogo {
-  width: 100%;
+  width: 112px;
   height: auto;
+  object-fit: contain;
 }
 
 .menuBrandText {
   display: grid;
-  gap: 4px;
+  gap: 5px;
 }
 
 .menuKicker {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  min-height: 24px;
-  padding: 0 9px;
+  min-height: 26px;
+  padding: 0 10px;
   border-radius: 999px;
-  background: rgba(74, 154, 93, 0.12);
+  background: rgba(74, 154, 93, 0.1);
   color: var(--brand-800);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -76,145 +84,281 @@
 .menuBrandText strong {
   color: var(--ink-900);
   font-family: var(--font-display);
-  font-size: 1.08rem;
+  font-size: 1.12rem;
   letter-spacing: -0.03em;
 }
 
-.menuUserCard {
-  display: grid;
-  gap: 6px;
-  padding: 14px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(74, 154, 93, 0.12);
-  flex-shrink: 0;
-}
-
-.menuUserCard span,
-.menuUserMeta small {
+.menuBrandText small,
+.menuUserBody span,
+.menuUserBody small,
+.menuNote,
+.menuQuickActionCard small,
+.menuProfileBody span,
+.menuProfileBody small,
+.menuProfileMeta span {
   color: var(--ink-600);
-  font-size: 0.78rem;
 }
 
-.menuUserCard strong {
+.menuBrandText small {
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.menuUserCard,
+.menuProfileCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(244, 250, 243, 0.98), rgba(236, 247, 234, 0.92));
+  border: 1px solid rgba(74, 154, 93, 0.12);
+}
+
+.menuUserAvatar,
+.menuProfileAvatar {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+  color: #f7fcf6;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.menuUserBody,
+.menuProfileBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.menuUserBody span,
+.menuProfileBody span,
+.menuProfileMeta span {
+  font-size: 0.76rem;
+}
+
+.menuUserBody strong,
+.menuProfileBody strong,
+.menuProfileMeta strong {
   color: var(--ink-900);
   font-size: 1rem;
+  line-height: 1.25;
 }
 
-.menuUserMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.menuUserMeta small {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: rgba(74, 154, 93, 0.08);
+.menuUserBody small,
+.menuProfileBody small {
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 .menuScrollArea {
+  display: grid;
+  gap: 14px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding-right: 2px;
 }
 
-.menuInner {
+.menuInner,
+.menuQuickGrid,
+.menuSheetLinks {
   display: grid;
-  gap: 8px;
-}
-
-.menuLink {
-  display: flex;
-  align-items: center;
   gap: 10px;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: rgba(74, 154, 93, 0.08);
-  color: var(--ink-900);
-  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
 }
 
-.menuLink:hover {
-  transform: translateX(2px);
-  background: rgba(74, 154, 93, 0.12);
-}
-
-.menuLinkActive {
-  background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
-  color: #f7fcf6;
-}
-
-.menuLinkIcon {
+.menuLink,
+.menuSheetLink {
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 22px;
+  background: rgba(247, 251, 246, 0.96);
+  color: var(--ink-900);
+  border: 1px solid rgba(74, 154, 93, 0.08);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.menuLink:hover,
+.menuSheetLink:hover,
+.menuQuickActionCard:hover {
+  transform: translateY(-1px);
+  border-color: rgba(31, 95, 49, 0.18);
+  box-shadow: 0 14px 28px rgba(31, 95, 49, 0.08);
+}
+
+.menuLinkActive,
+.menuSheetLinkActive {
+  background: linear-gradient(135deg, rgba(31, 95, 49, 0.98), rgba(74, 154, 93, 0.94));
+  border-color: rgba(31, 95, 49, 0.22);
+  color: #f7fcf6;
+  box-shadow: 0 18px 34px rgba(31, 95, 49, 0.14);
+}
+
+.menuLinkIcon,
+.menuQuickActionIcon,
+.menuDockIcon {
+  display: inline-grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(74, 154, 93, 0.12);
-  color: var(--brand-900);
-  font-size: 1rem;
   flex-shrink: 0;
 }
 
-.menuLinkActive .menuLinkIcon {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.14);
+.menuLinkIcon,
+.menuQuickActionIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  background: rgba(74, 154, 93, 0.1);
+  color: var(--brand-900);
+}
+
+.menuLinkActive .menuLinkIcon,
+.menuSheetLinkActive .menuLinkIcon {
+  background: rgba(255, 255, 255, 0.14);
   color: #f7fcf6;
+}
+
+.menuIconSvg,
+.menuProfileAvatarSvg {
+  width: 18px;
+  height: 18px;
 }
 
 .menuLinkBody {
   display: grid;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
 }
 
 .menuLabel {
-  font-size: 0.94rem;
+  font-size: 0.95rem;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .menuNote {
-  color: var(--ink-700);
-  font-size: 0.78rem;
-  line-height: 1.35;
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
-.menuLinkActive .menuNote {
-  color: rgba(247, 252, 246, 0.84);
+.menuLinkActive .menuNote,
+.menuSheetLinkActive .menuNote {
+  color: rgba(247, 252, 246, 0.78);
+}
+
+.menuQuickPanel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 24px;
+  border: 1px solid rgba(74, 154, 93, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(166, 211, 157, 0.16), transparent 32%),
+    linear-gradient(180deg, rgba(249, 252, 248, 0.98), rgba(241, 248, 239, 0.94));
+}
+
+.menuQuickPanelHeader {
+  display: grid;
+  gap: 5px;
+}
+
+.menuQuickPanelHeader strong {
+  color: var(--ink-900);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: -0.03em;
+}
+
+.menuQuickActionCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 13px;
+  border-radius: 20px;
+  border: 1px solid rgba(74, 154, 93, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink-900);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.menuQuickActionCard strong {
+  display: block;
+  color: var(--ink-900);
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.menuQuickActionCard small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
 .menuFooter {
-  margin-top: 12px;
   flex-shrink: 0;
 }
 
-.menuLogoutButton {
+.menuLogoutButton,
+.menuProfileLogoutButton,
+.menuQuickSheetClose {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid rgba(74, 154, 93, 0.14);
-  border-radius: 16px;
-  background: rgba(74, 154, 93, 0.08);
-  color: var(--brand-900);
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
   font: inherit;
-  font-weight: 650;
+  font-weight: 700;
   cursor: pointer;
 }
 
+.menuLogoutButton,
+.menuProfileLogoutButton {
+  width: 100%;
+  border: 0;
+  background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+  color: #f7fcf6;
+  box-shadow: 0 14px 28px rgba(31, 95, 49, 0.16);
+}
+
+.menuQuickSheetClose {
+  border: 1px solid rgba(31, 95, 49, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand-900);
+}
+
 .menuMobileDock,
-.menuMobileCurrent,
-.menuMobileProfile,
-.menuMobileQuickAdd,
-.menuMobileBackdrop {
+.menuMobileBackdrop,
+.menuQuickSheet {
   display: none;
+}
+
+.menuProfileMeta {
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(74, 154, 93, 0.12);
+  background: rgba(74, 154, 93, 0.08);
 }
 
 .srOnly {
@@ -229,337 +373,199 @@
   border: 0;
 }
 
-@media (max-width: 900px) {
-  .menuShell {
-    width: 100%;
-    margin: 0;
-  }
-
+@media (max-width: 980px) {
   .menuBar {
     display: none;
-  }
-
-  .menuMobileCurrent {
-    display: none;
-  }
-
-  .menuMobileDock {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 80;
-    display: grid;
-    grid-auto-flow: column;
-    justify-content: start;
-    grid-auto-columns: minmax(62px, 74px);
-    gap: 6px;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
-    overflow-x: auto;
-    border-top: 1px solid rgba(202, 222, 204, 0.9);
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    border-radius: 24px 24px 0 0;
-    background: rgba(247, 252, 246, 0.98);
-    box-shadow: 0 -8px 24px rgba(18, 28, 39, 0.08);
-    backdrop-filter: blur(18px);
-    scrollbar-width: none;
   }
 
   .menuMobileBackdrop {
     position: fixed;
     inset: 0;
-    z-index: 78;
+    z-index: 88;
     display: block;
-    border: none;
-    background: rgba(18, 28, 39, 0.08);
+    border: 0;
+    background: rgba(15, 29, 19, 0.18);
     backdrop-filter: blur(4px);
     cursor: pointer;
   }
 
-  .menuMobileDock::-webkit-scrollbar {
-    display: none;
+  .menuQuickSheet {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    z-index: 89;
+    display: grid;
+    gap: 14px;
+    max-height: min(70vh, 620px);
+    overflow-y: auto;
+    padding: 18px;
+    border: 1px solid rgba(31, 95, 49, 0.12);
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at top right, rgba(166, 211, 157, 0.18), transparent 30%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 250, 243, 0.96));
+    box-shadow: 0 24px 48px rgba(17, 34, 22, 0.16);
+  }
+
+  .menuQuickSheetHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .menuQuickSheetHeader strong {
+    display: block;
+    margin-top: 6px;
+    color: var(--ink-900);
+    font-family: var(--font-display);
+    font-size: 1.18rem;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+
+  .menuMobileDock {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 90;
+    display: grid;
+    gap: 8px;
+    align-items: stretch;
+    padding: 10px;
+    border: 1px solid rgba(31, 95, 49, 0.1);
+    border-radius: 28px;
+    background: rgba(247, 252, 246, 0.96);
+    box-shadow: 0 -8px 28px rgba(18, 28, 39, 0.12);
+    backdrop-filter: blur(18px);
+  }
+
+  .menuMobileDockWithAdd {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .menuMobileDockCompact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .menuDockLink,
-  .menuDockProfileTrigger {
+  .menuDockMoreButton,
+  .menuDockAddTrigger {
     display: grid;
     justify-items: center;
     align-content: center;
     gap: 4px;
-    min-height: 56px;
-    padding: 6px 8px;
-    border-radius: 12px;
-    border: 1px solid transparent;
-    background: transparent;
+    min-height: 58px;
+    padding: 6px 4px;
+    border-radius: 18px;
     color: var(--ink-900);
     font: inherit;
-    cursor: pointer;
-    appearance: none;
+    text-align: center;
+  }
+
+  .menuDockLink,
+  .menuDockMoreButton {
+    border: 1px solid transparent;
+    background: transparent;
   }
 
   .menuDockLinkActive {
-    background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+    background: linear-gradient(135deg, rgba(31, 95, 49, 0.98), rgba(74, 154, 93, 0.94));
     border-color: rgba(31, 95, 49, 0.22);
-    color: #ffffff;
-    box-shadow: 0 10px 18px rgba(31, 95, 49, 0.16);
+    color: #f7fcf6;
+    box-shadow: 0 14px 26px rgba(31, 95, 49, 0.16);
   }
 
   .menuDockIcon {
-    display: inline-grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
     background: rgba(74, 154, 93, 0.1);
     color: var(--brand-900);
-    font-size: 0.9rem;
-    line-height: 1;
   }
 
-  .menuDockLinkActive .menuDockIcon {
-    background: rgba(255, 255, 255, 0.16);
-    color: #ffffff;
+  .menuDockLinkActive .menuDockIcon,
+  .menuDockMoreButton.menuDockLinkActive .menuDockIcon {
+    background: rgba(255, 255, 255, 0.14);
+    color: #f7fcf6;
   }
 
   .menuDockLabel {
     display: -webkit-box;
     overflow: hidden;
-    color: inherit;
     font-size: 0.66rem;
     font-weight: 700;
-    line-height: 1.08;
-    text-align: center;
+    line-height: 1.05;
     text-wrap: balance;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
 
-  .menuMobileProfile {
-    display: block;
-  }
-
-  .menuMobileQuickAdd {
-    display: block;
-  }
-
   .menuDockAddTrigger {
-    display: grid;
-    place-items: center;
-    width: 64px;
-    min-width: 64px;
-    height: 64px;
-    align-self: start;
+    min-height: 64px;
     margin-top: -18px;
-    border: none;
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
-    box-shadow: 0 10px 22px rgba(31, 95, 49, 0.18);
-    font: inherit;
-    cursor: pointer;
-    appearance: none;
+    border: 0;
+    background: linear-gradient(135deg, rgba(31, 95, 49, 0.98), rgba(74, 154, 93, 0.94));
+    color: #f7fcf6;
+    box-shadow: 0 16px 30px rgba(31, 95, 49, 0.2);
   }
 
   .menuDockAddTriggerActive {
-    box-shadow: 0 14px 28px rgba(31, 95, 49, 0.24);
+    box-shadow: 0 20px 36px rgba(31, 95, 49, 0.24);
   }
 
   .menuDockAddIcon {
-    color: #ffffff;
-    font-size: 1.8rem;
-    line-height: 1;
-    font-weight: 500;
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
   }
 
+  .menuDockAddIcon .menuIconSvg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 640px) {
   .menuQuickSheet {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-    z-index: 79;
-    display: grid;
-    gap: 14px;
-    padding: 16px 14px 14px;
-    border-top: 1px solid rgba(202, 222, 204, 0.9);
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    border-radius: 24px 24px 0 0;
-    background: rgba(247, 252, 246, 0.98);
-    box-shadow: 0 -12px 28px rgba(18, 28, 39, 0.08);
-    backdrop-filter: blur(18px);
+    left: 8px;
+    right: 8px;
+    bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+    padding: 16px;
+    border-radius: 24px;
   }
 
   .menuQuickSheetHeader {
-    display: grid;
-    gap: 4px;
-  }
-
-  .menuQuickSheetHeader span {
-    color: var(--brand-800);
-    font-size: 0.74rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .menuQuickSheetHeader strong {
-    color: var(--ink-900);
-    font-size: 1rem;
-    line-height: 1.3;
-  }
-
-  .menuQuickGrid {
-    display: grid;
-    gap: 10px;
-  }
-
-  .menuQuickActionCard {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 10px 12px;
-    align-items: center;
-    padding: 14px;
-    border-radius: 18px;
-    border: 1px solid rgba(74, 154, 93, 0.1);
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--ink-900);
-  }
-
-  .menuQuickActionIcon {
-    display: inline-grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: rgba(74, 154, 93, 0.1);
-    color: var(--brand-900);
-    font-size: 1rem;
-    line-height: 1;
-  }
-
-  .menuQuickActionCard strong,
-  .menuQuickActionCard small {
-    grid-column: 2;
-  }
-
-  .menuQuickActionCard strong {
-    color: var(--ink-900);
-    font-size: 0.94rem;
-    line-height: 1.25;
-  }
-
-  .menuQuickActionCard small {
-    color: var(--ink-600);
-    font-size: 0.76rem;
-    line-height: 1.4;
-  }
-
-  .menuDockProfileIcon {
-    background: rgba(74, 154, 93, 0.1);
-    color: var(--brand-900);
-  }
-
-  .menuDockProfileSvg,
-  .menuProfileAvatarSvg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .menuProfileSheet {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-    z-index: 79;
-    display: grid;
-    gap: 12px;
-    padding: 14px 14px 12px;
-    border-top: 1px solid rgba(202, 222, 204, 0.9);
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    border-radius: 24px 24px 0 0;
-    background: rgba(247, 252, 246, 0.98);
-    box-shadow: 0 -10px 28px rgba(18, 28, 39, 0.08);
-    backdrop-filter: blur(18px);
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .menuProfileCard {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(74, 154, 93, 0.1);
+    border-radius: 20px;
   }
 
-  .menuProfileAvatar {
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    background: rgba(74, 154, 93, 0.12);
-    color: var(--brand-900);
-    flex-shrink: 0;
+  .menuMobileDock {
+    left: 8px;
+    right: 8px;
+    padding: 8px;
+    border-radius: 24px;
   }
 
-  .menuProfileAvatarSvg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .menuProfileBody {
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .menuProfileBody span,
-  .menuProfileMeta span {
-    color: var(--ink-600);
-    font-size: 0.76rem;
-  }
-
-  .menuProfileBody strong,
-  .menuProfileMeta strong {
-    color: var(--ink-900);
-    font-size: 0.94rem;
-    line-height: 1.3;
-    word-break: break-word;
-  }
-
-  .menuProfileBody small {
-    color: var(--brand-800);
-    font-size: 0.74rem;
-    font-weight: 700;
-  }
-
-  .menuProfileMeta {
-    display: grid;
-    gap: 4px;
-    padding: 12px;
-    border-radius: 18px;
-    background: rgba(74, 154, 93, 0.08);
-    border: 1px solid rgba(74, 154, 93, 0.1);
-  }
-
-  .menuProfileLogoutButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 46px;
-    padding: 0 16px;
-    border: 1px solid rgba(74, 154, 93, 0.14);
+  .menuDockLink,
+  .menuDockMoreButton {
+    min-height: 54px;
     border-radius: 16px;
-    background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
-    color: #ffffff;
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
+  }
+
+  .menuDockAddTrigger {
+    min-height: 60px;
+    border-radius: 18px;
+  }
+
+  .menuDockLabel {
+    font-size: 0.62rem;
   }
 }

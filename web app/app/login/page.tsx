@@ -37,72 +37,109 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <main className={styles.shell}>
       <section className={styles.infoPanel}>
-        <span className={styles.eyebrow}>Хотын ажиллагааны нэгдсэн платформ</span>
-        <h1>Хот тохижилтын веб апп</h1>
-        <p>
-          Odoo ERP дээрх ажлын урсгал, талбарын тайлан, хяналтын мөр, багийн бүтэц,
-          хэмжээг нэг дэлгэц дээр нэгтгэсэн гар утсанд эвтэйхэн веб апп.
-        </p>
+        <div className={styles.infoIntro}>
+          <span className={styles.eyebrow}>Хотын ажиллагааны нэгдсэн платформ</span>
+          <h1>Хотын ажиллагааг нэг дороос удирдана</h1>
+          <p>
+            Odoo систем дэх ажил, талбарын тайлан, хяналтын мөр, багийн урсгалыг
+            гар утас болон компьютер дээр ижил ойлгомжтойгоор ашиглах орчин.
+          </p>
+        </div>
 
-        <div className={styles.featureGrid}>
+        <div className={styles.signalGrid}>
+          <article className={styles.signalCard}>
+            <span>Шийдвэр</span>
+            <strong>1 самбар</strong>
+            <small>Менежерт яг одоо анхаарах зүйлс эхэндээ харагдана</small>
+          </article>
+          <article className={styles.signalCard}>
+            <span>Талбай</span>
+            <strong>Гар утсанд төвлөрсөн</strong>
+            <small>Маршрут, ажилбар, тайлангийн урсгал гар утсанд төвлөрсөн</small>
+          </article>
+          <article className={styles.signalCard}>
+            <span>Тайлан</span>
+            <strong>Нэг урсгал</strong>
+            <small>Ноорог, илгээсэн, баталсан төлөв нэг логикоор явна</small>
+          </article>
+        </div>
+
+        <div className={styles.featureList}>
           <article className={styles.featureCard}>
-            <strong>Ерөнхий менежер</strong>
-            <span>Хяналтын мөр, KPI, явц, гүйцэтгэлийн баталгааны урсгал</span>
+            <strong>Үйл ажиллагаа хариуцсан менежер</strong>
+            <span>Шийдвэр шаардах эрсдэл, KPI, баталгаажуулалтыг эхний дэлгэц дээр харна</span>
           </article>
           <article className={styles.featureCard}>
-            <strong>Мастер / Ахлах мастер</strong>
-            <span>Ажил, тайлан, зураг, аудио, хэмжээг нэг урсгалаар удирдана</span>
+            <strong>Багийн ахлагч</strong>
+            <span>Өнөөдрийн ажил, тайлан, хоцролт гурвыг богино урсгалаар удирдана</span>
           </article>
           <article className={styles.featureCard}>
-            <strong>Гар утсанд бэлэн</strong>
-            <span>Утсан дээр нэг гараар ашиглахад эвтэйхэн зохиомжтой</span>
+            <strong>Ажилтан</strong>
+            <span>Зөвхөн надад оноогдсон ажил, тайлан, маршрутаа уншиж ажиллана</span>
           </article>
         </div>
       </section>
 
       <section className={styles.formPanel}>
-        <div className={styles.formHeader}>
-          <span className={styles.formBadge}>Odoo нэвтрэлт</span>
-          <h2>Нэвтрэх</h2>
-          <p>
-            Odoo дээрх одоогийн хэрэглэгчийн нэр, нууц үгээрээ шууд орно.
-            Odoo ERP рүү тусдаа нэвтрэх шаардлагагүй.
-          </p>
-        </div>
+        <div className={styles.formWrap}>
+          <div className={styles.formHeader}>
+            <span className={styles.formBadge}>Odoo нэвтрэлт</span>
+            <h2>Нэвтрэх</h2>
+            <p>
+              Odoo дээрх одоогийн хэрэглэгчийн нэр, нууц үгээрээ шууд орно.
+              Тусдаа системийн эрх үүсгэх шаардлагагүй.
+            </p>
+          </div>
 
-        <form action={loginAction} className={styles.form}>
-          <label className={styles.field}>
-            <span>Нэвтрэх нэр</span>
-            <input
-              name="login"
-              type="text"
-              placeholder="Жишээ нь: admin эсвэл suldee@gmail.com"
-              autoComplete="username"
-              required
-            />
-          </label>
+          <div className={styles.formSteps}>
+            <span>1. Odoo эрхээр орно</span>
+            <span>2. Самбар автоматаар нээгдэнэ</span>
+            <span>3. Өөрийн үүрэгт тохирсон цэс гарна</span>
+          </div>
 
-          <label className={styles.field}>
-            <span>Нууц үг</span>
-            <input
-              name="password"
-              type="password"
-              placeholder="Нууц үгээ оруулна уу"
-              autoComplete="current-password"
-              required
-            />
-          </label>
+          <form action={loginAction} className={styles.form}>
+            <label className={styles.field} htmlFor="login-name">
+              <span>Нэвтрэх нэр</span>
+              <small>Odoo хэрэглэгчийн нэр эсвэл и-мэйл</small>
+              <input
+                id="login-name"
+                name="login"
+                type="text"
+                placeholder="Жишээ нь: admin эсвэл suldee@gmail.com"
+                autoComplete="username"
+                enterKeyHint="next"
+                required
+              />
+            </label>
 
-          {errorMessage ? <p className={styles.errorBox}>{errorMessage}</p> : null}
+            <label className={styles.field} htmlFor="login-password">
+              <span>Нууц үг</span>
+              <small>Odoo дээр ашигладаг нууц үг</small>
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                placeholder="Нууц үгээ оруулна уу"
+                autoComplete="current-password"
+                enterKeyHint="go"
+                required
+              />
+            </label>
 
-          <button type="submit" className={styles.submitButton}>
-            Дашбоард руу нэвтрэх
-          </button>
-        </form>
+            {errorMessage ? <p className={styles.errorBox}>{errorMessage}</p> : null}
 
-        <div className={styles.footerHint}>
-          <span>Жишээ нэвтрэх эрх</span>
-          <strong>`admin / admin`</strong>
+            <button type="submit" className={styles.submitButton}>
+              Дашбоард руу нэвтрэх
+            </button>
+          </form>
+
+          <div className={styles.footerHint}>
+            <div>
+              <span>Туршилтын эрх</span>
+              <small>Туршилтын эсвэл локал орчинд ашиглана</small>
+            </div>
+            <strong className={styles.footerCode}>admin / admin</strong>
+          </div>
         </div>
       </section>
     </main>

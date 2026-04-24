@@ -46,7 +46,7 @@ function getInitials(userName: string) {
     .slice(0, 2);
 
   if (!parts.length) {
-    return "HT";
+    return "ХТ";
   }
 
   return parts
@@ -68,49 +68,58 @@ export function WorkspaceHeader({
     notificationNote ??
     (safeNotificationCount > 0
       ? `${safeNotificationCount} анхаарах зүйл байна`
-      : "Шинэ мэдэгдэлгүй");
+      : "Шинэ анхаарах зүйл алга");
 
   return (
     <header className={styles.header}>
-      <div className={styles.brandBlock}>
-        <div className={styles.logoShell}>
-          <Image
-            src="/logo.png"
-            alt="Хот тохижилтын удирдлагын төв"
-            width={120}
-            height={40}
-            className={styles.logo}
-            unoptimized
-          />
-        </div>
+      <div className={styles.primaryBlock}>
+        <div className={styles.brandBlock}>
+          <div className={styles.logoShell}>
+            <Image
+              src="/logo.png"
+              alt="Хот тохижилтын удирдлагын төв"
+              width={112}
+              height={38}
+              className={styles.logo}
+              unoptimized
+            />
+          </div>
 
-        <div className={styles.brandCopy}>
-          <span className={styles.kicker}>Odoo урсгал</span>
-          <strong>{title}</strong>
-          <small>{subtitle}</small>
-        </div>
-      </div>
-
-      <div className={styles.metaRow}>
-        <div className={styles.noticeCard} aria-label={`Мэдэгдэл ${safeNotificationCount}`}>
-          <span className={styles.noticeIcon}>
-            <BellGlyph />
-          </span>
-          <div className={styles.cardCopy}>
-            <span>Мэдэгдэл</span>
-            <strong>{safeNotificationCount}</strong>
-            <small>{noticeText}</small>
+          <div className={styles.brandCopy}>
+            <span className={styles.kicker}>Odoo урсгал</span>
+            <strong>{title}</strong>
+            <small>{subtitle}</small>
           </div>
         </div>
 
-        <div className={styles.accountCard} aria-label="Хэрэглэгчийн мэдээлэл">
+        <div className={styles.liveNote}>
+          <span className={styles.liveDot} aria-hidden />
+          <span>{noticeText}</span>
+        </div>
+      </div>
+
+      <div className={styles.metaGrid}>
+        <article className={`${styles.metaCard} ${styles.noticeCard}`}>
+          <div className={styles.metaHead}>
+            <span className={styles.noticeIcon} aria-hidden>
+              <BellGlyph />
+            </span>
+            <div className={styles.metaCopy}>
+              <span>Анхаарах</span>
+              <strong>{safeNotificationCount}</strong>
+              <small>{noticeText}</small>
+            </div>
+          </div>
+        </article>
+
+        <article className={`${styles.metaCard} ${styles.accountCard}`}>
           <span className={styles.avatar}>{getInitials(userName)}</span>
-          <div className={styles.cardCopy}>
+          <div className={styles.metaCopy}>
             <span>Хэрэглэгч</span>
             <strong>{userName}</strong>
             <small>{roleLabel}</small>
           </div>
-        </div>
+        </article>
       </div>
     </header>
   );
