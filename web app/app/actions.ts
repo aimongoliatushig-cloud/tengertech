@@ -3,14 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import {
-  createSession,
-  destroySession,
-  hasCapability,
-  isMasterRole,
-  requireSession,
-  signInWithOdooCredentials,
-} from "@/lib/auth";
+import { hasCapability, isMasterRole, requireSession } from "@/lib/auth";
 import { pickPrimaryDepartmentName } from "@/lib/dashboard-scope";
 import {
   createFieldStopIssue,
@@ -138,33 +131,6 @@ function buildFieldPath(taskId: number, stopLineId?: number) {
     path: `/field?taskId=${taskId}`,
     hash: stopLineId ? `#stop-${stopLineId}` : "",
   };
-}
-
-export async function loginAction(formData: FormData) {
-  const login = String(formData.get("login") ?? "").trim();
-  const password = String(formData.get("password") ?? "").trim();
-
-  if (!login || !password) {
-    redirect("/login?error=missing");
-  }
-
-  try {
-    const session = await signInWithOdooCredentials(login, password);
-    if (!session) {
-      redirect("/login?error=invalid");
-    }
-
-    await createSession(session);
-  } catch {
-    redirect("/login?error=connection");
-  }
-
-  redirect("/");
-}
-
-export async function logoutAction() {
-  await destroySession();
-  redirect("/login");
 }
 
 export async function createProjectAction(formData: FormData) {

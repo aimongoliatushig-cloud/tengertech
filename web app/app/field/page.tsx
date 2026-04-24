@@ -4,7 +4,6 @@ import { AppMenu } from "@/app/_components/app-menu";
 import { WorkspaceHeader } from "@/app/_components/workspace-header";
 import {
   createFieldStopIssueAction,
-  logoutAction,
   markFieldStopArrivedAction,
   markFieldStopDoneAction,
   markFieldStopSkippedAction,
@@ -144,7 +143,7 @@ export default async function FieldPage({ searchParams }: PageProps) {
           </div>
 
           <div className={workspaceStyles.navActions}>
-            <form action={logoutAction}>
+            <form action="/auth/logout" method="post">
               <button type="submit" className={workspaceStyles.secondaryButton}>
                 Гарах
               </button>

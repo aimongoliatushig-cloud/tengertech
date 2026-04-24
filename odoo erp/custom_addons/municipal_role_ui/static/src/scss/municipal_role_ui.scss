@@ -59,6 +59,145 @@
     line-height: 1.1;
 }
 
+.o_form_view .municipal-role-dashboard__chart {
+    margin-bottom: 18px;
+}
+
+.o_form_view .municipal-role-dashboard__chart .o_field_html,
+.o_form_view .municipal-role-dashboard__chart .o_field_widget {
+    width: 100%;
+}
+
+.o_form_view .municipal-role-chart {
+    border: 1px solid var(--municipal-role-border);
+    border-radius: 24px;
+    padding: 20px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 248, 241, 0.96) 100%),
+        radial-gradient(circle at top right, rgba(47, 143, 80, 0.12), transparent 50%);
+    box-shadow: 0 18px 36px rgba(47, 143, 80, 0.08);
+}
+
+.o_form_view .municipal-role-chart__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.o_form_view .municipal-role-chart__copy {
+    max-width: 420px;
+}
+
+.o_form_view .municipal-role-chart__title {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.o_form_view .municipal-role-chart__subtitle {
+    margin: 0;
+    color: #587066;
+    font-size: 13px;
+}
+
+.o_form_view .municipal-role-chart__summary {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.o_form_view .municipal-role-chart__metric {
+    min-width: 120px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(47, 143, 80, 0.12);
+    background: rgba(255, 255, 255, 0.84);
+}
+
+.o_form_view .municipal-role-chart__metric-label,
+.o_form_view .municipal-role-chart__bar-date,
+.o_form_view .municipal-role-chart__bar-value {
+    display: block;
+    color: #5a6a61;
+    font-size: 12px;
+}
+
+.o_form_view .municipal-role-chart__metric-value {
+    display: block;
+    margin-top: 4px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--municipal-role-ink);
+}
+
+.o_form_view .municipal-role-chart__bars {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 10px;
+    align-items: end;
+}
+
+.o_form_view .municipal-role-chart__bar {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.o_form_view .municipal-role-chart__bar-value,
+.o_form_view .municipal-role-chart__bar-date {
+    text-align: center;
+}
+
+.o_form_view .municipal-role-chart__bar-track {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: 200px;
+    padding: 10px 0;
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(229, 241, 232, 0.92) 100%);
+    overflow: hidden;
+}
+
+.o_form_view .municipal-role-chart__bar-track::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    height: 1px;
+    background: rgba(31, 50, 40, 0.14);
+}
+
+.o_form_view .municipal-role-chart__bar-fill {
+    position: relative;
+    z-index: 1;
+    width: min(42px, 72%);
+    height: var(--municipal-role-chart-height);
+    border-radius: 14px 14px 8px 8px;
+    background: linear-gradient(180deg, #6bc381 0%, #2f8f50 100%);
+    box-shadow: 0 14px 30px rgba(47, 143, 80, 0.18);
+}
+
+.o_form_view .municipal-role-chart__bar--today .municipal-role-chart__bar-fill {
+    background: linear-gradient(180deg, #ffd56a 0%, #f19e2b 100%);
+    box-shadow: 0 14px 30px rgba(241, 158, 43, 0.2);
+}
+
+.o_form_view .municipal-role-chart__bar--empty .municipal-role-chart__bar-fill {
+    width: min(42px, 72%);
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(90, 106, 97, 0.22);
+    box-shadow: none;
+}
+
 .o_form_view .municipal-role-dashboard__panels {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -125,6 +264,25 @@
     .o_form_view .municipal-role-dashboard__hero {
         padding: 18px;
         border-radius: 20px;
+    }
+
+    .o_form_view .municipal-role-chart {
+        padding: 16px;
+        border-radius: 20px;
+    }
+
+    .o_form_view .municipal-role-chart__bars {
+        gap: 6px;
+    }
+
+    .o_form_view .municipal-role-chart__bar-track {
+        min-height: 148px;
+        border-radius: 14px;
+    }
+
+    .o_form_view .municipal-role-chart__metric {
+        flex: 1 1 100px;
+        min-width: 100px;
     }
 
     .o_form_view .municipal-role-dashboard__kpi-grid,

@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
 import { WorkspaceHeader } from "@/app/_components/workspace-header";
-import { logoutAction } from "@/app/actions";
 import shellStyles from "@/app/workspace.module.css";
 import {
   getRoleLabel,
@@ -336,7 +335,7 @@ export default async function ProfilePage() {
                 <p>Хэрэв энэ төхөөрөмжийг өөр хүн ашиглах бол гараад үлдээнэ үү.</p>
               </div>
 
-              <form action={logoutAction}>
+          <form action="/auth/logout" method="post">
                 <button type="submit" className={styles.logoutButton}>
                   Гарах
                 </button>

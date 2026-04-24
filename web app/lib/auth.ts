@@ -80,20 +80,43 @@ export async function getSession() {
   }
 }
 
-export async function createSession(session: AppSession) {
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, sealSession(session), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: SESSION_TTL_SECONDS,
-    path: "/",
-  });
+function shouldUseSecureSessionCookie() {
+  return process.env.SESSION_COOKIE_SECURE?.trim().toLowerCase() === "true";
 }
 
-export async function destroySession() {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+export function buildSessionCookieHeader(session: AppSession) {
+  const expiresAt = new Date(Date.now() + SESSION_TTL_SECONDS * 1000).toUTCString();
+  const parts = [
+    `${SESSION_COOKIE_NAME}=${sealSession(session)}`,
+    "Path=/",
+    `Expires=${expiresAt}`,
+    `Max-Age=${SESSION_TTL_SECONDS}`,
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+
+  if (shouldUseSecureSessionCookie()) {
+    parts.push("Secure");
+  }
+
+  return parts.join("; ");
+}
+
+export function buildDestroyedSessionCookieHeader() {
+  const parts = [
+    `${SESSION_COOKIE_NAME}=`,
+    "Path=/",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+    "Max-Age=0",
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+
+  if (shouldUseSecureSessionCookie()) {
+    parts.push("Secure");
+  }
+
+  return parts.join("; ");
 }
 
 export async function requireSession() {

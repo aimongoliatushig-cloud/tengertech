@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { loginAction } from "@/app/actions";
 import { getSession } from "@/lib/auth";
 
 import styles from "./page.module.css";
@@ -97,7 +96,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <span>3. Өөрийн үүрэгт тохирсон цэс гарна</span>
           </div>
 
-          <form action={loginAction} className={styles.form}>
+          <form action="/auth/login" method="post" className={styles.form}>
             <label className={styles.field} htmlFor="login-name">
               <span>Нэвтрэх нэр</span>
               <small>Odoo хэрэглэгчийн нэр эсвэл и-мэйл</small>

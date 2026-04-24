@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { AppMenu } from "@/app/_components/app-menu";
-import { logoutAction } from "@/app/actions";
 import { getRoleLabel, hasCapability, isMasterRole, isWorkerOnly, type AppSession } from "@/lib/auth";
 import {
   buildDashboardModel,
@@ -582,7 +581,7 @@ export function DashboardView({ session, snapshot, todayAssignments }: Dashboard
                     : "Шийдвэр шаардах урсгалыг эхний дэлгэцээс унших биш шууд хөдөлгөхөөр байрлууллаа."}
                 </small>
 
-                <form action={logoutAction}>
+                <form action="/auth/logout" method="post">
                   <button type="submit" className={styles.logoutButton}>
                     Гарах
                   </button>

@@ -111,7 +111,7 @@
 
     <menuitem id="menu_municipal_role_ui_root" name="Албан тушаалын орон зай" sequence="5"/>
     <menuitem id="menu_dashboard_director" name="Захирлын самбар" parent="menu_municipal_role_ui_root" action="action_server_dashboard_director" groups="municipal_role_ui.group_role_director" sequence="10"/>
-    <menuitem id="menu_dashboard_general_manager" name="Ерөнхий менежер" parent="menu_municipal_role_ui_root" action="action_server_dashboard_general_manager" groups="municipal_role_ui.group_role_general_manager" sequence="20"/>
+    <menuitem id="menu_dashboard_general_manager" name="Ерөнхий менежер" parent="menu_municipal_role_ui_root" action="action_server_dashboard_general_manager" groups="municipal_role_ui.group_role_general_manager,ops_people_registry.group_ops_profile_general_manager" sequence="20"/>
     <menuitem id="menu_dashboard_department_head" name="Хэлтсийн дарга" parent="menu_municipal_role_ui_root" action="action_server_dashboard_department_head" groups="municipal_role_ui.group_role_department_head" sequence="30"/>
     <menuitem id="menu_dashboard_project_leader" name="Төслийн удирдагч" parent="menu_municipal_role_ui_root" action="action_server_dashboard_project_leader" groups="municipal_role_ui.group_role_project_leader" sequence="40"/>
     <menuitem id="menu_dashboard_senior_master" name="Ахлах мастер" parent="menu_municipal_role_ui_root" action="action_server_dashboard_senior_master" groups="municipal_role_ui.group_role_senior_master" sequence="50"/>

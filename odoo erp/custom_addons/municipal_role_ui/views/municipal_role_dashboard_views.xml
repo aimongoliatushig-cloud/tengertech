@@ -34,6 +34,10 @@
                             <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_8_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_8_value" nolabel="1"/></div></div>
                         </div>
 
+                        <div class="municipal-role-dashboard__chart" groups="municipal_role_ui.group_role_general_manager,ops_people_registry.group_ops_profile_general_manager">
+                            <field name="waste_load_chart_html" nolabel="1" widget="html"/>
+                        </div>
+
                         <div class="municipal-role-dashboard__panels">
                             <field name="highlight_html" nolabel="1" widget="html"/>
                             <field name="performance_html" nolabel="1" widget="html"/>
@@ -42,7 +46,7 @@
 
                         <separator string="Шуурхай үйлдэл"/>
 
-                        <div class="municipal-role-action-grid" groups="municipal_role_ui.group_role_director,municipal_role_ui.group_role_general_manager">
+                        <div class="municipal-role-action-grid" groups="municipal_role_ui.group_role_director,municipal_role_ui.group_role_general_manager,ops_people_registry.group_ops_profile_general_manager">
                             <button type="object" name="action_open_projects" string="Төслүүд" class="btn btn-primary"/>
                             <button type="object" name="action_open_today_tasks" string="Өнөөдрийн ажил" class="btn btn-secondary"/>
                             <button type="object" name="action_open_overdue_tasks" string="Хоцорсон ажил" class="btn btn-secondary"/>

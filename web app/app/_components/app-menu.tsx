@@ -5,8 +5,6 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { logoutAction } from "@/app/actions";
-
 import styles from "./app-menu.module.css";
 
 type MenuKey =
@@ -827,7 +825,7 @@ export function AppMenu({
         </div>
 
         <div className={styles.menuFooter}>
-          <form action={logoutAction}>
+              <form action="/auth/logout" method="post">
             <button type="submit" className={styles.menuLogoutButton}>
               Гарах
             </button>
@@ -931,7 +929,7 @@ export function AppMenu({
               <strong>{activeItem?.label ?? menuTitle}</strong>
             </div>
 
-            <form action={logoutAction}>
+          <form action="/auth/logout" method="post">
               <button type="submit" className={styles.menuProfileLogoutButton}>
                 Гарах
               </button>

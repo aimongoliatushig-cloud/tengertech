@@ -6,6 +6,7 @@ import shellStyles from "@/app/workspace.module.css";
 import { getRoleLabel, hasCapability, requireSession } from "@/lib/auth";
 import { loadFleetVehicleBoard } from "@/lib/odoo";
 
+import { AutoBaseBoard } from "./auto-base-board";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -82,68 +83,15 @@ export default async function AutoBasePage() {
               <div className={styles.sectionHeader}>
                 <div>
                   <span className={styles.eyebrow}>Машины төлөв</span>
-                  <h1>Авто баазын chart</h1>
+                  <h1>Авто баазын самбар</h1>
                 </div>
-                <p>Энэ хэсэгт зөвхөн идэвхтэй явж буй машин болон засагдаж буй машин л харагдана.</p>
+                <p>
+                  Гар утсан дээр эхлээд ангиллаа сонгож, дараа нь тухайн төлөвт
+                  байгаа машины жагсаалтыг төвлөрүүлж харна.
+                </p>
               </div>
 
-              <div className={styles.boardGrid}>
-                <section className={`${styles.columnCard} ${styles.columnActive}`}>
-                  <div className={styles.columnHeader}>
-                    <div>
-                      <span className={styles.columnLabel}>Идэвхтэй машин</span>
-                      <strong>{board.activeCount}</strong>
-                    </div>
-                    <span className={styles.countBadge}>{board.activeCount}</span>
-                  </div>
-
-                  {board.activeVehicles.length ? (
-                    <div className={styles.vehicleList}>
-                      {board.activeVehicles.map((vehicle) => (
-                        <article key={vehicle.id} className={styles.vehicleCard}>
-                          <div className={styles.vehicleTop}>
-                            <strong className={styles.vehiclePlate}>{vehicle.plate}</strong>
-                            <span className={`${styles.vehicleState} ${styles.vehicleStateActive}`}>
-                              {vehicle.stateLabel || "Идэвхтэй"}
-                            </span>
-                          </div>
-                          <p className={styles.vehicleName}>{vehicle.name}</p>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className={styles.emptyState}>Одоогоор идэвхтэй машин алга.</div>
-                  )}
-                </section>
-
-                <section className={`${styles.columnCard} ${styles.columnRepair}`}>
-                  <div className={styles.columnHeader}>
-                    <div>
-                      <span className={styles.columnLabel}>Засагдаж буй машин</span>
-                      <strong>{board.repairCount}</strong>
-                    </div>
-                    <span className={styles.countBadge}>{board.repairCount}</span>
-                  </div>
-
-                  {board.repairVehicles.length ? (
-                    <div className={styles.vehicleList}>
-                      {board.repairVehicles.map((vehicle) => (
-                        <article key={vehicle.id} className={styles.vehicleCard}>
-                          <div className={styles.vehicleTop}>
-                            <strong className={styles.vehiclePlate}>{vehicle.plate}</strong>
-                            <span className={`${styles.vehicleState} ${styles.vehicleStateRepair}`}>
-                              {vehicle.latestRepairState || vehicle.stateLabel || "Засварт"}
-                            </span>
-                          </div>
-                          <p className={styles.vehicleName}>{vehicle.name}</p>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className={styles.emptyState}>Одоогоор засагдаж буй машин алга.</div>
-                  )}
-                </section>
-              </div>
+              <AutoBaseBoard board={board} />
             </section>
           </div>
         </div>

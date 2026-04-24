@@ -47,6 +47,7 @@ class MunicipalRoleDashboard(models.Model):
     alert_html = fields.Html(string="Анхаарах зүйл", sanitize=False, readonly=True)
     last_refreshed_at = fields.Datetime(string="Сүүлд шинэчилсэн", readonly=True)
 
+    waste_load_chart_html = fields.Html(string="Waste load chart", sanitize=False, readonly=True)
     kpi_1_label = fields.Char(string="KPI 1", readonly=True)
     kpi_1_value = fields.Char(string="KPI 1 утга", readonly=True)
     kpi_2_label = fields.Char(string="KPI 2", readonly=True)
@@ -155,6 +156,7 @@ class MunicipalRoleDashboard(models.Model):
         payload = {
             "dashboard_title": title,
             "dashboard_subtitle": subtitle,
+            "waste_load_chart_html": False,
             "highlight_html": self._render_panel("Товч төлөв", [("Мэдээлэл", "Одоогоор ачаалж байна", "soft")]),
             "performance_html": self._render_panel("Гүйцэтгэл", [("Төлөв", "Тооцоолол бэлэн", "ok")]),
             "alert_html": self._render_panel("Анхаарах зүйл", [("Тайлбар", "Шинэчилж ачааллаарай", "warn")]),
@@ -202,6 +204,135 @@ class MunicipalRoleDashboard(models.Model):
         if digits:
             return f"{value:,.{digits}f}"
         return f"{int(round(value or 0)):,.0f}"
+
+    def _format_weight(self, value):
+        return f"{self._format_number(value)} \u043a\u0433"
+
+    def _short_date_label(self, date_value):
+        return f"{date_value.month:02d}/{date_value.day:02d}"
+
+    def _daily_garbage_weight_series(self, days=7):
+        weight_total_model = self._get_model("mfo.daily.weight.total")
+        if not weight_total_model:
+            return []
+
+        end_date = self._today()
+        start_date = end_date - timedelta(days=max(days - 1, 0))
+        grouped_data = weight_total_model.read_group(
+            [
+                ("shift_date", ">=", start_date),
+                ("shift_date", "<=", end_date),
+                ("task_id.mfo_operation_type", "=", "garbage"),
+            ],
+            ["shift_date", "net_weight_total"],
+            ["shift_date"],
+            lazy=False,
+            orderby="shift_date asc",
+        )
+
+        weights_by_date = {}
+        for group in grouped_data:
+            shift_date = group.get("shift_date")
+            if not shift_date:
+                continue
+            weights_by_date[fields.Date.to_date(shift_date)] = group.get("net_weight_total", 0.0) or 0.0
+
+        return [
+            {
+                "date": current_date,
+                "label": self._short_date_label(current_date),
+                "weight": weights_by_date.get(current_date, 0.0),
+            }
+            for current_date in (
+                start_date + timedelta(days=offset) for offset in range(days)
+            )
+        ]
+
+    def _render_waste_load_chart(self, items):
+        chart_title = "\u0425\u043e\u0433 \u0430\u0447\u0438\u043b\u0442\u044b\u043d 7 \u0445\u043e\u043d\u043e\u0433\u0438\u0439\u043d \u0433\u0440\u0430\u0444\u0438\u043a"
+        chart_subtitle = "\u0421\u04af\u04af\u043b\u0438\u0439\u043d 7 \u0445\u043e\u043d\u043e\u0433\u0442 \u0431\u04af\u0440\u0442\u0433\u044d\u0433\u0434\u0441\u044d\u043d \u043d\u0438\u0439\u0442 \u043a\u0433"
+        if not items:
+            return self._render_panel(
+                chart_title,
+                [
+                    (
+                        "\u041c\u044d\u0434\u044d\u044d\u043b\u044d\u043b",
+                        "\u041f\u04af\u04af\u0433\u0438\u0439\u043d \u0431\u04af\u0440\u0442\u0433\u044d\u043b \u0430\u043b\u0433\u0430",
+                        "soft",
+                    )
+                ],
+            )
+
+        total_weight = sum(item["weight"] for item in items)
+        max_weight = max((item["weight"] for item in items), default=0.0)
+        today_weight = items[-1]["weight"] if items else 0.0
+        today_date = self._today()
+
+        summary_markup = []
+        for label, value in [
+            ("\u0037 \u0445\u043e\u043d\u043e\u0433\u0438\u0439\u043d \u043d\u0438\u0439\u0442", self._format_weight(total_weight)),
+            ("\u04e8\u043d\u04e9\u04e9\u0434\u04e9\u0440", self._format_weight(today_weight)),
+            ("\u0414\u044d\u044d\u0434 \u0446\u044d\u0433", self._format_weight(max_weight)),
+        ]:
+            summary_markup.append(
+                (
+                    '<div class="municipal-role-chart__metric">'
+                    '<span class="municipal-role-chart__metric-label">%s</span>'
+                    '<strong class="municipal-role-chart__metric-value">%s</strong>'
+                    "</div>"
+                )
+                % (html.escape(label), html.escape(value))
+            )
+
+        bar_markup = []
+        for item in items:
+            weight = item["weight"] or 0.0
+            if max_weight > 0 and weight > 0:
+                height_percent = max((weight / max_weight) * 100.0, 12.0)
+            else:
+                height_percent = 0.0
+
+            bar_classes = ["municipal-role-chart__bar"]
+            if item["date"] == today_date:
+                bar_classes.append("municipal-role-chart__bar--today")
+            if weight <= 0:
+                bar_classes.append("municipal-role-chart__bar--empty")
+
+            bar_markup.append(
+                (
+                    '<div class="%s">'
+                    '<span class="municipal-role-chart__bar-value">%s</span>'
+                    '<div class="municipal-role-chart__bar-track">'
+                    '<span class="municipal-role-chart__bar-fill" style="--municipal-role-chart-height: %.1f%%;"></span>'
+                    "</div>"
+                    '<span class="municipal-role-chart__bar-date">%s</span>'
+                    "</div>"
+                )
+                % (
+                    " ".join(bar_classes),
+                    html.escape(self._format_weight(weight)),
+                    height_percent,
+                    html.escape(item["label"]),
+                )
+            )
+
+        return (
+            '<section class="municipal-role-chart">'
+            '<div class="municipal-role-chart__header">'
+            '<div class="municipal-role-chart__copy">'
+            '<h2 class="municipal-role-chart__title">%s</h2>'
+            '<p class="municipal-role-chart__subtitle">%s</p>'
+            "</div>"
+            '<div class="municipal-role-chart__summary">%s</div>'
+            "</div>"
+            '<div class="municipal-role-chart__bars">%s</div>'
+            "</section>"
+        ) % (
+            html.escape(chart_title),
+            html.escape(chart_subtitle),
+            "".join(summary_markup),
+            "".join(bar_markup),
+        )
 
     def _render_panel(self, title, items):
         if not items:
@@ -485,6 +616,7 @@ class MunicipalRoleDashboard(models.Model):
             "net_weight_total",
             [("shift_date", ">=", self._week_start()), ("shift_date", "<=", self._today())],
         )
+        waste_load_series = self._daily_garbage_weight_series()
         payload = self._empty_payload(
             "Ерөнхий менежерийн орон зай",
             "Өдөр тутмын ажлын урсгал, машин, маршрут, гүйцэтгэлийг нэг дэлгэцээс хянана.",
@@ -510,6 +642,7 @@ class MunicipalRoleDashboard(models.Model):
                 ("Анхаарах ажил", self._format_number(self._count("project.task", self._overdue_task_domain("general_manager", user)))),
             ],
         )
+        payload["waste_load_chart_html"] = self._render_waste_load_chart(waste_load_series)
         payload["highlight_html"] = self._render_panel(
             "Ажлын ангиллын товч төлөв",
             [

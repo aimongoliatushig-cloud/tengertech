@@ -36,7 +36,10 @@ ODOO_DB=odoo19_admin
 ODOO_LOGIN=admin
 ODOO_PASSWORD=admin
 SESSION_SECRET=replace-this-with-a-long-random-secret
+SESSION_COOKIE_SECURE=false
 ```
+
+`SESSION_COOKIE_SECURE=true` тохиргоог зөвхөн HTTPS reverse proxy дээр ажиллуулж байгаа үед асаана.
 
 ## Гол файлууд
 
