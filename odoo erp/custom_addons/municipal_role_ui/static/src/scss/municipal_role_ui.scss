@@ -1,0 +1,135 @@
+.o_form_view .municipal-role-dashboard {
+    --municipal-role-green: #2f8f50;
+    --municipal-role-soft: #eef7ef;
+    --municipal-role-border: #dbeadf;
+    --municipal-role-ink: #1f3228;
+    color: var(--municipal-role-ink);
+}
+
+.o_form_view .municipal-role-dashboard__hero {
+    padding: 24px;
+    border: 1px solid var(--municipal-role-border);
+    border-radius: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #f1f8f1 58%, #e7f3e9 100%);
+    box-shadow: 0 20px 40px rgba(47, 143, 80, 0.08);
+    margin-bottom: 18px;
+}
+
+.o_form_view .municipal-role-dashboard__chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(47, 143, 80, 0.12);
+    color: var(--municipal-role-green);
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.o_form_view .municipal-role-dashboard__kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.o_form_view .municipal-role-dashboard__kpi-card {
+    padding: 18px;
+    border-radius: 20px;
+    border: 1px solid var(--municipal-role-border);
+    background: #fff;
+    min-height: 118px;
+}
+
+.o_form_view .municipal-role-dashboard__kpi-label {
+    color: #5a6a61;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.o_form_view .municipal-role-dashboard__kpi-value .o_field_widget,
+.o_form_view .municipal-role-dashboard__hero .o_field_widget {
+    font-weight: 700;
+    color: var(--municipal-role-ink);
+}
+
+.o_form_view .municipal-role-dashboard__kpi-value .o_field_char,
+.o_form_view .municipal-role-dashboard__hero .o_field_char {
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.o_form_view .municipal-role-dashboard__panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.o_form_view .municipal-role-panel {
+    border: 1px solid var(--municipal-role-border);
+    background: #fff;
+    border-radius: 20px;
+    padding: 18px;
+    min-height: 210px;
+}
+
+.o_form_view .municipal-role-panel__title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.o_form_view .municipal-role-panel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.o_form_view .municipal-role-panel__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: var(--municipal-role-soft);
+}
+
+.o_form_view .municipal-role-panel__row--ok {
+    background: rgba(47, 143, 80, 0.12);
+}
+
+.o_form_view .municipal-role-panel__row--warn {
+    background: rgba(201, 141, 24, 0.14);
+}
+
+.o_form_view .municipal-role-panel__row--danger {
+    background: rgba(182, 80, 79, 0.14);
+}
+
+.o_form_view .municipal-role-panel__row--soft {
+    background: #f5f8f6;
+}
+
+.o_form_view .municipal-role-action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.o_form_view .municipal-role-action-grid .btn {
+    min-height: 52px;
+    border-radius: 16px;
+}
+
+@media (max-width: 768px) {
+    .o_form_view .municipal-role-dashboard__hero {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    .o_form_view .municipal-role-dashboard__kpi-grid,
+    .o_form_view .municipal-role-dashboard__panels,
+    .o_form_view .municipal-role-action-grid {
+        grid-template-columns: 1fr;
+    }
+}

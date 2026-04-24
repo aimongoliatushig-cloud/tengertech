@@ -778,4 +778,84 @@
   .stickyActionBar {
     bottom: 5.75rem;
   }
+
+  .metricsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .overviewPanel,
+  .cardSection,
+  .metricCard,
+  .statusBanner,
+  .requestCard,
+  .dashboardCard,
+  .emptyState {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .overviewCopy h2 {
+    font-size: clamp(1.5rem, 8vw, 2rem);
+    line-height: 1.02;
+  }
+
+  .overviewCopy p:not(.overviewEyebrow) {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .pillGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .pillCard {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .metricsGrid {
+    gap: 12px;
+  }
+
+  .metricCard strong {
+    font-size: 1.55rem;
+  }
+
+  .sectionHeader,
+  .requestCardTop,
+  .tableRowHeader,
+  .formActionsCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sectionHeader p {
+    max-width: none;
+    text-align: left;
+  }
+
+  .filterRow,
+  .requestGrid,
+  .detailGrid,
+  .quoteGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .metaList,
+  .badgeRow {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
 }

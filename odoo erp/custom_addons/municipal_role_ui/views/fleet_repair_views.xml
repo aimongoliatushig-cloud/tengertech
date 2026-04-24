@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_fleet_repair_request_list_municipal_role_ui" model="ir.ui.view">
+        <field name="name">fleet.repair.request.list.municipal.role.ui</field>
+        <field name="model">fleet.repair.request</field>
+        <field name="inherit_id" ref="fleet_repair_workflow.view_fleet_repair_request_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='state']" position="after">
+                <field name="current_responsible_user_id" optional="show"/>
+                <field name="is_overdue" optional="show"/>
+                <field name="estimated_amount" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_fleet_repair_request_form_municipal_role_ui" model="ir.ui.view">
+        <field name="name">fleet.repair.request.form.municipal.role.ui</field>
+        <field name="model">fleet.repair.request</field>
+        <field name="inherit_id" ref="fleet_repair_workflow.view_fleet_repair_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Шуурхай төлөв" groups="municipal_role_ui.group_role_director,municipal_role_ui.group_role_general_manager,municipal_role_ui.group_role_accountant,municipal_role_ui.group_role_finance_officer,municipal_role_ui.group_role_storekeeper,municipal_role_ui.group_role_garage_mechanic,municipal_role_ui.group_role_system_admin">
+                    <group col="4">
+                        <field name="current_responsible_user_id" readonly="1"/>
+                        <field name="current_stage_age_days" readonly="1"/>
+                        <field name="needs_ceo_approval" readonly="1"/>
+                        <field name="is_overdue" readonly="1"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

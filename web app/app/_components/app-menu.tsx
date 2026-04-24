@@ -17,6 +17,7 @@ type MenuKey =
   | "field"
   | "projects"
   | "procurement"
+  | "profile"
   | "review"
   | "quality"
   | "new-project"
@@ -34,6 +35,7 @@ type IconName =
   | "download"
   | "garage"
   | "team"
+  | "menu"
   | "plus"
   | "profile"
   | "more";
@@ -279,6 +281,14 @@ function MenuIcon({
           />
         </svg>
       );
+    case "menu":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+          <path d="M5 7.5H19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M5 12H19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M5 16.5H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
     case "plus":
       return (
         <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
@@ -345,6 +355,35 @@ function getInitials(userName: string) {
     .toLocaleUpperCase("mn-MN");
 }
 
+function getDockLabel(key: MenuKey) {
+  switch (key) {
+    case "dashboard":
+      return "Нүүр";
+    case "tasks":
+      return "Ажил";
+    case "projects":
+      return "Төсөл";
+    case "procurement":
+      return "Авалт";
+    case "reports":
+      return "Тайлан";
+    case "review":
+      return "Хяналт";
+    case "field":
+      return "Маршрут";
+    case "auto-base":
+      return "Бааз";
+    case "hr":
+      return "ХН";
+    case "quality":
+      return "Чанар";
+    case "data-download":
+      return "Файл";
+    default:
+      return "Цэс";
+  }
+}
+
 export function AppMenu({
   active,
   canCreateProject = false,
@@ -360,9 +399,10 @@ export function AppMenu({
 }: AppMenuProps) {
   void canViewQualityCenter;
 
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const createHubHref = "/create";
   const autoBaseHref = "/auto-base";
+  const profileHref = "/profile";
   const canOpenCreateHub = canCreateProject || canCreateTasks || canWriteReports;
   const canViewHrDirectory =
     roleLabel === "Ерөнхий менежер" ||
@@ -639,33 +679,60 @@ export function AppMenu({
           note: "Шинэ үйлдэл сонгох",
           icon: "plus",
         }
+      : active === "profile"
+        ? {
+            key: "profile",
+            href: profileHref,
+            label: "Профайл",
+            note: "Таны бүртгэл ба эрх",
+            icon: "profile",
+          }
       : items[0]);
 
-  const mobileItems = items.filter((item) => item.key !== "new-project");
-  const defaultMobilePrimary = mobileItems.slice(0, 3);
-  const activeMobileItem =
+  const homeItem = items.find((item) => item.key === "dashboard") ?? items[0] ?? null;
+  const workItem =
+    (workerMode
+      ? items.find((item) => item.key === (active === "field" ? "field" : "tasks"))
+      : masterMode
+        ? items.find((item) => item.key === "tasks")
+        : items.find((item) => item.key === "projects")) ??
+    items.find((item) => item.key === "tasks") ??
+    items.find((item) => item.key === "projects") ??
+    items.find((item) => item.key === "field") ??
+    null;
+  const procurementItem = items.find((item) => item.key === "procurement") ?? null;
+  const activeDockItem =
     activeItem?.key !== "new-project"
-      ? mobileItems.find((item) => item.key === activeItem?.key) ?? null
+      ? items.find((item) => item.key === activeItem?.key) ?? null
       : null;
-  const mobilePrimaryItems =
-    activeMobileItem && !defaultMobilePrimary.some((item) => item.key === activeMobileItem.key)
-      ? [
-          ...defaultMobilePrimary.slice(0, Math.max(0, defaultMobilePrimary.length - 1)),
-          activeMobileItem,
-        ]
-      : defaultMobilePrimary;
-  const mobileLeadingItems = mobilePrimaryItems.slice(0, 2);
-  const mobileTrailingItems = mobilePrimaryItems.slice(2);
-  const mobileOverflowItems = mobileItems.filter(
-    (item) => !mobilePrimaryItems.some((primary) => primary.key === item.key),
-  );
 
-  function closeMobileSheets() {
-    setIsMoreOpen(false);
+  const dockItems: MenuItem[] = [];
+  for (const candidate of [homeItem, workItem, procurementItem, activeDockItem, ...items]) {
+    if (!candidate || candidate.key === "new-project") {
+      continue;
+    }
+    if (dockItems.some((item) => item.key === candidate.key)) {
+      continue;
+    }
+    dockItems.push(candidate);
+    if (dockItems.length === 4) {
+      break;
+    }
   }
 
-  function toggleMoreSheet() {
-    setIsMoreOpen((current) => !current);
+  const mobileLeadingItems = dockItems.slice(0, 2);
+  const mobileTrailingItems = dockItems.slice(2, 4);
+  const mobileMenuLinks = items.filter((item) => item.key !== "new-project");
+  const dockHasActiveShortcut = dockItems.some((item) => item.key === active);
+  const menuUtilityActive =
+    isMenuOpen || (!dockHasActiveShortcut && active !== "new-project" && active !== "profile");
+
+  function closeMobileOverlays() {
+    setIsMenuOpen(false);
+  }
+
+  function toggleMenu() {
+    setIsMenuOpen((current) => !current);
   }
 
   return (
@@ -699,7 +766,7 @@ export function AppMenu({
             </div>
           </div>
 
-          <div className={styles.menuUserCard}>
+          <Link href={profileHref} className={`${styles.menuUserCard} ${styles.menuUserCardLink}`}>
             <div className={styles.menuUserAvatar} aria-hidden>
               {getInitials(userName)}
             </div>
@@ -708,7 +775,7 @@ export function AppMenu({
               <strong>{userName}</strong>
               <small>{roleLabel}</small>
             </div>
-          </div>
+          </Link>
         </div>
 
         <div className={styles.menuScrollArea}>
@@ -768,16 +835,17 @@ export function AppMenu({
         </div>
       </aside>
 
-      {isMoreOpen ? (
+      {isMenuOpen ? (
         <>
           <button
             type="button"
             className={styles.menuMobileBackdrop}
             aria-label="Цэс хаах"
-            onClick={closeMobileSheets}
+            onClick={closeMobileOverlays}
           />
 
-          <div className={styles.menuQuickSheet} role="dialog" aria-label="Дэлгэрэнгүй цэс">
+          {isMenuOpen ? (
+            <div className={styles.menuQuickSheet} role="dialog" aria-label="Хажуугийн цэс">
             <div className={styles.menuQuickSheetHeader}>
               <div>
                 <span className={styles.menuKicker}>Дэлгэрэнгүй цэс</span>
@@ -787,22 +855,24 @@ export function AppMenu({
               <button
                 type="button"
                 className={styles.menuQuickSheetClose}
-                onClick={closeMobileSheets}
+                onClick={closeMobileOverlays}
               >
                 Хаах
               </button>
             </div>
 
-            <div className={styles.menuProfileCard}>
-              <div className={styles.menuProfileAvatar} aria-hidden>
-                <MenuIcon icon="profile" className={styles.menuProfileAvatarSvg} />
+            <Link href={profileHref} className={styles.menuProfileCardLink} onClick={closeMobileOverlays}>
+              <div className={styles.menuProfileCard}>
+                <div className={styles.menuProfileAvatar} aria-hidden>
+                  <MenuIcon icon="profile" className={styles.menuProfileAvatarSvg} />
+                </div>
+                <div className={styles.menuProfileBody}>
+                  <span>Профайл</span>
+                  <strong>{userName}</strong>
+                  <small>{roleLabel}</small>
+                </div>
               </div>
-              <div className={styles.menuProfileBody}>
-                <span>Профайл</span>
-                <strong>{userName}</strong>
-                <small>{roleLabel}</small>
-              </div>
-            </div>
+            </Link>
 
             {quickActions.length ? (
               <section className={styles.menuQuickPanel} aria-label="Товч үйлдэл">
@@ -817,7 +887,7 @@ export function AppMenu({
                       key={`sheet-${action.key}`}
                       href={action.href}
                       className={styles.menuQuickActionCard}
-                      onClick={closeMobileSheets}
+                      onClick={closeMobileOverlays}
                     >
                       <span className={styles.menuQuickActionIcon} aria-hidden>
                         <MenuIcon icon={action.icon} className={styles.menuIconSvg} />
@@ -832,9 +902,9 @@ export function AppMenu({
               </section>
             ) : null}
 
-            {mobileOverflowItems.length ? (
+            {mobileMenuLinks.length ? (
               <div className={styles.menuSheetLinks}>
-                {mobileOverflowItems.map((item) => (
+                {mobileMenuLinks.map((item) => (
                   <Link
                     key={`sheet-${item.key}`}
                     href={item.href}
@@ -842,7 +912,7 @@ export function AppMenu({
                       active === item.key ? styles.menuSheetLinkActive : ""
                     }`}
                     aria-current={active === item.key ? "page" : undefined}
-                    onClick={closeMobileSheets}
+                    onClick={closeMobileOverlays}
                   >
                     <span className={styles.menuLinkIcon} aria-hidden>
                       <MenuIcon icon={item.icon} className={styles.menuIconSvg} />
@@ -866,10 +936,48 @@ export function AppMenu({
                 Гарах
               </button>
             </form>
-          </div>
+            </div>
+          ) : null}
         </>
       ) : null}
 
+      <div className={styles.menuMobileUtilityBar} aria-label="Туслах цэс">
+        <button
+          type="button"
+          className={`${styles.menuUtilityButton} ${
+            menuUtilityActive ? styles.menuUtilityButtonActive : ""
+          }`}
+          aria-expanded={isMenuOpen}
+          onClick={toggleMenu}
+        >
+          <span className={styles.menuUtilityIcon} aria-hidden>
+            <MenuIcon icon="menu" className={styles.menuIconSvg} />
+          </span>
+          <span className={styles.menuUtilityCopy}>
+            <strong>Цэс</strong>
+            <small>{activeItem?.label ?? menuTitle}</small>
+          </span>
+        </button>
+
+        <Link
+          href={profileHref}
+          className={`${styles.menuUtilityButton} ${
+            active === "profile" ? styles.menuUtilityButtonActive : ""
+          }`}
+          aria-current={active === "profile" ? "page" : undefined}
+          onClick={closeMobileOverlays}
+        >
+          <span className={styles.menuUtilityAvatar} aria-hidden>
+            {getInitials(userName)}
+          </span>
+          <span className={styles.menuUtilityCopy}>
+            <strong>Профайл</strong>
+            <small>{roleLabel}</small>
+          </span>
+        </Link>
+      </div>
+
+      {!isMenuOpen ? (
       <div
         className={`${styles.menuMobileDock} ${
           canOpenCreateHub ? styles.menuMobileDockWithAdd : styles.menuMobileDockCompact
@@ -884,12 +992,12 @@ export function AppMenu({
               active === item.key ? styles.menuDockLinkActive : ""
             }`}
             aria-current={active === item.key ? "page" : undefined}
-            onClick={closeMobileSheets}
+            onClick={closeMobileOverlays}
           >
             <span className={styles.menuDockIcon} aria-hidden>
               <MenuIcon icon={item.icon} className={styles.menuIconSvg} />
             </span>
-            <span className={styles.menuDockLabel}>{item.label}</span>
+            <span className={styles.menuDockLabel}>{getDockLabel(item.key)}</span>
           </Link>
         ))}
 
@@ -900,7 +1008,7 @@ export function AppMenu({
               active === "new-project" ? styles.menuDockAddTriggerActive : ""
             }`}
             aria-label="Нэмэх төв"
-            onClick={closeMobileSheets}
+            onClick={closeMobileOverlays}
           >
             <span className={styles.menuDockAddIcon} aria-hidden>
               <MenuIcon icon="plus" className={styles.menuIconSvg} />
@@ -917,27 +1025,16 @@ export function AppMenu({
               active === item.key ? styles.menuDockLinkActive : ""
             }`}
             aria-current={active === item.key ? "page" : undefined}
-            onClick={closeMobileSheets}
+            onClick={closeMobileOverlays}
           >
             <span className={styles.menuDockIcon} aria-hidden>
               <MenuIcon icon={item.icon} className={styles.menuIconSvg} />
             </span>
-            <span className={styles.menuDockLabel}>{item.label}</span>
+            <span className={styles.menuDockLabel}>{getDockLabel(item.key)}</span>
           </Link>
         ))}
-
-        <button
-          type="button"
-          className={`${styles.menuDockMoreButton} ${isMoreOpen ? styles.menuDockLinkActive : ""}`}
-          aria-expanded={isMoreOpen}
-          onClick={toggleMoreSheet}
-        >
-          <span className={styles.menuDockIcon} aria-hidden>
-            <MenuIcon icon="more" className={styles.menuIconSvg} />
-          </span>
-          <span className={styles.menuDockLabel}>Цэс</span>
-        </button>
       </div>
+      ) : null}
     </nav>
   );
 }

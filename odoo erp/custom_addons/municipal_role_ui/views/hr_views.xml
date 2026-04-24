@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_employee_form_municipal_role_ui" model="ir.ui.view">
+        <field name="name">hr.employee.form.municipal.role.ui</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Ажилтны эрх ба урсгал" groups="municipal_role_ui.group_role_hr,municipal_role_ui.group_role_system_admin">
+                    <group col="4">
+                        <field name="ops_access_profile_id"/>
+                        <field name="ops_employee_code"/>
+                        <field name="mfo_field_role"/>
+                        <field name="mfo_is_field_active"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_hr_disciplinary_action_form_municipal_role_ui" model="ir.ui.view">
+        <field name="name">hr.disciplinary.action.form.municipal.role.ui</field>
+        <field name="model">hr.disciplinary.action</field>
+        <field name="inherit_id" ref="hr_discipline_transfer_mn.view_hr_disciplinary_action_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Удирдлагын төлөв" groups="municipal_role_ui.group_role_hr,municipal_role_ui.group_role_director,municipal_role_ui.group_role_system_admin">
+                    <group col="4">
+                        <field name="state" readonly="1"/>
+                        <field name="action_type" readonly="1"/>
+                        <field name="approved_by_id" readonly="1"/>
+                        <field name="effective_date" readonly="1"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

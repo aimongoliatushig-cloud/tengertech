@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_project_form_municipal_role_ui" model="ir.ui.view">
+        <field name="name">project.project.form.municipal.role.ui</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Удирдлагын товч төлөв" groups="municipal_role_ui.group_role_director,municipal_role_ui.group_role_general_manager,municipal_role_ui.group_role_department_head,municipal_role_ui.group_role_project_leader,municipal_role_ui.group_role_system_admin">
+                    <group col="4">
+                        <field name="ops_department_id" readonly="1"/>
+                        <field name="user_id" readonly="1"/>
+                        <field name="ops_planned_quantity" readonly="1"/>
+                        <field name="ops_measurement_unit" readonly="1"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

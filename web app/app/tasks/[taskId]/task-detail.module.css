@@ -601,9 +601,12 @@
 }
 
 @media (max-width: 1080px) {
-  .pageGrid,
-  .heroStats {
+  .pageGrid {
     grid-template-columns: 1fr;
+  }
+
+  .heroStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .sideColumn {
@@ -644,18 +647,54 @@
     border-radius: 24px;
   }
 
+  .summaryTop {
+    gap: 12px;
+  }
+
+  .titleBlock h1 {
+    font-size: clamp(1.7rem, 8vw, 2.25rem);
+    line-height: 1.02;
+  }
+
+  .lead {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.9rem;
+    line-height: 1.58;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
   .infoGrid {
     grid-template-columns: 1fr;
   }
 
+  .heroStats {
+    gap: 10px;
+  }
+
+  .heroStatCard {
+    padding: 14px 16px;
+    border-radius: 18px;
+  }
+
   .heroStatCard strong {
-    font-size: 1.3rem;
+    font-size: 1.15rem;
   }
 
   .anchorRow,
   .secondaryActions {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .sectionHead p {
+    padding: 10px 12px;
+    font-size: 0.84rem;
+    line-height: 1.5;
   }
 
   .filePickerHeader,
@@ -682,6 +721,30 @@
   }
 
   .anchorLink {
-    width: 100%;
+    min-height: 40px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  .infoCard,
+  .helperPanel,
+  .returnBox,
+  .fileFieldGroup,
+  .filePickerBox,
+  .composerHighlight {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .chip {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.84rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .heroStats {
+    grid-template-columns: 1fr;
   }
 }

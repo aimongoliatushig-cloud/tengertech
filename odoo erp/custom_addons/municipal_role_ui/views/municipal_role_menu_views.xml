@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_server_dashboard_director" model="ir.actions.server">
+        <field name="name">Захирлын самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('director')</field>
+    </record>
+    <record id="action_server_dashboard_general_manager" model="ir.actions.server">
+        <field name="name">Ерөнхий менежерийн самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('general_manager')</field>
+    </record>
+    <record id="action_server_dashboard_department_head" model="ir.actions.server">
+        <field name="name">Хэлтсийн даргын самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('department_head')</field>
+    </record>
+    <record id="action_server_dashboard_project_leader" model="ir.actions.server">
+        <field name="name">Төслийн удирдагчийн самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('project_leader')</field>
+    </record>
+    <record id="action_server_dashboard_senior_master" model="ir.actions.server">
+        <field name="name">Ахлах мастерын самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('senior_master')</field>
+    </record>
+    <record id="action_server_dashboard_master" model="ir.actions.server">
+        <field name="name">Мастерын самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('master')</field>
+    </record>
+    <record id="action_server_dashboard_employee" model="ir.actions.server">
+        <field name="name">Ажилтны самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('employee')</field>
+    </record>
+    <record id="action_server_dashboard_hr" model="ir.actions.server">
+        <field name="name">Хүний нөөцийн самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('hr')</field>
+    </record>
+    <record id="action_server_dashboard_accountant" model="ir.actions.server">
+        <field name="name">Нягтлан бодогчийн самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('accountant')</field>
+    </record>
+    <record id="action_server_dashboard_finance_officer" model="ir.actions.server">
+        <field name="name">Санхүүгийн ажилтны самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('finance_officer')</field>
+    </record>
+    <record id="action_server_dashboard_storekeeper" model="ir.actions.server">
+        <field name="name">Няравын самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('storekeeper')</field>
+    </record>
+    <record id="action_server_dashboard_office_clerk" model="ir.actions.server">
+        <field name="name">Бичиг хэргийн самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('office_clerk')</field>
+    </record>
+    <record id="action_server_dashboard_contract_officer" model="ir.actions.server">
+        <field name="name">Гэрээний самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('contract_officer')</field>
+    </record>
+    <record id="action_server_dashboard_garage_mechanic" model="ir.actions.server">
+        <field name="name">Гаражийн механикийн самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('garage_mechanic')</field>
+    </record>
+    <record id="action_server_dashboard_driver" model="ir.actions.server">
+        <field name="name">Жолоочийн самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('driver')</field>
+    </record>
+    <record id="action_server_dashboard_loader" model="ir.actions.server">
+        <field name="name">Ачигчийн самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('loader')</field>
+    </record>
+    <record id="action_server_dashboard_inspector" model="ir.actions.server">
+        <field name="name">Хяналтын ажилтны самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('inspector')</field>
+    </record>
+    <record id="action_server_dashboard_system_admin" model="ir.actions.server">
+        <field name="name">Системийн админы самбар</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = env['municipal.role.dashboard'].action_open_role_workspace('system_admin')</field>
+    </record>
+
+    <menuitem id="menu_municipal_role_ui_root" name="Албан тушаалын орон зай" sequence="5"/>
+    <menuitem id="menu_dashboard_director" name="Захирлын самбар" parent="menu_municipal_role_ui_root" action="action_server_dashboard_director" groups="municipal_role_ui.group_role_director" sequence="10"/>
+    <menuitem id="menu_dashboard_general_manager" name="Ерөнхий менежер" parent="menu_municipal_role_ui_root" action="action_server_dashboard_general_manager" groups="municipal_role_ui.group_role_general_manager" sequence="20"/>
+    <menuitem id="menu_dashboard_department_head" name="Хэлтсийн дарга" parent="menu_municipal_role_ui_root" action="action_server_dashboard_department_head" groups="municipal_role_ui.group_role_department_head" sequence="30"/>
+    <menuitem id="menu_dashboard_project_leader" name="Төслийн удирдагч" parent="menu_municipal_role_ui_root" action="action_server_dashboard_project_leader" groups="municipal_role_ui.group_role_project_leader" sequence="40"/>
+    <menuitem id="menu_dashboard_senior_master" name="Ахлах мастер" parent="menu_municipal_role_ui_root" action="action_server_dashboard_senior_master" groups="municipal_role_ui.group_role_senior_master" sequence="50"/>
+    <menuitem id="menu_dashboard_master" name="Мастер" parent="menu_municipal_role_ui_root" action="action_server_dashboard_master" groups="municipal_role_ui.group_role_master" sequence="60"/>
+    <menuitem id="menu_dashboard_employee" name="Энгийн ажилтан" parent="menu_municipal_role_ui_root" action="action_server_dashboard_employee" groups="municipal_role_ui.group_role_employee" sequence="70"/>
+    <menuitem id="menu_dashboard_hr" name="Хүний нөөц" parent="menu_municipal_role_ui_root" action="action_server_dashboard_hr" groups="municipal_role_ui.group_role_hr" sequence="80"/>
+    <menuitem id="menu_dashboard_accountant" name="Нягтлан бодогч" parent="menu_municipal_role_ui_root" action="action_server_dashboard_accountant" groups="municipal_role_ui.group_role_accountant" sequence="90"/>
+    <menuitem id="menu_dashboard_finance_officer" name="Санхүүгийн ажилтан" parent="menu_municipal_role_ui_root" action="action_server_dashboard_finance_officer" groups="municipal_role_ui.group_role_finance_officer" sequence="100"/>
+    <menuitem id="menu_dashboard_storekeeper" name="Нярав" parent="menu_municipal_role_ui_root" action="action_server_dashboard_storekeeper" groups="municipal_role_ui.group_role_storekeeper" sequence="110"/>
+    <menuitem id="menu_dashboard_office_clerk" name="Бичиг хэрэг" parent="menu_municipal_role_ui_root" action="action_server_dashboard_office_clerk" groups="municipal_role_ui.group_role_office_clerk" sequence="120"/>
+    <menuitem id="menu_dashboard_contract_officer" name="Гэрээ" parent="menu_municipal_role_ui_root" action="action_server_dashboard_contract_officer" groups="municipal_role_ui.group_role_contract_officer" sequence="130"/>
+    <menuitem id="menu_dashboard_garage_mechanic" name="Гаражийн механик" parent="menu_municipal_role_ui_root" action="action_server_dashboard_garage_mechanic" groups="municipal_role_ui.group_role_garage_mechanic" sequence="140"/>
+    <menuitem id="menu_dashboard_driver" name="Жолооч" parent="menu_municipal_role_ui_root" action="action_server_dashboard_driver" groups="municipal_role_ui.group_role_driver" sequence="150"/>
+    <menuitem id="menu_dashboard_loader" name="Ачигч" parent="menu_municipal_role_ui_root" action="action_server_dashboard_loader" groups="municipal_role_ui.group_role_loader" sequence="160"/>
+    <menuitem id="menu_dashboard_inspector" name="Хяналт" parent="menu_municipal_role_ui_root" action="action_server_dashboard_inspector" groups="municipal_role_ui.group_role_inspector" sequence="170"/>
+    <menuitem id="menu_dashboard_system_admin" name="Системийн админ" parent="menu_municipal_role_ui_root" action="action_server_dashboard_system_admin" groups="municipal_role_ui.group_role_system_admin,base.group_system" sequence="180"/>
+</odoo>

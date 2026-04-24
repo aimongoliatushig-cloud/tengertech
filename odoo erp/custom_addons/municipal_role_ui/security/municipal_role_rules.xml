@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_municipal_role_dashboard_self" model="ir.rule">
+        <field name="name">Албан тушаалын самбар: өөрийн самбарыг харах</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [ref('municipal_role_ui.group_role_director'), ref('municipal_role_ui.group_role_general_manager'), ref('municipal_role_ui.group_role_department_head'), ref('municipal_role_ui.group_role_project_leader'), ref('municipal_role_ui.group_role_senior_master'), ref('municipal_role_ui.group_role_master'), ref('municipal_role_ui.group_role_employee'), ref('municipal_role_ui.group_role_hr'), ref('municipal_role_ui.group_role_accountant'), ref('municipal_role_ui.group_role_finance_officer'), ref('municipal_role_ui.group_role_storekeeper'), ref('municipal_role_ui.group_role_office_clerk'), ref('municipal_role_ui.group_role_contract_officer'), ref('municipal_role_ui.group_role_garage_mechanic'), ref('municipal_role_ui.group_role_driver'), ref('municipal_role_ui.group_role_loader'), ref('municipal_role_ui.group_role_inspector')])]"/>
+    </record>
+
+    <record id="rule_municipal_role_dashboard_system_admin" model="ir.rule">
+        <field name="name">Албан тушаалын самбар: системийн админ бүхнийг харах</field>
+        <field name="model_id" ref="model_municipal_role_dashboard"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('municipal_role_ui.group_role_system_admin'))]"/>
+    </record>
+
+    <record id="rule_municipal_role_project_department_scope" model="ir.rule">
+        <field name="name">Төсөл: хэлтэс ба төсөл удирдагчийн хүрээ</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="domain_force">['|', ('ops_department_id.manager_id.user_id', '=', user.id), ('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [ref('municipal_role_ui.group_role_department_head'), ref('municipal_role_ui.group_role_project_leader')])]"/>
+    </record>
+
+    <record id="rule_municipal_role_project_team_scope" model="ir.rule">
+        <field name="name">Төсөл: мастер ба ажилтны хүрээ</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="domain_force">[('task_ids.user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [ref('municipal_role_ui.group_role_senior_master'), ref('municipal_role_ui.group_role_master'), ref('municipal_role_ui.group_role_employee'), ref('municipal_role_ui.group_role_driver'), ref('municipal_role_ui.group_role_loader'), ref('municipal_role_ui.group_role_inspector'), ref('municipal_role_ui.group_role_garage_mechanic')])]"/>
+    </record>
+
+    <record id="rule_municipal_role_task_department_scope" model="ir.rule">
+        <field name="name">Ажил: хэлтэс ба төсөл удирдагчийн хүрээ</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">['|', ('project_id.ops_department_id.manager_id.user_id', '=', user.id), ('project_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [ref('municipal_role_ui.group_role_department_head'), ref('municipal_role_ui.group_role_project_leader')])]"/>
+    </record>
+
+    <record id="rule_municipal_role_task_team_scope" model="ir.rule">
+        <field name="name">Ажил: мастер ба ажилтны хүрээ</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">['|', ('ops_team_leader_id', '=', user.id), ('user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [ref('municipal_role_ui.group_role_senior_master'), ref('municipal_role_ui.group_role_master'), ref('municipal_role_ui.group_role_employee')])]"/>
+    </record>
+
+    <record id="rule_municipal_role_task_driver_scope" model="ir.rule">
+        <field name="name">Ажил: жолоочийн хүрээ</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">['|', ('mfo_driver_employee_id.user_id', '=', user.id), ('user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_role_ui.group_role_driver'))]"/>
+    </record>
+
+    <record id="rule_municipal_role_task_loader_scope" model="ir.rule">
+        <field name="name">Ажил: ачигчийн хүрээ</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">['|', ('mfo_collector_employee_ids.user_id', '=', user.id), ('user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_role_ui.group_role_loader'))]"/>
+    </record>
+
+    <record id="rule_municipal_role_task_inspector_scope" model="ir.rule">
+        <field name="name">Ажил: хяналтын ажилтны хүрээ</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">['|', ('mfo_inspector_employee_id.user_id', '=', user.id), ('user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_role_ui.group_role_inspector'))]"/>
+    </record>
+
+    <record id="rule_municipal_role_report_department_scope" model="ir.rule">
+        <field name="name">Тайлан: хэлтэс ба төсөл удирдагчийн хүрээ</field>
+        <field name="model_id" ref="ops_field_reporting.model_ops_task_report"/>
+        <field name="domain_force">['|', ('task_id.project_id.ops_department_id.manager_id.user_id', '=', user.id), ('task_id.project_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [ref('municipal_role_ui.group_role_department_head'), ref('municipal_role_ui.group_role_project_leader')])]"/>
+    </record>
+
+    <record id="rule_municipal_role_report_team_scope" model="ir.rule">
+        <field name="name">Тайлан: мастер ба ажилтны хүрээ</field>
+        <field name="model_id" ref="ops_field_reporting.model_ops_task_report"/>
+        <field name="domain_force">['|', ('task_id.ops_team_leader_id', '=', user.id), ('task_id.user_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(6, 0, [ref('municipal_role_ui.group_role_senior_master'), ref('municipal_role_ui.group_role_master'), ref('municipal_role_ui.group_role_employee')])]"/>
+    </record>
+
+    <record id="rule_municipal_role_report_driver_scope" model="ir.rule">
+        <field name="name">Тайлан: жолоочийн хүрээ</field>
+        <field name="model_id" ref="ops_field_reporting.model_ops_task_report"/>
+        <field name="domain_force">['|', ('task_id.mfo_driver_employee_id.user_id', '=', user.id), ('reporter_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_role_ui.group_role_driver'))]"/>
+    </record>
+
+    <record id="rule_municipal_role_report_loader_scope" model="ir.rule">
+        <field name="name">Тайлан: ачигчийн хүрээ</field>
+        <field name="model_id" ref="ops_field_reporting.model_ops_task_report"/>
+        <field name="domain_force">['|', ('task_id.mfo_collector_employee_ids.user_id', '=', user.id), ('reporter_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_role_ui.group_role_loader'))]"/>
+    </record>
+
+    <record id="rule_municipal_role_report_inspector_scope" model="ir.rule">
+        <field name="name">Тайлан: хяналтын ажилтны хүрээ</field>
+        <field name="model_id" ref="ops_field_reporting.model_ops_task_report"/>
+        <field name="domain_force">['|', ('task_id.mfo_inspector_employee_id.user_id', '=', user.id), ('reporter_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('municipal_role_ui.group_role_inspector'))]"/>
+    </record>
+</odoo>

@@ -452,8 +452,38 @@
     border-radius: 24px;
   }
 
+  .pageHeaderMain,
+  .pageHeaderAside,
+  .titleBlock,
+  .userBlock {
+    gap: 8px;
+  }
+
+  .titleBlock h1 {
+    font-size: clamp(1.75rem, 8vw, 2.4rem);
+    line-height: 1;
+  }
+
+  .titleBlock p {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.92rem;
+    line-height: 1.58;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
+
+  .userBlock {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .userBlock strong {
+    font-size: 1.08rem;
+  }
+
   .summaryStrip {
-    grid-auto-columns: minmax(220px, 88vw);
+    grid-auto-columns: minmax(210px, 82vw);
   }
 
   .taskInfoGrid {
@@ -481,12 +511,92 @@
     margin-bottom: 14px;
   }
 
+  .pageHeader,
+  .filterPanel,
+  .taskSection,
+  .emptyState {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .pageKicker,
+  .filterKicker {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: 0.7rem;
+  }
+
+  .titleBlock h1 {
+    font-size: clamp(1.65rem, 8vw, 2.1rem);
+    line-height: 1.02;
+  }
+
+  .titleBlock p {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
   .filterScroller {
-    grid-auto-columns: minmax(150px, 78%);
+    grid-auto-columns: minmax(138px, 72%);
   }
 
   .summaryStrip {
-    grid-auto-columns: minmax(220px, 84%);
+    grid-auto-columns: minmax(196px, 76vw);
+    gap: 12px;
+  }
+
+  .summaryCard {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .summaryCard strong {
+    font-size: 1.35rem;
+  }
+
+  .filterHeader p,
+  .sectionHeader p {
+    padding: 10px 12px;
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+
+  .filterChip {
+    min-height: 72px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .taskCardList {
+    gap: 12px;
+  }
+
+  .taskCard {
+    padding: 16px;
+    border-radius: 20px;
+    gap: 8px;
+  }
+
+  .taskIdentity strong {
+    font-size: 1.05rem;
+  }
+
+  .taskRoute {
+    font-size: 0.98rem;
+  }
+
+  .taskInfoItem {
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  .progressTrack {
+    height: 8px;
+  }
+
+  .subtleNote {
+    font-size: 0.84rem;
+    line-height: 1.5;
   }
 
   .dateButton,

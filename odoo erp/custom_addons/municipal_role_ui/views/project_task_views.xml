@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_task_form_municipal_role_ui" model="ir.ui.view">
+        <field name="name">project.task.form.municipal.role.ui</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Шуурхай төлөв" groups="municipal_role_ui.group_role_general_manager,municipal_role_ui.group_role_department_head,municipal_role_ui.group_role_project_leader,municipal_role_ui.group_role_senior_master,municipal_role_ui.group_role_master,municipal_role_ui.group_role_employee,municipal_role_ui.group_role_driver,municipal_role_ui.group_role_loader,municipal_role_ui.group_role_inspector">
+                    <group col="4">
+                        <field name="ops_team_leader_id" readonly="1"/>
+                        <field name="mfo_vehicle_id" readonly="1"/>
+                        <field name="mfo_shift_date" readonly="1"/>
+                        <field name="mfo_progress_percent" readonly="1"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_project_task_tree_municipal_role_ui" model="ir.ui.view">
+        <field name="name">project.task.tree.municipal.role.ui</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_tree2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='name']" position="after">
+                <field name="ops_team_leader_id" optional="show"/>
+                <field name="mfo_vehicle_id" optional="hide"/>
+                <field name="mfo_shift_date" optional="show"/>
+                <field name="mfo_progress_percent" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

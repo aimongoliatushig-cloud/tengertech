@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_municipal_role_dashboard_form" model="ir.ui.view">
+        <field name="name">municipal.role.dashboard.form</field>
+        <field name="model">municipal.role.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Албан тушаалын орон зай" create="false" edit="false" delete="false">
+                <header>
+                    <button type="object" name="action_refresh_dashboard" string="Сэргээх" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <field name="user_id" invisible="1"/>
+                    <field name="role_code" invisible="1"/>
+                    <div class="municipal-role-dashboard">
+                        <div class="municipal-role-dashboard__hero">
+                            <div class="municipal-role-dashboard__chip">
+                                <field name="role_label" nolabel="1" readonly="1"/>
+                            </div>
+                            <h1><field name="dashboard_title" nolabel="1" readonly="1"/></h1>
+                            <p><field name="dashboard_subtitle" nolabel="1" readonly="1"/></p>
+                            <div class="text-muted">
+                                <field name="last_refreshed_at" readonly="1"/>
+                            </div>
+                        </div>
+
+                        <div class="municipal-role-dashboard__kpi-grid">
+                            <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_1_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_1_value" nolabel="1"/></div></div>
+                            <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_2_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_2_value" nolabel="1"/></div></div>
+                            <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_3_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_3_value" nolabel="1"/></div></div>
+                            <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_4_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_4_value" nolabel="1"/></div></div>
+                            <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_5_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_5_value" nolabel="1"/></div></div>
+                            <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_6_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_6_value" nolabel="1"/></div></div>
+                            <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_7_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_7_value" nolabel="1"/></div></div>
+                            <div class="municipal-role-dashboard__kpi-card"><div class="municipal-role-dashboard__kpi-label"><field name="kpi_8_label" nolabel="1"/></div><div class="municipal-role-dashboard__kpi-value"><field name="kpi_8_value" nolabel="1"/></div></div>
+                        </div>
+
+                        <div class="municipal-role-dashboard__panels">
+                            <field name="highlight_html" nolabel="1" widget="html"/>
+                            <field name="performance_html" nolabel="1" widget="html"/>
+                            <field name="alert_html" nolabel="1" widget="html"/>
+                        </div>
+
+                        <separator string="Шуурхай үйлдэл"/>
+
+                        <div class="municipal-role-action-grid" groups="municipal_role_ui.group_role_director,municipal_role_ui.group_role_general_manager">
+                            <button type="object" name="action_open_projects" string="Төслүүд" class="btn btn-primary"/>
+                            <button type="object" name="action_open_today_tasks" string="Өнөөдрийн ажил" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_overdue_tasks" string="Хоцорсон ажил" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_procurements_pending" string="Батлах авалт" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_procurements_over_threshold" string="1 сая+ хүсэлт" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_repair_requests" string="Засварын хүсэлт" class="btn btn-secondary"/>
+                        </div>
+
+                        <div class="municipal-role-action-grid" groups="municipal_role_ui.group_role_department_head,municipal_role_ui.group_role_project_leader">
+                            <button type="object" name="action_open_projects" string="Хариуцсан төсөл" class="btn btn-primary"/>
+                            <button type="object" name="action_open_today_tasks" string="Өнөөдрийн ажил" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_review_tasks" string="Шалгах ажил" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_task_reports" string="Тайлан" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_procurements" string="Худалдан авалт" class="btn btn-secondary"/>
+                        </div>
+
+                        <div class="municipal-role-action-grid" groups="municipal_role_ui.group_role_senior_master,municipal_role_ui.group_role_master,municipal_role_ui.group_role_employee,municipal_role_ui.group_role_driver,municipal_role_ui.group_role_loader,municipal_role_ui.group_role_inspector">
+                            <button type="object" name="action_open_today_tasks" string="Өнөөдрийн ажил" class="btn btn-primary"/>
+                            <button type="object" name="action_open_review_tasks" string="Шалгах ажил" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_task_reports" string="Тайлан" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_my_routes" string="Маршрут" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_quality_reports" string="Чанарын тайлан" class="btn btn-secondary"/>
+                        </div>
+
+                        <div class="municipal-role-action-grid" groups="municipal_role_ui.group_role_hr">
+                            <button type="object" name="action_open_employees" string="Ажилтнууд" class="btn btn-primary"/>
+                            <button type="object" name="action_open_leave_requests" string="Чөлөө / өвчтэй" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_disciplinary_actions" string="Сахилгын бүртгэл" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_transfers" string="Шилжилт хөдөлгөөн" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_clearance_requests" string="Тойрох хуудас" class="btn btn-secondary"/>
+                        </div>
+
+                        <div class="municipal-role-action-grid" groups="municipal_role_ui.group_role_accountant,municipal_role_ui.group_role_finance_officer,municipal_role_ui.group_role_storekeeper,municipal_role_ui.group_role_office_clerk,municipal_role_ui.group_role_contract_officer,municipal_role_ui.group_role_garage_mechanic">
+                            <button type="object" name="action_open_procurements" string="Худалдан авалт" class="btn btn-primary" groups="municipal_role_ui.group_role_accountant,municipal_role_ui.group_role_finance_officer,municipal_role_ui.group_role_storekeeper,municipal_role_ui.group_role_office_clerk,municipal_role_ui.group_role_contract_officer"/>
+                            <button type="object" name="action_open_repair_requests" string="Засварын хүсэлт" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_vehicles" string="Машинууд" class="btn btn-secondary" groups="municipal_role_ui.group_role_garage_mechanic"/>
+                        </div>
+
+                        <div class="municipal-role-action-grid" groups="municipal_role_ui.group_role_system_admin">
+                            <button type="object" name="action_open_access_profiles" string="Role management" class="btn btn-primary"/>
+                            <button type="object" name="action_open_users" string="Хэрэглэгчид" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_sync_logs" string="Sync log" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_projects" string="Төслүүд" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_procurements" string="Худалдан авалт" class="btn btn-secondary"/>
+                            <button type="object" name="action_open_repair_requests" string="Засварын хүсэлт" class="btn btn-secondary"/>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

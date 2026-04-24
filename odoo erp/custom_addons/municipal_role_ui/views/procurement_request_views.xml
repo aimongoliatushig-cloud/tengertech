@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mpw_procurement_request_search_municipal_role_ui" model="ir.ui.view">
+        <field name="name">mpw.procurement.request.search.municipal.role.ui</field>
+        <field name="model">mpw.procurement.request</field>
+        <field name="arch" type="xml">
+            <search string="Худалдан авалтын хүсэлт">
+                <field name="name"/>
+                <field name="title"/>
+                <field name="project_id"/>
+                <field name="department_id"/>
+                <field name="responsible_storekeeper_user_id"/>
+                <field name="current_responsible_user_id"/>
+                <field name="state"/>
+                <field name="selected_supplier_id"/>
+                <field name="payment_status"/>
+                <field name="receipt_status"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_mpw_procurement_request_list_municipal_role_ui" model="ir.ui.view">
+        <field name="name">mpw.procurement.request.list.municipal.role.ui</field>
+        <field name="model">mpw.procurement.request</field>
+        <field name="arch" type="xml">
+            <list default_order="create_date desc"
+                  decoration-danger="is_delayed"
+                  decoration-muted="state == 'cancelled'"
+                  decoration-success="state in ('received', 'done')">
+                <field name="name"/>
+                <field name="title"/>
+                <field name="project_id" optional="show"/>
+                <field name="department_id" optional="show"/>
+                <field name="state" widget="badge"/>
+                <field name="flow_type" widget="badge" optional="show"/>
+                <field name="is_over_threshold" optional="hide"/>
+                <field name="current_responsible_user_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="responsible_storekeeper_user_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="selected_supplier_id" optional="show"/>
+                <field name="selected_supplier_total" optional="show"/>
+                <field name="payment_status" widget="badge" optional="show"/>
+                <field name="receipt_status" widget="badge" optional="show"/>
+                <field name="current_stage_age_days" optional="show"/>
+                <field name="required_date" optional="show"/>
+                <field name="delay_days" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mpw_procurement_request_kanban_municipal_role_ui" model="ir.ui.view">
+        <field name="name">mpw.procurement.request.kanban.municipal.role.ui</field>
+        <field name="model">mpw.procurement.request</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile">
+                <field name="name"/>
+                <field name="title"/>
+                <field name="project_id"/>
+                <field name="department_id"/>
+                <field name="state"/>
+                <field name="state_label"/>
+                <field name="flow_type"/>
+                <field name="is_over_threshold"/>
+                <field name="current_responsible_user_id"/>
+                <field name="selected_supplier_id"/>
+                <field name="selected_supplier_total"/>
+                <field name="required_date"/>
+                <field name="is_delayed"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <strong><field name="name"/></strong>
+                                    <div class="text-muted"><field name="title"/></div>
+                                </div>
+                                <field name="state" widget="badge"/>
+                            </div>
+                            <div class="mb-2">
+                                <div><span class="text-muted">Төсөл:</span> <field name="project_id"/></div>
+                                <div><span class="text-muted">Алба нэгж:</span> <field name="department_id"/></div>
+                                <div><span class="text-muted">Хариуцагч:</span> <field name="current_responsible_user_id"/></div>
+                            </div>
+                            <div class="mt-2 d-flex gap-2 flex-wrap">
+                                <field name="flow_type" widget="badge"/>
+                                <field name="state_label" widget="badge"/>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div>
+                                    <t t-if="record.selected_supplier_id.value">
+                                        <span><field name="selected_supplier_id"/></span>
+                                    </t>
+                                </div>
+                                <div class="text-end">
+                                    <div><field name="selected_supplier_total"/></div>
+                                    <small t-if="record.is_delayed.value" class="text-danger">Хоцорсон</small>
+                                    <small t-if="!record.is_delayed.value and record.required_date.value"><field name="required_date"/></small>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_mpw_procurement_request_form_municipal_role_ui" model="ir.ui.view">
+        <field name="name">mpw.procurement.request.form.municipal.role.ui</field>
+        <field name="model">mpw.procurement.request</field>
+        <field name="arch" type="xml">
+            <form string="Худалдан авалтын хүсэлт">
+                <header>
+                    <field name="state"
+                           widget="statusbar"
+                           statusbar_visible="draft,quotation_waiting,quotations_ready,finance_review,order_preparing,director_pending,decision_approved,order_issued,contract_preparing,contract_signed,paid,received,done,cancelled"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_project" type="object" class="oe_stat_button" icon="fa-folder-open" invisible="not project_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Төсөл</span>
+                            </div>
+                        </button>
+                        <button name="action_open_task" type="object" class="oe_stat_button" icon="fa-tasks" invisible="not task_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Ажилбар</span>
+                            </div>
+                        </button>
+                        <button name="action_view_attachments" type="object" class="oe_stat_button" icon="fa-paperclip">
+                            <field name="attachment_count" widget="statinfo" string="Хавсралт"/>
+                        </button>
+                    </div>
+
+                    <group>
+                        <group string="Үндсэн мэдээлэл">
+                            <field name="name" readonly="1"/>
+                            <field name="title"/>
+                            <field name="project_id"/>
+                            <field name="task_id"/>
+                            <field name="department_id"/>
+                            <field name="requester_user_id" readonly="1"/>
+                            <field name="requester_employee_id" readonly="1"/>
+                            <field name="responsible_storekeeper_user_id"/>
+                            <field name="procurement_type"/>
+                            <field name="urgency"/>
+                            <field name="required_date"/>
+                            <field name="description"/>
+                        </group>
+                        <group string="Шуурхай төлөв">
+                            <field name="flow_type" readonly="1"/>
+                            <field name="is_over_threshold" readonly="1"/>
+                            <field name="current_responsible_user_id" readonly="1"/>
+                            <field name="current_stage_age_days" readonly="1"/>
+                            <field name="payment_status" readonly="1"/>
+                            <field name="receipt_status" readonly="1"/>
+                            <field name="selected_supplier_id" readonly="1"/>
+                            <field name="selected_supplier_total" readonly="1"/>
+                            <field name="payment_reference"/>
+                            <field name="payment_date"/>
+                            <field name="is_delayed" readonly="1"/>
+                            <field name="delay_days" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Мөрүүд">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id"/>
+                                    <field name="product_name_manual"/>
+                                    <field name="specification"/>
+                                    <field name="quantity"/>
+                                    <field name="uom_id"/>
+                                    <field name="approx_unit_price"/>
+                                    <field name="approx_subtotal" readonly="1"/>
+                                    <field name="final_unit_price"/>
+                                    <field name="final_subtotal" readonly="1"/>
+                                    <field name="remark"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Үнийн санал">
+                            <field name="quotation_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="supplier_id"/>
+                                    <field name="quotation_ref"/>
+                                    <field name="quotation_date"/>
+                                    <field name="amount_total"/>
+                                    <field name="expected_delivery_date"/>
+                                    <field name="is_selected"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Баримт">
+                            <field name="document_ids">
+                                <list editable="bottom">
+                                    <field name="document_type"/>
+                                    <field name="note"/>
+                                    <field name="is_required" readonly="1"/>
+                                    <field name="attachment_ids" widget="many2many_binary"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Төлөв ба огноо">
+                            <group>
+                                <group string="Шийдвэр ба гэрээ">
+                                    <field name="director_order_prepared_by" readonly="1"/>
+                                    <field name="director_order_attachment_count" readonly="1"/>
+                                    <field name="date_director_decision" readonly="1"/>
+                                    <field name="date_order_issued" readonly="1"/>
+                                    <field name="contract_prepared_by" readonly="1"/>
+                                    <field name="contract_attachment_count" readonly="1"/>
+                                    <field name="date_contract_signed" readonly="1"/>
+                                </group>
+                                <group string="Төлбөр ба хүлээн авалт">
+                                    <field name="finance_processed_by" readonly="1"/>
+                                    <field name="date_paid" readonly="1"/>
+                                    <field name="received_by" readonly="1"/>
+                                    <field name="date_received" readonly="1"/>
+                                    <field name="purchase_order_id" readonly="1"/>
+                                    <field name="vendor_bill_id" readonly="1"/>
+                                    <field name="receipt_picking_id" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Түүх">
+                            <field name="audit_log_ids" readonly="1">
+                                <list create="0" delete="0" edit="0">
+                                    <field name="changed_at"/>
+                                    <field name="action_label"/>
+                                    <field name="old_state"/>
+                                    <field name="new_state"/>
+                                    <field name="user_id"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Тэмдэглэл">
+                            <field name="notes_internal" placeholder="Дотоод тайлбар"/>
+                            <field name="notes_user" placeholder="Хэрэглэгчийн тэмдэглэл"/>
+                        </page>
+                    </notebook>
+
+                    <chatter/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
