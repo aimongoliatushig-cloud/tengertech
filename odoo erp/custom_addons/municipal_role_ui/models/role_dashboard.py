@@ -212,12 +212,22 @@ class MunicipalRoleDashboard(models.Model):
         return f"{date_value.month:02d}/{date_value.day:02d}"
 
     def _daily_garbage_weight_series(self, days=7):
-        weight_total_model = self._get_model("mfo.daily.weight.total")
-        if not weight_total_model:
-            return []
-
         end_date = self._today()
         start_date = end_date - timedelta(days=max(days - 1, 0))
+        series_dates = [
+            start_date + timedelta(days=offset) for offset in range(days)
+        ]
+        weight_total_model = self._get_model("mfo.daily.weight.total")
+        if not weight_total_model:
+            return [
+                {
+                    "date": current_date,
+                    "label": self._short_date_label(current_date),
+                    "weight": 0.0,
+                }
+                for current_date in series_dates
+            ]
+
         grouped_data = weight_total_model.read_group(
             [
                 ("shift_date", ">=", start_date),
@@ -243,25 +253,21 @@ class MunicipalRoleDashboard(models.Model):
                 "label": self._short_date_label(current_date),
                 "weight": weights_by_date.get(current_date, 0.0),
             }
-            for current_date in (
-                start_date + timedelta(days=offset) for offset in range(days)
-            )
+            for current_date in series_dates
         ]
 
     def _render_waste_load_chart(self, items):
         chart_title = "\u0425\u043e\u0433 \u0430\u0447\u0438\u043b\u0442\u044b\u043d 7 \u0445\u043e\u043d\u043e\u0433\u0438\u0439\u043d \u0433\u0440\u0430\u0444\u0438\u043a"
         chart_subtitle = "\u0421\u04af\u04af\u043b\u0438\u0439\u043d 7 \u0445\u043e\u043d\u043e\u0433\u0442 \u0431\u04af\u0440\u0442\u0433\u044d\u0433\u0434\u0441\u044d\u043d \u043d\u0438\u0439\u0442 \u043a\u0433"
         if not items:
-            return self._render_panel(
-                chart_title,
-                [
-                    (
-                        "\u041c\u044d\u0434\u044d\u044d\u043b\u044d\u043b",
-                        "\u041f\u04af\u04af\u0433\u0438\u0439\u043d \u0431\u04af\u0440\u0442\u0433\u044d\u043b \u0430\u043b\u0433\u0430",
-                        "soft",
-                    )
-                ],
-            )
+            items = [
+                {
+                    "date": self._today() - timedelta(days=offset),
+                    "label": self._short_date_label(self._today() - timedelta(days=offset)),
+                    "weight": 0.0,
+                }
+                for offset in range(6, -1, -1)
+            ]
 
         total_weight = sum(item["weight"] for item in items)
         max_weight = max((item["weight"] for item in items), default=0.0)

@@ -178,7 +178,8 @@
 .o_form_view .municipal-role-chart__bar-fill {
     position: relative;
     z-index: 1;
-    width: min(42px, 72%);
+    width: 72%;
+    max-width: 42px;
     height: var(--municipal-role-chart-height);
     border-radius: 14px 14px 8px 8px;
     background: linear-gradient(180deg, #6bc381 0%, #2f8f50 100%);
@@ -191,7 +192,8 @@
 }
 
 .o_form_view .municipal-role-chart__bar--empty .municipal-role-chart__bar-fill {
-    width: min(42px, 72%);
+    width: 72%;
+    max-width: 42px;
     height: 6px;
     border-radius: 999px;
     background: rgba(90, 106, 97, 0.22);
